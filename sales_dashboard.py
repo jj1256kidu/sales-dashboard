@@ -138,6 +138,23 @@ if 'current_view' not in st.session_state:
 if 'filters' not in st.session_state:
     st.session_state.filters = {}
 
+# Initialize session state for configuration
+if 'dashboard_config' not in st.session_state:
+    st.session_state.dashboard_config = {
+        'show_kpis': True,
+        'show_quarter_breakdown': True,
+        'show_hunting_farming': True,
+        'show_monthly_trend': True,
+        'show_sales_funnel': True,
+        'show_strategy_view': True,
+        'show_leaderboard': True,
+        'show_geo_view': True,
+        'show_detailed_view': True,
+        'show_weighted_revenue': True,
+        'show_win_rate': True,
+        'show_probability_distribution': True
+    }
+
 # Custom CSS for modern corporate styling
 st.markdown(f"""
     <style>
@@ -167,61 +184,46 @@ st.markdown(f"""
         letter-spacing: -0.025em;
     }}
     
-    /* Sticky Navigation */
-    .stTabs [data-baseweb="tab-list"] {{
-        position: sticky;
-        top: 0;
-        z-index: 100;
+    /* Navigation Menu */
+    .nav-menu {{
         background-color: {colors['header']};
-        padding: 1rem 2rem;
-        margin-bottom: 2rem;
+        padding: 1rem;
         border-bottom: 1px solid {colors['border']};
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
         backdrop-filter: blur(10px);
         -webkit-backdrop-filter: blur(10px);
     }}
     
-    /* Tab Styling */
-    .stTabs [data-baseweb="tab-list"] {{
-        gap: 1rem;
-        background-color: transparent;
-        padding: 0.5rem;
+    .nav-container {{
         display: flex;
         flex-wrap: wrap;
-        justify-content: flex-start;
+        gap: 1rem;
+        max-width: 1400px;
+        margin: 0 auto;
     }}
     
-    .stTabs [data-baseweb="tab"] {{
-        height: 60px;
-        white-space: pre-wrap;
+    .nav-group {{
+        flex: 1;
+        min-width: 200px;
+    }}
+    
+    .nav-item {{
+        display: block;
+        padding: 1rem;
         background-color: {colors['card_bg']};
-        border-radius: 16px;
-        padding: 0 1.5rem;
-        color: {colors['secondary']};
-        font-weight: 500;
+        color: {colors['text']};
+        text-decoration: none;
+        border-radius: 12px;
+        text-align: center;
         transition: all 0.3s ease;
         border: 1px solid {colors['border']};
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        min-width: 200px;
-        justify-content: center;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }}
     
-    .stTabs [data-baseweb="tab"]:hover {{
+    .nav-item:hover {{
+        background-color: {colors['hover']};
         transform: translateY(-2px);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        background-color: {colors['hover']};
-    }}
-    
-    .stTabs [aria-selected="true"] {{
-        background-color: {colors['primary']};
-        color: white;
-        border-radius: 16px;
-        box-shadow: 0 4px 6px -1px rgba(96, 165, 250, 0.2);
-        border: none;
-        font-weight: 600;
     }}
     
     /* Section Headers */
@@ -272,8 +274,8 @@ st.markdown(f"""
         color: {colors['secondary']};
     }}
     
-    /* Detailed View Table */
-    .stDataFrame {{
+    /* Data Editor Styling */
+    .data-editor {{
         background-color: {colors['card_bg']};
         border-radius: 16px;
         padding: 1.5rem;
@@ -284,173 +286,119 @@ st.markdown(f"""
         -webkit-backdrop-filter: blur(10px);
     }}
     
-    .stDataFrame thead th {{
-        background-color: {colors['table_header']};
-        color: {colors['table_text']};
-        font-weight: 600;
-        padding: 1rem;
-        border-bottom: 1px solid {colors['table_border']};
-    }}
-    
-    .stDataFrame tbody td {{
-        padding: 1rem;
-        border-bottom: 1px solid {colors['table_border']};
-        color: {colors['table_text']};
-        background-color: {colors['table_row']};
-    }}
-    
-    .stDataFrame tbody tr:hover {{
-        background-color: {colors['table_hover']};
-    }}
-    
-    /* Table Filters */
-    .table-filters {{
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
+    /* Filter Panel */
+    .filter-panel {{
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 300px;
+        height: 100vh;
         background-color: {colors['card_bg']};
+        border-left: 1px solid {colors['border']};
         padding: 1.5rem;
-        border-radius: 16px;
-        border: 1px solid {colors['border']};
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
     }}
     
-    .table-filter-item {{
-        flex: 1;
-        min-width: 200px;
-    }}
-    
-    /* Buttons */
-    .stButton button {{
+    .filter-toggle {{
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1001;
         background-color: {colors['primary']};
         color: white;
         border: none;
-        border-radius: 12px;
+        border-radius: 8px;
         padding: 0.5rem 1rem;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }}
+    
+    .filter-toggle:hover {{
+        opacity: 0.9;
+    }}
+    
+    .filter-section {{
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid {colors['border']};
+    }}
+    
+    .filter-section:last-child {{
+        border-bottom: none;
+    }}
+    
+    .filter-section h4 {{
+        margin: 0 0 1rem 0;
+        color: {colors['text']};
+        font-size: 1rem;
+        font-weight: 600;
+    }}
+    
+    .filter-actions {{
+        position: sticky;
+        bottom: 0;
+        background-color: {colors['card_bg']};
+        padding: 1rem 0;
+        border-top: 1px solid {colors['border']};
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+    }}
+    
+    .filter-actions button {{
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
         font-weight: 500;
         transition: all 0.3s ease;
-        font-family: 'Inter', sans-serif;
-        box-shadow: 0 2px 4px rgba(96, 165, 250, 0.2);
     }}
     
-    .stButton button:hover {{
+    .filter-actions .apply {{
         background-color: {colors['primary']};
+        color: white;
+    }}
+    
+    .filter-actions .reset {{
+        background-color: {colors['secondary']};
+        color: white;
+    }}
+    
+    .filter-actions button:hover {{
         opacity: 0.9;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(96, 165, 250, 0.3);
     }}
     
-    /* Input Fields */
-    .stTextInput input, .stNumberInput input {{
-        background-color: {colors['input_bg']};
-        border: 1px solid {colors['input_border']};
-        border-radius: 12px;
-        color: {colors['input_text']};
-        padding: 0.5rem;
-        font-family: 'Inter', sans-serif;
-        transition: all 0.3s ease;
+    /* Full Page Layout */
+    .full-page {{
+        padding: 2rem;
+        max-width: 1400px;
+        margin: 0 auto;
+        background-color: {colors['background']};
     }}
     
-    .stTextInput input:focus, .stNumberInput input:focus {{
-        border-color: {colors['primary']};
-        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.1);
+    .page-header {{
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
     }}
     
-    /* Select Boxes */
-    .stSelectbox select {{
-        background-color: {colors['select_bg']};
-        border: 1px solid {colors['select_border']};
-        color: {colors['select_text']};
-        border-radius: 12px;
-        padding: 0.5rem;
-        transition: all 0.3s ease;
-    }}
-    
-    .stSelectbox select:focus {{
-        border-color: {colors['primary']};
-        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.1);
-    }}
-    
-    /* Radio Buttons */
-    .stRadio > div {{
-        background-color: {colors['radio_bg']};
-        border-radius: 16px;
-        padding: 1rem;
-        border: 1px solid {colors['radio_border']};
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-    }}
-    
-    /* Sidebar */
-    .css-1d391kg {{
-        background-color: {colors['sidebar_bg']};
-        color: {colors['sidebar_text']};
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-    }}
-    
-    /* Custom Table Styling */
-    .custom-table {{
-        background-color: {colors['card_bg']};
-        border-radius: 16px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        border: 1px solid {colors['border']};
-        margin-top: 1rem;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-    }}
-    
-    .custom-table table {{
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-    }}
-    
-    .custom-table th {{
-        background-color: {colors['table_header']};
-        color: {colors['table_text']};
+    .page-title {{
+        font-size: 1.5rem;
         font-weight: 600;
-        padding: 1rem;
-        text-align: left;
-        border-bottom: 1px solid {colors['table_border']};
+        color: {colors['text']};
+        margin: 0;
     }}
     
-    .custom-table td {{
-        padding: 1rem;
-        border-bottom: 1px solid {colors['table_border']};
-        color: {colors['table_text']};
-        background-color: {colors['table_row']};
+    .page-actions {{
+        display: flex;
+        gap: 1rem;
     }}
-    
-    .custom-table tr:hover td {{
-        background-color: {colors['table_hover']};
-    }}
-    
-    /* Responsive Design */
-    @media (max-width: 768px) {{
-        .stTabs [data-baseweb="tab"] {{
-            min-width: 100%;
-            margin-bottom: 0.5rem;
-        }}
-        
-        .table-filters {{
-            flex-direction: column;
-        }}
-        
-        .table-filter-item {{
-            width: 100%;
-        }}
-    }}
-    
-    /* Hide Streamlit default elements */
-    #MainMenu {{visibility: hidden;}}
-    footer {{visibility: hidden;}}
-    .stDeployButton {{display:none;}}
     
     /* Custom Scrollbar */
     ::-webkit-scrollbar {{
@@ -471,129 +419,10 @@ st.markdown(f"""
         background: {colors['secondary']};
     }}
     
-    /* Data Editor Styling */
-    .data-editor {
-        background-color: {colors['card_bg']};
-        border-radius: 16px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        border: 1px solid {colors['border']};
-        margin-top: 1rem;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-    }
-    
-    .filter-panel {
-        position: fixed;
-        top: 0;
-        right: 0;
-        width: 300px;
-        height: 100vh;
-        background-color: {colors['card_bg']};
-        border-left: 1px solid {colors['border']};
-        padding: 1.5rem;
-        overflow-y: auto;
-        z-index: 1000;
-        box-shadow: -2px 0 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    .filter-toggle {
-        position: fixed;
-        top: 1rem;
-        right: 1rem;
-        z-index: 1001;
-        background-color: {colors['primary']};
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    .filter-toggle:hover {
-        opacity: 0.9;
-    }
-    
-    .filter-section {
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 1px solid {colors['border']};
-    }
-    
-    .filter-section:last-child {
-        border-bottom: none;
-    }
-    
-    .filter-section h4 {
-        margin: 0 0 1rem 0;
-        color: {colors['text']};
-        font-size: 1rem;
-        font-weight: 600;
-    }
-    
-    .filter-actions {
-        position: sticky;
-        bottom: 0;
-        background-color: {colors['card_bg']};
-        padding: 1rem 0;
-        border-top: 1px solid {colors['border']};
-        display: flex;
-        gap: 1rem;
-        justify-content: flex-end;
-    }
-    
-    .filter-actions button {
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        border: none;
-        cursor: pointer;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-    
-    .filter-actions .apply {
-        background-color: {colors['primary']};
-        color: white;
-    }
-    
-    .filter-actions .reset {
-        background-color: {colors['secondary']};
-        color: white;
-    }
-    
-    .filter-actions button:hover {
-        opacity: 0.9;
-    }
-    
-    /* Full Page Layout */
-    .full-page {
-        padding: 2rem;
-        max-width: 1400px;
-        margin: 0 auto;
-    }
-    
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
-    
-    .page-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: {colors['text']};
-        margin: 0;
-    }
-    
-    .page-actions {
-        display: flex;
-        gap: 1rem;
-    }
+    /* Hide Streamlit default elements */
+    #MainMenu {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
+    .stDeployButton {{display:none;}}
     </style>
 """, unsafe_allow_html=True)
 
@@ -657,7 +486,8 @@ if df is not None:
         'leaderboard': '👥 Leaderboard',
         'geo': '🌍 Geography',
         'detailed': '🧾 Detailed',
-        'editor': '✏️ Data Editor'
+        'editor': '✏️ Data Editor',
+        'probability': '🎯 Probability'
     }
     
     # Display navigation menu
@@ -714,8 +544,81 @@ if df is not None:
 else:
     st.info("Please upload data to view the dashboard.")
 
+# Add configuration section in sidebar
+with st.sidebar:
+    st.markdown("""
+        <div class="section-header">
+            <h3>⚙️ Dashboard Configuration</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("**📊 Overview Settings**")
+    st.session_state.dashboard_config['show_kpis'] = st.checkbox(
+        "Show Key Performance Indicators",
+        value=st.session_state.dashboard_config['show_kpis']
+    )
+    st.session_state.dashboard_config['show_quarter_breakdown'] = st.checkbox(
+        "Show Quarter-wise Breakdown",
+        value=st.session_state.dashboard_config['show_quarter_breakdown']
+    )
+    st.session_state.dashboard_config['show_hunting_farming'] = st.checkbox(
+        "Show Hunting/Farming Distribution",
+        value=st.session_state.dashboard_config['show_hunting_farming']
+    )
+    
+    st.markdown("**📈 Trend Settings**")
+    st.session_state.dashboard_config['show_monthly_trend'] = st.checkbox(
+        "Show Monthly Pipeline Trend",
+        value=st.session_state.dashboard_config['show_monthly_trend']
+    )
+    
+    st.markdown("**🔄 Funnel Settings**")
+    st.session_state.dashboard_config['show_sales_funnel'] = st.checkbox(
+        "Show Sales Stage Funnel",
+        value=st.session_state.dashboard_config['show_sales_funnel']
+    )
+    
+    st.markdown("**🎯 Strategy Settings**")
+    st.session_state.dashboard_config['show_strategy_view'] = st.checkbox(
+        "Show Strategy View",
+        value=st.session_state.dashboard_config['show_strategy_view']
+    )
+    st.session_state.dashboard_config['show_probability_distribution'] = st.checkbox(
+        "Show Probability Distribution",
+        value=st.session_state.dashboard_config['show_probability_distribution']
+    )
+    
+    st.markdown("**👥 Team Settings**")
+    st.session_state.dashboard_config['show_leaderboard'] = st.checkbox(
+        "Show Sales Leaderboard",
+        value=st.session_state.dashboard_config['show_leaderboard']
+    )
+    st.session_state.dashboard_config['show_win_rate'] = st.checkbox(
+        "Show Win Rate Analysis",
+        value=st.session_state.dashboard_config['show_win_rate']
+    )
+    
+    st.markdown("**🌍 Geography Settings**")
+    st.session_state.dashboard_config['show_geo_view'] = st.checkbox(
+        "Show Geography View",
+        value=st.session_state.dashboard_config['show_geo_view']
+    )
+    
+    st.markdown("**📊 Detailed View Settings**")
+    st.session_state.dashboard_config['show_detailed_view'] = st.checkbox(
+        "Show Detailed Deals View",
+        value=st.session_state.dashboard_config['show_detailed_view']
+    )
+    st.session_state.dashboard_config['show_weighted_revenue'] = st.checkbox(
+        "Show Weighted Revenue",
+        value=st.session_state.dashboard_config['show_weighted_revenue']
+    )
+
 # Add view functions
 def show_overview():
+    if not st.session_state.dashboard_config['show_kpis']:
+        return
+    
     st.markdown("""
         <div class="section-header">
             <h3>🎯 Key Performance Indicators</h3>
@@ -756,41 +659,49 @@ def show_overview():
             delta_color="normal"
         )
     
-    # Quarter-wise Breakdown
-    st.markdown("""
-        <div class="section-header">
-            <h3>📊 Quarter-wise Breakdown</h3>
-        </div>
-    """, unsafe_allow_html=True)
+    if st.session_state.dashboard_config['show_quarter_breakdown']:
+        st.markdown("""
+            <div class="section-header">
+                <h3>📊 Quarter-wise Breakdown</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        quarter_metrics = filtered_df.groupby('Quarter').agg({
+            'Amount': ['sum', 'count'],
+            'Probability': 'mean'
+        }).reset_index()
+        
+        quarter_metrics.columns = ['Quarter', 'Total Amount (Lakhs)', 'Number of Deals', 'Avg Probability']
+        quarter_metrics['Total Amount (Lakhs)'] = quarter_metrics['Total Amount (Lakhs)'] / 100000
+        
+        fig = px.bar(
+            quarter_metrics,
+            x='Quarter',
+            y='Total Amount (Lakhs)',
+            title='Quarter-wise Pipeline Distribution',
+            text='Total Amount (Lakhs)',
+            labels={'Total Amount (Lakhs)': 'Amount (Lakhs)'}
+        )
+        
+        fig = apply_theme_to_plot(fig)
+        fig.update_traces(
+            texttemplate='₹%{text:.2f}L',
+            textposition='outside',
+            marker_color=colors['primary']
+        )
+        
+        st.plotly_chart(fig, use_container_width=True, key="quarter_breakdown")
+        
+        # Display metrics table
+        st.dataframe(
+            quarter_metrics.style.format({
+                'Total Amount (Lakhs)': '₹{:.2f}L',
+                'Avg Probability': '{:.1f}%'
+            }),
+            use_container_width=True
+        )
     
-    quarter_metrics = filtered_df.groupby('Quarter').agg({
-        'Amount': ['sum', 'count'],
-        'Probability': 'mean'
-    }).reset_index()
-    
-    quarter_metrics.columns = ['Quarter', 'Total Amount (Lakhs)', 'Number of Deals', 'Avg Probability']
-    quarter_metrics['Total Amount (Lakhs)'] = quarter_metrics['Total Amount (Lakhs)'] / 100000
-    
-    fig = px.bar(
-        quarter_metrics,
-        x='Quarter',
-        y='Total Amount (Lakhs)',
-        title='Quarter-wise Pipeline Distribution',
-        text='Total Amount (Lakhs)',
-        labels={'Total Amount (Lakhs)': 'Amount (Lakhs)'}
-    )
-    
-    fig = apply_theme_to_plot(fig)
-    fig.update_traces(
-        texttemplate='₹%{text:.2f}L',
-        textposition='outside',
-        marker_color=colors['primary']
-    )
-    
-    st.plotly_chart(fig, use_container_width=True, key="quarter_breakdown")
-    
-    # Hunting vs Farming Distribution
-    if 'Hunting/Farming' in filtered_df.columns:
+    if st.session_state.dashboard_config['show_hunting_farming'] and 'Hunting/Farming' in filtered_df.columns:
         st.markdown("""
             <div class="section-header">
                 <h3>🎯 Hunting vs Farming Distribution</h3>
@@ -873,6 +784,9 @@ def show_overview():
             st.markdown(table_html, unsafe_allow_html=True)
 
 def show_trends():
+    if not st.session_state.dashboard_config['show_monthly_trend']:
+        return
+    
     st.markdown("""
         <div class="section-header">
             <h3>📈 Monthly Pipeline Trend</h3>
@@ -918,6 +832,9 @@ def show_trends():
     )
 
 def show_funnel():
+    if not st.session_state.dashboard_config['show_sales_funnel']:
+        return
+    
     st.markdown("""
         <div class="section-header">
             <h3>🔄 Sales Stage Funnel</h3>
@@ -956,6 +873,9 @@ def show_funnel():
     )
 
 def show_strategy():
+    if not st.session_state.dashboard_config['show_strategy_view']:
+        return
+    
     st.markdown("""
         <div class="section-header">
             <h3>🎯 Strategy View</h3>
@@ -1000,8 +920,14 @@ def show_strategy():
         }),
         use_container_width=True
     )
+    
+    if st.session_state.dashboard_config['show_probability_distribution']:
+        show_probability_distribution()
 
 def show_leaderboard():
+    if not st.session_state.dashboard_config['show_leaderboard']:
+        return
+    
     st.markdown("""
         <div class="section-header">
             <h3>🏆 Sales Leaderboard</h3>
@@ -1060,10 +986,51 @@ def show_leaderboard():
             }),
             use_container_width=True
         )
+        
+        if st.session_state.dashboard_config['show_win_rate'] and 'Sales Owner' in filtered_df.columns:
+            st.markdown("""
+                <div class="section-header">
+                    <h3>🎯 Win Rate Analysis</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            win_rate_metrics = filtered_df.groupby('Sales Owner').agg({
+                'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum() / len(x) * 100
+            }).reset_index()
+            
+            win_rate_metrics.columns = ['Sales Owner', 'Win Rate']
+            win_rate_metrics = win_rate_metrics.sort_values('Win Rate', ascending=False)
+            
+            fig = px.bar(
+                win_rate_metrics,
+                x='Sales Owner',
+                y='Win Rate',
+                title='Win Rate by Sales Owner',
+                text='Win Rate'
+            )
+            
+            fig = apply_theme_to_plot(fig)
+            fig.update_traces(
+                texttemplate='%{text:.1f}%',
+                textposition='outside',
+                marker_color=colors['success']
+            )
+            
+            st.plotly_chart(fig, use_container_width=True, key="win_rate")
+            
+            st.dataframe(
+                win_rate_metrics.style.format({
+                    'Win Rate': '{:.1f}%'
+                }),
+                use_container_width=True
+            )
     else:
         st.info("Sales Owner data is not available in the dataset.")
 
 def show_geo():
+    if not st.session_state.dashboard_config['show_geo_view']:
+        return
+    
     st.markdown("""
         <div class="section-header">
             <h3>🌍 Geography View</h3>
@@ -1113,14 +1080,18 @@ def show_geo():
         st.info("No geography data (Region, Country, or Geography) is available in the dataset.")
 
 def show_detailed():
+    if not st.session_state.dashboard_config['show_detailed_view']:
+        return
+    
     st.markdown("""
         <div class="section-header">
             <h3>🧾 Detailed Deals</h3>
         </div>
     """, unsafe_allow_html=True)
     
-    # Add Weighted Revenue column
-    filtered_df['Weighted Revenue'] = filtered_df['Amount'] * filtered_df['Probability'] / 100
+    # Add Weighted Revenue column if configured
+    if st.session_state.dashboard_config['show_weighted_revenue']:
+        filtered_df['Weighted Revenue'] = filtered_df['Amount'] * filtered_df['Probability'] / 100
     
     # Define columns for display
     columns_to_show = [
@@ -1216,4 +1187,57 @@ def show_detailed():
             data=excel_buffer,
             file_name="filtered_deals.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        ) 
+        )
+
+def show_probability_distribution():
+    st.markdown("""
+        <div class="section-header">
+            <h3>🎯 Probability Distribution</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Create probability bins
+    filtered_df['Probability Bin'] = pd.cut(
+        filtered_df['Probability'],
+        bins=[0, 25, 50, 75, 100],
+        labels=['0-25%', '26-50%', '51-75%', '76-100%']
+    )
+    
+    # Calculate metrics for each bin
+    prob_metrics = filtered_df.groupby('Probability Bin').agg({
+        'Amount': ['sum', 'count'],
+        'Probability': 'mean'
+    }).reset_index()
+    
+    prob_metrics.columns = ['Probability Range', 'Total Amount (Lakhs)', 'Number of Deals', 'Average Probability']
+    prob_metrics['Total Amount (Lakhs)'] = prob_metrics['Total Amount (Lakhs)'] / 100000
+    
+    # Create stacked bar chart
+    fig = go.Figure()
+    
+    fig.add_trace(go.Bar(
+        x=prob_metrics['Probability Range'],
+        y=prob_metrics['Total Amount (Lakhs)'],
+        text=prob_metrics['Total Amount (Lakhs)'].apply(lambda x: f'₹{x:.2f}L'),
+        textposition='auto',
+        marker_color=colors['primary']
+    ))
+    
+    fig = apply_theme_to_plot(fig)
+    fig.update_layout(
+        title='Pipeline Distribution by Probability Range',
+        xaxis_title='Probability Range',
+        yaxis_title='Amount (Lakhs)',
+        showlegend=False
+    )
+    
+    st.plotly_chart(fig, use_container_width=True, key="probability_distribution")
+    
+    # Display metrics table
+    st.dataframe(
+        prob_metrics.style.format({
+            'Total Amount (Lakhs)': '₹{:.2f}L',
+            'Average Probability': '{:.1f}%'
+        }),
+        use_container_width=True
+    ) 
