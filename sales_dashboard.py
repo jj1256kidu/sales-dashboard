@@ -477,6 +477,634 @@ if df is not None:
     # Initialize filtered_df with the original dataframe
     filtered_df = df.copy()
     
+    # Define view functions first
+    def show_overview():
+        if not st.session_state.dashboard_config['show_kpis']:
+            return
+        
+        st.markdown("""
+            <div class="section-header">
+                <h3>🎯 Key Performance Indicators</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Dynamic KPI display
+        num_cols = min(3, len(filtered_df.columns))
+        kpi_cols = st.columns(num_cols)
+        
+        # Total Amount
+        with kpi_cols[0]:
+            total_amount = filtered_df['Amount'].sum() / 100000
+            st.metric(
+                "Total Amount",
+                format_lakhs(total_amount * 100000),
+                delta=None,
+                delta_color="normal"
+            )
+        
+        # Average Probability
+        with kpi_cols[1]:
+            avg_probability = filtered_df['Probability'].mean()
+            st.metric(
+                "Average Probability",
+                f"{avg_probability:.1f}%",
+                delta=None,
+                delta_color="normal"
+            )
+        
+        # Closed Won Amount
+        with kpi_cols[2]:
+            won_amount = filtered_df[filtered_df['Sales Stage'].astype(str).isin(['Closed Won', 'Won'])]['Amount'].sum() / 100000
+            st.metric(
+                "Closed Won",
+                format_lakhs(won_amount * 100000),
+                delta=None,
+                delta_color="normal"
+            )
+        
+        if st.session_state.dashboard_config['show_quarter_breakdown']:
+            st.markdown("""
+                <div class="section-header">
+                    <h3>📊 Quarter-wise Breakdown</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            quarter_metrics = filtered_df.groupby('Quarter').agg({
+                'Amount': ['sum', 'count'],
+                'Probability': 'mean'
+            }).reset_index()
+            
+            quarter_metrics.columns = ['Quarter', 'Total Amount (Lakhs)', 'Number of Deals', 'Avg Probability']
+            quarter_metrics['Total Amount (Lakhs)'] = quarter_metrics['Total Amount (Lakhs)'] / 100000
+            
+            fig = px.bar(
+                quarter_metrics,
+                x='Quarter',
+                y='Total Amount (Lakhs)',
+                title='Quarter-wise Pipeline Distribution',
+                text='Total Amount (Lakhs)',
+                labels={'Total Amount (Lakhs)': 'Amount (Lakhs)'}
+            )
+            
+            fig = apply_theme_to_plot(fig)
+            fig.update_traces(
+                texttemplate='₹%{text:.2f}L',
+                textposition='outside',
+                marker_color=colors['primary']
+            )
+            
+            st.plotly_chart(fig, use_container_width=True, key="quarter_breakdown")
+            
+            # Display metrics table
+            st.dataframe(
+                quarter_metrics.style.format({
+                    'Total Amount (Lakhs)': '₹{:.2f}L',
+                    'Avg Probability': '{:.1f}%'
+                }),
+                use_container_width=True
+            )
+        
+        if st.session_state.dashboard_config['show_hunting_farming'] and 'Hunting/Farming' in filtered_df.columns:
+            st.markdown("""
+                <div class="section-header">
+                    <h3>🎯 Hunting vs Farming Distribution</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            hunting_farming = filtered_df.groupby('Hunting/Farming')['Amount'].sum().reset_index()
+            total_amount = hunting_farming['Amount'].sum()
+            
+            if total_amount > 0:
+                hunting_farming['Percentage'] = (hunting_farming['Amount'] / total_amount * 100).round(1)
+                
+                fig = go.Figure(data=[go.Pie(
+                    labels=hunting_farming['Hunting/Farming'],
+                    values=hunting_farming['Amount'] / 100000,
+                    hole=.4,
+                    textinfo='label+percent',
+                    textposition='outside',
+                    marker=dict(
+                        colors=[colors['accent1'], colors['accent2']],
+                        line=dict(color=colors['card_bg'], width=2)
+                    )
+                )])
+                
+                fig = apply_theme_to_plot(fig)
+                fig.update_layout(
+                    title="Distribution of Hunting vs Farming (in Lakhs)",
+                    showlegend=True,
+                    annotations=[dict(
+                        text='Hunting/Farming',
+                        x=0.5,
+                        y=0.5,
+                        font_size=20,
+                        showarrow=False,
+                        font_color=colors['text']
+                    )],
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=1.02,
+                        xanchor="right",
+                        x=1
+                    )
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, key="hunting_farming")
+                
+                # Display metrics table
+                hunting_farming_metrics = hunting_farming.copy()
+                hunting_farming_metrics['Amount'] = hunting_farming_metrics['Amount'] / 100000
+                
+                table_html = f"""
+                <div class="custom-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Amount (Lakhs)</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                """
+                
+                for _, row in hunting_farming_metrics.iterrows():
+                    table_html += f"""
+                            <tr>
+                                <td>{row['Hunting/Farming']}</td>
+                                <td>₹{row['Amount']:.2f}L</td>
+                                <td>{row['Percentage']:.1f}%</td>
+                            </tr>
+                    """
+                
+                table_html += """
+                        </tbody>
+                    </table>
+                </div>
+                """
+                
+                st.markdown(table_html, unsafe_allow_html=True)
+
+    def show_trends():
+        if not st.session_state.dashboard_config['show_monthly_trend']:
+            return
+        
+        st.markdown("""
+            <div class="section-header">
+                <h3>📈 Monthly Pipeline Trend</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        filtered_df['Date'] = pd.to_datetime(filtered_df['Expected Close Date'], errors='coerce')
+        monthly_metrics = filtered_df.groupby(filtered_df['Date'].dt.to_period('M')).agg({
+            'Amount': 'sum',
+            'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum()
+        }).reset_index()
+        
+        monthly_metrics['Date'] = monthly_metrics['Date'].astype(str)
+        monthly_metrics['Amount'] = monthly_metrics['Amount'] / 100000
+        
+        fig = go.Figure()
+        
+        fig.add_trace(go.Scatter(
+            x=monthly_metrics['Date'],
+            y=monthly_metrics['Amount'],
+            name='Pipeline',
+            line=dict(color=colors['primary'], width=2),
+            mode='lines+markers'
+        ))
+        
+        fig = apply_theme_to_plot(fig)
+        fig.update_layout(
+            title='Monthly Pipeline Trend',
+            xaxis_title='Month',
+            yaxis_title='Amount (Lakhs)',
+            showlegend=True
+        )
+        
+        fig.update_traces(texttemplate='₹%{y:.2f}L', textposition='top center')
+        
+        st.plotly_chart(fig, use_container_width=True, key="monthly_trend")
+        
+        st.dataframe(
+            monthly_metrics.style.format({
+                'Amount': '₹{:.2f}L'
+            }),
+            use_container_width=True
+        )
+
+    def show_funnel():
+        if not st.session_state.dashboard_config['show_sales_funnel']:
+            return
+        
+        st.markdown("""
+            <div class="section-header">
+                <h3>🔄 Sales Stage Funnel</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        stage_metrics = filtered_df.groupby('Sales Stage').agg({
+            'Amount': 'sum',
+            'Opportunity Number': 'count'
+        }).reset_index()
+        
+        stage_metrics['Amount'] = stage_metrics['Amount'] / 100000
+        
+        fig = go.Figure(go.Funnel(
+            y=stage_metrics['Sales Stage'],
+            x=stage_metrics['Amount'],
+            textinfo='value+percent initial',
+            texttemplate='₹%{value:.2f}L',
+            textposition='inside',
+            marker=dict(color=colors['primary'])
+        ))
+        
+        fig = apply_theme_to_plot(fig)
+        fig.update_layout(
+            title='Sales Stage Funnel',
+            showlegend=False
+        )
+        
+        st.plotly_chart(fig, use_container_width=True, key="sales_funnel")
+        
+        st.dataframe(
+            stage_metrics.style.format({
+                'Amount': '₹{:.2f}L'
+            }),
+            use_container_width=True
+        )
+
+    def show_strategy():
+        if not st.session_state.dashboard_config['show_strategy_view']:
+            return
+        
+        st.markdown("""
+            <div class="section-header">
+                <h3>🎯 Strategy View</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        fig = px.scatter(
+            filtered_df,
+            x='Probability',
+            y='Amount',
+            size='Amount',
+            color='Practice',
+            hover_data=['Organization Name', 'Sales Stage'],
+            title='Deal Value vs Probability by Practice',
+            labels={
+                'Amount': 'Deal Value (Lakhs)',
+                'Probability': 'Probability (%)',
+                'Practice': 'Practice'
+            }
+        )
+        
+        fig = apply_theme_to_plot(fig)
+        fig.update_traces(
+            texttemplate='₹%{y:.2f}L',
+            textposition='top center'
+        )
+        
+        st.plotly_chart(fig, use_container_width=True, key="strategy_view")
+        
+        strategy_metrics = filtered_df.groupby('Practice').agg({
+            'Amount': 'sum',
+            'Probability': 'mean',
+            'Opportunity Number': 'count'
+        }).reset_index()
+        
+        strategy_metrics['Amount'] = strategy_metrics['Amount'] / 100000
+        
+        st.dataframe(
+            strategy_metrics.style.format({
+                'Amount': '₹{:.2f}L',
+                'Probability': '{:.1f}%'
+            }),
+            use_container_width=True
+        )
+        
+        if st.session_state.dashboard_config['show_probability_distribution']:
+            show_probability_distribution()
+
+    def show_leaderboard():
+        if not st.session_state.dashboard_config['show_leaderboard']:
+            return
+        
+        st.markdown("""
+            <div class="section-header">
+                <h3>🏆 Sales Leaderboard</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        if 'Sales Owner' in filtered_df.columns:
+            owner_metrics = filtered_df.groupby('Sales Owner').agg({
+                'Amount': 'sum',
+                'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum()
+            }).reset_index()
+            
+            owner_metrics.columns = ['Sales Owner', 'Total Pipeline', 'Closed Won']
+            owner_metrics['Total Pipeline'] = owner_metrics['Total Pipeline'] / 100000
+            owner_metrics['Closed Won'] = owner_metrics['Closed Won'] / 100000
+            owner_metrics['Win Rate'] = (owner_metrics['Closed Won'] / owner_metrics['Total Pipeline'] * 100).round(1)
+            
+            owner_metrics = owner_metrics.sort_values('Total Pipeline', ascending=False)
+            
+            fig = go.Figure()
+            
+            fig.add_trace(go.Bar(
+                y=owner_metrics['Sales Owner'],
+                x=owner_metrics['Total Pipeline'],
+                name='Total Pipeline',
+                orientation='h',
+                marker_color=colors['primary']
+            ))
+            
+            fig.add_trace(go.Bar(
+                y=owner_metrics['Sales Owner'],
+                x=owner_metrics['Closed Won'],
+                name='Closed Won',
+                orientation='h',
+                marker_color=colors['success']
+            ))
+            
+            fig = apply_theme_to_plot(fig)
+            fig.update_layout(
+                title='Sales Owner Performance',
+                barmode='overlay',
+                xaxis_title='Amount (Lakhs)',
+                yaxis_title='Sales Owner',
+                showlegend=True
+            )
+            
+            fig.update_traces(texttemplate='₹%{x:.2f}L', textposition='auto')
+            
+            st.plotly_chart(fig, use_container_width=True, key="sales_leaderboard")
+            
+            st.dataframe(
+                owner_metrics.style.format({
+                    'Total Pipeline': '₹{:.2f}L',
+                    'Closed Won': '₹{:.2f}L',
+                    'Win Rate': '{:.1f}%'
+                }),
+                use_container_width=True
+            )
+            
+            if st.session_state.dashboard_config['show_win_rate'] and 'Sales Owner' in filtered_df.columns:
+                st.markdown("""
+                    <div class="section-header">
+                        <h3>🎯 Win Rate Analysis</h3>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                win_rate_metrics = filtered_df.groupby('Sales Owner').agg({
+                    'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum() / len(x) * 100
+                }).reset_index()
+                
+                win_rate_metrics.columns = ['Sales Owner', 'Win Rate']
+                win_rate_metrics = win_rate_metrics.sort_values('Win Rate', ascending=False)
+                
+                fig = px.bar(
+                    win_rate_metrics,
+                    x='Sales Owner',
+                    y='Win Rate',
+                    title='Win Rate by Sales Owner',
+                    text='Win Rate'
+                )
+                
+                fig = apply_theme_to_plot(fig)
+                fig.update_traces(
+                    texttemplate='%{text:.1f}%',
+                    textposition='outside',
+                    marker_color=colors['success']
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, key="win_rate")
+                
+                st.dataframe(
+                    win_rate_metrics.style.format({
+                        'Win Rate': '{:.1f}%'
+                    }),
+                    use_container_width=True
+                )
+        else:
+            st.info("Sales Owner data is not available in the dataset.")
+
+    def show_geo():
+        if not st.session_state.dashboard_config['show_geo_view']:
+            return
+        
+        st.markdown("""
+            <div class="section-header">
+                <h3>🌍 Geography View</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        geography_columns = ['Region', 'Country', 'Geography']
+        available_geo_column = next((col for col in geography_columns if col in filtered_df.columns), None)
+        
+        if available_geo_column:
+            geo_metrics = filtered_df.groupby(available_geo_column).agg({
+                'Amount': 'sum',
+                'Opportunity Number': 'count'
+            }).reset_index()
+            
+            geo_metrics['Amount'] = geo_metrics['Amount'] / 100000
+            
+            fig = px.choropleth(
+                geo_metrics,
+                locations=available_geo_column,
+                locationmode='country names' if available_geo_column in ['Country', 'Geography'] else None,
+                color='Amount',
+                hover_data=['Opportunity Number'],
+                title=f'{available_geo_column}-wise Pipeline Distribution',
+                color_continuous_scale='Viridis'
+            )
+            
+            fig = apply_theme_to_plot(fig)
+            fig.update_layout(
+                geo=dict(
+                    showframe=False,
+                    showcoastlines=True,
+                    projection_type='equirectangular'
+                )
+            )
+            
+            st.plotly_chart(fig, use_container_width=True, key="geo_view")
+            
+            st.dataframe(
+                geo_metrics.style.format({
+                    'Amount': '₹{:.2f}L',
+                    'Opportunity Number': '{:,.0f}'
+                }),
+                use_container_width=True
+            )
+        else:
+            st.info("No geography data (Region, Country, or Geography) is available in the dataset.")
+
+    def show_detailed():
+        if not st.session_state.dashboard_config['show_detailed_view']:
+            return
+        
+        st.markdown("""
+            <div class="section-header">
+                <h3>🧾 Detailed Deals</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Add Weighted Revenue column if configured
+        if st.session_state.dashboard_config['show_weighted_revenue']:
+            filtered_df['Weighted Revenue'] = filtered_df['Amount'] * filtered_df['Probability'] / 100
+        
+        # Define columns for display
+        columns_to_show = [
+            'Opportunity Number',
+            'Organization Name',
+            'Amount',
+            'Probability',
+            'Weighted Revenue',
+            'Quarter',
+            'Practice',
+            'Sales Stage',
+            'Tech Owner',
+            'Sales Owner',
+            'Expected Close Date'
+        ]
+        
+        # Filter columns that exist in the dataframe
+        available_columns = [col for col in columns_to_show if col in filtered_df.columns]
+        
+        # Table filters
+        st.markdown('<div class="table-filters">', unsafe_allow_html=True)
+        
+        # Search filter
+        search_term = st.text_input("🔍 Search", key="table_search")
+        
+        # Column filters
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            practice_filter = st.multiselect(
+                "Practice",
+                options=safe_sort_unique(filtered_df['Practice']),
+                default=[]
+            )
+        with col2:
+            stage_filter = st.multiselect(
+                "Sales Stage",
+                options=safe_sort_unique(filtered_df['Sales Stage']),
+                default=[]
+            )
+        with col3:
+            quarter_filter = st.multiselect(
+                "Quarter",
+                options=safe_sort_unique(filtered_df['Quarter']),
+                default=[]
+            )
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Apply filters
+        filtered_table_df = filtered_df.copy()
+        if search_term:
+            filtered_table_df = filtered_table_df[
+                filtered_table_df['Organization Name'].astype(str).str.contains(search_term, case=False, na=False) |
+                filtered_table_df['Opportunity Number'].astype(str).str.contains(search_term, case=False, na=False)
+            ]
+        if practice_filter:
+            filtered_table_df = filtered_table_df[filtered_table_df['Practice'].astype(str).isin(practice_filter)]
+        if stage_filter:
+            filtered_table_df = filtered_table_df[filtered_table_df['Sales Stage'].astype(str).isin(stage_filter)]
+        if quarter_filter:
+            filtered_table_df = filtered_table_df[filtered_table_df['Quarter'].astype(str).isin(quarter_filter)]
+        
+        # Display table with formatting and column configuration
+        st.dataframe(
+            filtered_table_df[available_columns].style.format({
+                'Amount': '₹{:.2f}L',
+                'Weighted Revenue': '₹{:.2f}L',
+                'Probability': '{:.1f}%'
+            }),
+            use_container_width=True,
+            height=600
+        )
+        
+        # Export options
+        col1, col2 = st.columns(2)
+        with col1:
+            # Export to CSV
+            csv = filtered_table_df[available_columns].to_csv(index=False)
+            st.download_button(
+                label="📥 Export to CSV",
+                data=csv,
+                file_name="filtered_deals.csv",
+                mime="text/csv"
+            )
+        with col2:
+            # Export to Excel
+            excel_buffer = io.BytesIO()
+            with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
+                filtered_table_df[available_columns].to_excel(writer, index=False, sheet_name='Deals')
+            excel_buffer.seek(0)
+            st.download_button(
+                label="📊 Export to Excel",
+                data=excel_buffer,
+                file_name="filtered_deals.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+
+    def show_probability_distribution():
+        st.markdown("""
+            <div class="section-header">
+                <h3>🎯 Probability Distribution</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Create probability bins
+        filtered_df['Probability Bin'] = pd.cut(
+            filtered_df['Probability'],
+            bins=[0, 25, 50, 75, 100],
+            labels=['0-25%', '26-50%', '51-75%', '76-100%']
+        )
+        
+        # Calculate metrics for each bin
+        prob_metrics = filtered_df.groupby('Probability Bin').agg({
+            'Amount': ['sum', 'count'],
+            'Probability': 'mean'
+        }).reset_index()
+        
+        prob_metrics.columns = ['Probability Range', 'Total Amount (Lakhs)', 'Number of Deals', 'Average Probability']
+        prob_metrics['Total Amount (Lakhs)'] = prob_metrics['Total Amount (Lakhs)'] / 100000
+        
+        # Create stacked bar chart
+        fig = go.Figure()
+        
+        fig.add_trace(go.Bar(
+            x=prob_metrics['Probability Range'],
+            y=prob_metrics['Total Amount (Lakhs)'],
+            text=prob_metrics['Total Amount (Lakhs)'].apply(lambda x: f'₹{x:.2f}L'),
+            textposition='auto',
+            marker_color=colors['primary']
+        ))
+        
+        fig = apply_theme_to_plot(fig)
+        fig.update_layout(
+            title='Pipeline Distribution by Probability Range',
+            xaxis_title='Probability Range',
+            yaxis_title='Amount (Lakhs)',
+            showlegend=False
+        )
+        
+        st.plotly_chart(fig, use_container_width=True, key="probability_distribution")
+        
+        # Display metrics table
+        st.dataframe(
+            prob_metrics.style.format({
+                'Total Amount (Lakhs)': '₹{:.2f}L',
+                'Average Probability': '{:.1f}%'
+            }),
+            use_container_width=True
+        )
+
     # Navigation menu
     nav_items = {
         'overview': '📊 Overview',
@@ -532,7 +1160,8 @@ if df is not None:
             'strategy': show_strategy,
             'leaderboard': show_leaderboard,
             'geo': show_geo,
-            'detailed': show_detailed
+            'detailed': show_detailed,
+            'probability': show_probability_distribution
         }
         
         if st.session_state.current_view in view_functions:
@@ -612,632 +1241,4 @@ with st.sidebar:
     st.session_state.dashboard_config['show_weighted_revenue'] = st.checkbox(
         "Show Weighted Revenue",
         value=st.session_state.dashboard_config['show_weighted_revenue']
-    )
-
-# Add view functions
-def show_overview():
-    if not st.session_state.dashboard_config['show_kpis']:
-        return
-    
-    st.markdown("""
-        <div class="section-header">
-            <h3>🎯 Key Performance Indicators</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Dynamic KPI display
-    num_cols = min(3, len(filtered_df.columns))
-    kpi_cols = st.columns(num_cols)
-    
-    # Total Amount
-    with kpi_cols[0]:
-        total_amount = filtered_df['Amount'].sum() / 100000
-        st.metric(
-            "Total Amount",
-            format_lakhs(total_amount * 100000),
-            delta=None,
-            delta_color="normal"
-        )
-    
-    # Average Probability
-    with kpi_cols[1]:
-        avg_probability = filtered_df['Probability'].mean()
-        st.metric(
-            "Average Probability",
-            f"{avg_probability:.1f}%",
-            delta=None,
-            delta_color="normal"
-        )
-    
-    # Closed Won Amount
-    with kpi_cols[2]:
-        won_amount = filtered_df[filtered_df['Sales Stage'].astype(str).isin(['Closed Won', 'Won'])]['Amount'].sum() / 100000
-        st.metric(
-            "Closed Won",
-            format_lakhs(won_amount * 100000),
-            delta=None,
-            delta_color="normal"
-        )
-    
-    if st.session_state.dashboard_config['show_quarter_breakdown']:
-        st.markdown("""
-            <div class="section-header">
-                <h3>📊 Quarter-wise Breakdown</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        quarter_metrics = filtered_df.groupby('Quarter').agg({
-            'Amount': ['sum', 'count'],
-            'Probability': 'mean'
-        }).reset_index()
-        
-        quarter_metrics.columns = ['Quarter', 'Total Amount (Lakhs)', 'Number of Deals', 'Avg Probability']
-        quarter_metrics['Total Amount (Lakhs)'] = quarter_metrics['Total Amount (Lakhs)'] / 100000
-        
-        fig = px.bar(
-            quarter_metrics,
-            x='Quarter',
-            y='Total Amount (Lakhs)',
-            title='Quarter-wise Pipeline Distribution',
-            text='Total Amount (Lakhs)',
-            labels={'Total Amount (Lakhs)': 'Amount (Lakhs)'}
-        )
-        
-        fig = apply_theme_to_plot(fig)
-        fig.update_traces(
-            texttemplate='₹%{text:.2f}L',
-            textposition='outside',
-            marker_color=colors['primary']
-        )
-        
-        st.plotly_chart(fig, use_container_width=True, key="quarter_breakdown")
-        
-        # Display metrics table
-        st.dataframe(
-            quarter_metrics.style.format({
-                'Total Amount (Lakhs)': '₹{:.2f}L',
-                'Avg Probability': '{:.1f}%'
-            }),
-            use_container_width=True
-        )
-    
-    if st.session_state.dashboard_config['show_hunting_farming'] and 'Hunting/Farming' in filtered_df.columns:
-        st.markdown("""
-            <div class="section-header">
-                <h3>🎯 Hunting vs Farming Distribution</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        hunting_farming = filtered_df.groupby('Hunting/Farming')['Amount'].sum().reset_index()
-        total_amount = hunting_farming['Amount'].sum()
-        
-        if total_amount > 0:
-            hunting_farming['Percentage'] = (hunting_farming['Amount'] / total_amount * 100).round(1)
-            
-            fig = go.Figure(data=[go.Pie(
-                labels=hunting_farming['Hunting/Farming'],
-                values=hunting_farming['Amount'] / 100000,
-                hole=.4,
-                textinfo='label+percent',
-                textposition='outside',
-                marker=dict(
-                    colors=[colors['accent1'], colors['accent2']],
-                    line=dict(color=colors['card_bg'], width=2)
-                )
-            )])
-            
-            fig = apply_theme_to_plot(fig)
-            fig.update_layout(
-                title="Distribution of Hunting vs Farming (in Lakhs)",
-                showlegend=True,
-                annotations=[dict(
-                    text='Hunting/Farming',
-                    x=0.5,
-                    y=0.5,
-                    font_size=20,
-                    showarrow=False,
-                    font_color=colors['text']
-                )],
-                legend=dict(
-                    orientation="h",
-                    yanchor="bottom",
-                    y=1.02,
-                    xanchor="right",
-                    x=1
-                )
-            )
-            
-            st.plotly_chart(fig, use_container_width=True, key="hunting_farming")
-            
-            # Display metrics table
-            hunting_farming_metrics = hunting_farming.copy()
-            hunting_farming_metrics['Amount'] = hunting_farming_metrics['Amount'] / 100000
-            
-            table_html = f"""
-            <div class="custom-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Amount (Lakhs)</th>
-                            <th>Percentage</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-            """
-            
-            for _, row in hunting_farming_metrics.iterrows():
-                table_html += f"""
-                        <tr>
-                            <td>{row['Hunting/Farming']}</td>
-                            <td>₹{row['Amount']:.2f}L</td>
-                            <td>{row['Percentage']:.1f}%</td>
-                        </tr>
-                """
-            
-            table_html += """
-                    </tbody>
-                </table>
-            </div>
-            """
-            
-            st.markdown(table_html, unsafe_allow_html=True)
-
-def show_trends():
-    if not st.session_state.dashboard_config['show_monthly_trend']:
-        return
-    
-    st.markdown("""
-        <div class="section-header">
-            <h3>📈 Monthly Pipeline Trend</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    filtered_df['Date'] = pd.to_datetime(filtered_df['Expected Close Date'], errors='coerce')
-    monthly_metrics = filtered_df.groupby(filtered_df['Date'].dt.to_period('M')).agg({
-        'Amount': 'sum',
-        'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum()
-    }).reset_index()
-    
-    monthly_metrics['Date'] = monthly_metrics['Date'].astype(str)
-    monthly_metrics['Amount'] = monthly_metrics['Amount'] / 100000
-    
-    fig = go.Figure()
-    
-    fig.add_trace(go.Scatter(
-        x=monthly_metrics['Date'],
-        y=monthly_metrics['Amount'],
-        name='Pipeline',
-        line=dict(color=colors['primary'], width=2),
-        mode='lines+markers'
-    ))
-    
-    fig = apply_theme_to_plot(fig)
-    fig.update_layout(
-        title='Monthly Pipeline Trend',
-        xaxis_title='Month',
-        yaxis_title='Amount (Lakhs)',
-        showlegend=True
-    )
-    
-    fig.update_traces(texttemplate='₹%{y:.2f}L', textposition='top center')
-    
-    st.plotly_chart(fig, use_container_width=True, key="monthly_trend")
-    
-    st.dataframe(
-        monthly_metrics.style.format({
-            'Amount': '₹{:.2f}L'
-        }),
-        use_container_width=True
-    )
-
-def show_funnel():
-    if not st.session_state.dashboard_config['show_sales_funnel']:
-        return
-    
-    st.markdown("""
-        <div class="section-header">
-            <h3>🔄 Sales Stage Funnel</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    stage_metrics = filtered_df.groupby('Sales Stage').agg({
-        'Amount': 'sum',
-        'Opportunity Number': 'count'
-    }).reset_index()
-    
-    stage_metrics['Amount'] = stage_metrics['Amount'] / 100000
-    
-    fig = go.Figure(go.Funnel(
-        y=stage_metrics['Sales Stage'],
-        x=stage_metrics['Amount'],
-        textinfo='value+percent initial',
-        texttemplate='₹%{value:.2f}L',
-        textposition='inside',
-        marker=dict(color=colors['primary'])
-    ))
-    
-    fig = apply_theme_to_plot(fig)
-    fig.update_layout(
-        title='Sales Stage Funnel',
-        showlegend=False
-    )
-    
-    st.plotly_chart(fig, use_container_width=True, key="sales_funnel")
-    
-    st.dataframe(
-        stage_metrics.style.format({
-            'Amount': '₹{:.2f}L'
-        }),
-        use_container_width=True
-    )
-
-def show_strategy():
-    if not st.session_state.dashboard_config['show_strategy_view']:
-        return
-    
-    st.markdown("""
-        <div class="section-header">
-            <h3>🎯 Strategy View</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    fig = px.scatter(
-        filtered_df,
-        x='Probability',
-        y='Amount',
-        size='Amount',
-        color='Practice',
-        hover_data=['Organization Name', 'Sales Stage'],
-        title='Deal Value vs Probability by Practice',
-        labels={
-            'Amount': 'Deal Value (Lakhs)',
-            'Probability': 'Probability (%)',
-            'Practice': 'Practice'
-        }
-    )
-    
-    fig = apply_theme_to_plot(fig)
-    fig.update_traces(
-        texttemplate='₹%{y:.2f}L',
-        textposition='top center'
-    )
-    
-    st.plotly_chart(fig, use_container_width=True, key="strategy_view")
-    
-    strategy_metrics = filtered_df.groupby('Practice').agg({
-        'Amount': 'sum',
-        'Probability': 'mean',
-        'Opportunity Number': 'count'
-    }).reset_index()
-    
-    strategy_metrics['Amount'] = strategy_metrics['Amount'] / 100000
-    
-    st.dataframe(
-        strategy_metrics.style.format({
-            'Amount': '₹{:.2f}L',
-            'Probability': '{:.1f}%'
-        }),
-        use_container_width=True
-    )
-    
-    if st.session_state.dashboard_config['show_probability_distribution']:
-        show_probability_distribution()
-
-def show_leaderboard():
-    if not st.session_state.dashboard_config['show_leaderboard']:
-        return
-    
-    st.markdown("""
-        <div class="section-header">
-            <h3>🏆 Sales Leaderboard</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    if 'Sales Owner' in filtered_df.columns:
-        owner_metrics = filtered_df.groupby('Sales Owner').agg({
-            'Amount': 'sum',
-            'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum()
-        }).reset_index()
-        
-        owner_metrics.columns = ['Sales Owner', 'Total Pipeline', 'Closed Won']
-        owner_metrics['Total Pipeline'] = owner_metrics['Total Pipeline'] / 100000
-        owner_metrics['Closed Won'] = owner_metrics['Closed Won'] / 100000
-        owner_metrics['Win Rate'] = (owner_metrics['Closed Won'] / owner_metrics['Total Pipeline'] * 100).round(1)
-        
-        owner_metrics = owner_metrics.sort_values('Total Pipeline', ascending=False)
-        
-        fig = go.Figure()
-        
-        fig.add_trace(go.Bar(
-            y=owner_metrics['Sales Owner'],
-            x=owner_metrics['Total Pipeline'],
-            name='Total Pipeline',
-            orientation='h',
-            marker_color=colors['primary']
-        ))
-        
-        fig.add_trace(go.Bar(
-            y=owner_metrics['Sales Owner'],
-            x=owner_metrics['Closed Won'],
-            name='Closed Won',
-            orientation='h',
-            marker_color=colors['success']
-        ))
-        
-        fig = apply_theme_to_plot(fig)
-        fig.update_layout(
-            title='Sales Owner Performance',
-            barmode='overlay',
-            xaxis_title='Amount (Lakhs)',
-            yaxis_title='Sales Owner',
-            showlegend=True
-        )
-        
-        fig.update_traces(texttemplate='₹%{x:.2f}L', textposition='auto')
-        
-        st.plotly_chart(fig, use_container_width=True, key="sales_leaderboard")
-        
-        st.dataframe(
-            owner_metrics.style.format({
-                'Total Pipeline': '₹{:.2f}L',
-                'Closed Won': '₹{:.2f}L',
-                'Win Rate': '{:.1f}%'
-            }),
-            use_container_width=True
-        )
-        
-        if st.session_state.dashboard_config['show_win_rate'] and 'Sales Owner' in filtered_df.columns:
-            st.markdown("""
-                <div class="section-header">
-                    <h3>🎯 Win Rate Analysis</h3>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            win_rate_metrics = filtered_df.groupby('Sales Owner').agg({
-                'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum() / len(x) * 100
-            }).reset_index()
-            
-            win_rate_metrics.columns = ['Sales Owner', 'Win Rate']
-            win_rate_metrics = win_rate_metrics.sort_values('Win Rate', ascending=False)
-            
-            fig = px.bar(
-                win_rate_metrics,
-                x='Sales Owner',
-                y='Win Rate',
-                title='Win Rate by Sales Owner',
-                text='Win Rate'
-            )
-            
-            fig = apply_theme_to_plot(fig)
-            fig.update_traces(
-                texttemplate='%{text:.1f}%',
-                textposition='outside',
-                marker_color=colors['success']
-            )
-            
-            st.plotly_chart(fig, use_container_width=True, key="win_rate")
-            
-            st.dataframe(
-                win_rate_metrics.style.format({
-                    'Win Rate': '{:.1f}%'
-                }),
-                use_container_width=True
-            )
-    else:
-        st.info("Sales Owner data is not available in the dataset.")
-
-def show_geo():
-    if not st.session_state.dashboard_config['show_geo_view']:
-        return
-    
-    st.markdown("""
-        <div class="section-header">
-            <h3>🌍 Geography View</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    geography_columns = ['Region', 'Country', 'Geography']
-    available_geo_column = next((col for col in geography_columns if col in filtered_df.columns), None)
-    
-    if available_geo_column:
-        geo_metrics = filtered_df.groupby(available_geo_column).agg({
-            'Amount': 'sum',
-            'Opportunity Number': 'count'
-        }).reset_index()
-        
-        geo_metrics['Amount'] = geo_metrics['Amount'] / 100000
-        
-        fig = px.choropleth(
-            geo_metrics,
-            locations=available_geo_column,
-            locationmode='country names' if available_geo_column in ['Country', 'Geography'] else None,
-            color='Amount',
-            hover_data=['Opportunity Number'],
-            title=f'{available_geo_column}-wise Pipeline Distribution',
-            color_continuous_scale='Viridis'
-        )
-        
-        fig = apply_theme_to_plot(fig)
-        fig.update_layout(
-            geo=dict(
-                showframe=False,
-                showcoastlines=True,
-                projection_type='equirectangular'
-            )
-        )
-        
-        st.plotly_chart(fig, use_container_width=True, key="geo_view")
-        
-        st.dataframe(
-            geo_metrics.style.format({
-                'Amount': '₹{:.2f}L',
-                'Opportunity Number': '{:,.0f}'
-            }),
-            use_container_width=True
-        )
-    else:
-        st.info("No geography data (Region, Country, or Geography) is available in the dataset.")
-
-def show_detailed():
-    if not st.session_state.dashboard_config['show_detailed_view']:
-        return
-    
-    st.markdown("""
-        <div class="section-header">
-            <h3>🧾 Detailed Deals</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Add Weighted Revenue column if configured
-    if st.session_state.dashboard_config['show_weighted_revenue']:
-        filtered_df['Weighted Revenue'] = filtered_df['Amount'] * filtered_df['Probability'] / 100
-    
-    # Define columns for display
-    columns_to_show = [
-        'Opportunity Number',
-        'Organization Name',
-        'Amount',
-        'Probability',
-        'Weighted Revenue',
-        'Quarter',
-        'Practice',
-        'Sales Stage',
-        'Tech Owner',
-        'Sales Owner',
-        'Expected Close Date'
-    ]
-    
-    # Filter columns that exist in the dataframe
-    available_columns = [col for col in columns_to_show if col in filtered_df.columns]
-    
-    # Table filters
-    st.markdown('<div class="table-filters">', unsafe_allow_html=True)
-    
-    # Search filter
-    search_term = st.text_input("🔍 Search", key="table_search")
-    
-    # Column filters
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        practice_filter = st.multiselect(
-            "Practice",
-            options=safe_sort_unique(filtered_df['Practice']),
-            default=[]
-        )
-    with col2:
-        stage_filter = st.multiselect(
-            "Sales Stage",
-            options=safe_sort_unique(filtered_df['Sales Stage']),
-            default=[]
-        )
-    with col3:
-        quarter_filter = st.multiselect(
-            "Quarter",
-            options=safe_sort_unique(filtered_df['Quarter']),
-            default=[]
-        )
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Apply filters
-    filtered_table_df = filtered_df.copy()
-    if search_term:
-        filtered_table_df = filtered_table_df[
-            filtered_table_df['Organization Name'].astype(str).str.contains(search_term, case=False, na=False) |
-            filtered_table_df['Opportunity Number'].astype(str).str.contains(search_term, case=False, na=False)
-        ]
-    if practice_filter:
-        filtered_table_df = filtered_table_df[filtered_table_df['Practice'].astype(str).isin(practice_filter)]
-    if stage_filter:
-        filtered_table_df = filtered_table_df[filtered_table_df['Sales Stage'].astype(str).isin(stage_filter)]
-    if quarter_filter:
-        filtered_table_df = filtered_table_df[filtered_table_df['Quarter'].astype(str).isin(quarter_filter)]
-    
-    # Display table with formatting and column configuration
-    st.dataframe(
-        filtered_table_df[available_columns].style.format({
-            'Amount': '₹{:.2f}L',
-            'Weighted Revenue': '₹{:.2f}L',
-            'Probability': '{:.1f}%'
-        }),
-        use_container_width=True,
-        height=600
-    )
-    
-    # Export options
-    col1, col2 = st.columns(2)
-    with col1:
-        # Export to CSV
-        csv = filtered_table_df[available_columns].to_csv(index=False)
-        st.download_button(
-            label="📥 Export to CSV",
-            data=csv,
-            file_name="filtered_deals.csv",
-            mime="text/csv"
-        )
-    with col2:
-        # Export to Excel
-        excel_buffer = io.BytesIO()
-        with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
-            filtered_table_df[available_columns].to_excel(writer, index=False, sheet_name='Deals')
-        excel_buffer.seek(0)
-        st.download_button(
-            label="📊 Export to Excel",
-            data=excel_buffer,
-            file_name="filtered_deals.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
-def show_probability_distribution():
-    st.markdown("""
-        <div class="section-header">
-            <h3>🎯 Probability Distribution</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Create probability bins
-    filtered_df['Probability Bin'] = pd.cut(
-        filtered_df['Probability'],
-        bins=[0, 25, 50, 75, 100],
-        labels=['0-25%', '26-50%', '51-75%', '76-100%']
-    )
-    
-    # Calculate metrics for each bin
-    prob_metrics = filtered_df.groupby('Probability Bin').agg({
-        'Amount': ['sum', 'count'],
-        'Probability': 'mean'
-    }).reset_index()
-    
-    prob_metrics.columns = ['Probability Range', 'Total Amount (Lakhs)', 'Number of Deals', 'Average Probability']
-    prob_metrics['Total Amount (Lakhs)'] = prob_metrics['Total Amount (Lakhs)'] / 100000
-    
-    # Create stacked bar chart
-    fig = go.Figure()
-    
-    fig.add_trace(go.Bar(
-        x=prob_metrics['Probability Range'],
-        y=prob_metrics['Total Amount (Lakhs)'],
-        text=prob_metrics['Total Amount (Lakhs)'].apply(lambda x: f'₹{x:.2f}L'),
-        textposition='auto',
-        marker_color=colors['primary']
-    ))
-    
-    fig = apply_theme_to_plot(fig)
-    fig.update_layout(
-        title='Pipeline Distribution by Probability Range',
-        xaxis_title='Probability Range',
-        yaxis_title='Amount (Lakhs)',
-        showlegend=False
-    )
-    
-    st.plotly_chart(fig, use_container_width=True, key="probability_distribution")
-    
-    # Display metrics table
-    st.dataframe(
-        prob_metrics.style.format({
-            'Total Amount (Lakhs)': '₹{:.2f}L',
-            'Average Probability': '{:.1f}%'
-        }),
-        use_container_width=True
     ) 
