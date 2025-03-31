@@ -103,7 +103,7 @@ with col2:
         "Theme",
         options=list(theme_options.keys()),
         index=0 if st.session_state.theme == 'dark' else 1,
-        key='theme_selector'
+        key='theme_selector_main'
     )
     
     # Update theme state if changed
@@ -500,26 +500,6 @@ st.markdown(f"""
     .stDeployButton {{display:none;}}
     </style>
 """, unsafe_allow_html=True)
-
-# Title and Header with theme toggle
-col1, col2 = st.columns([6, 1])
-with col1:
-    st.title("📊 Sales Dashboard")
-with col2:
-    # Update theme selector with a more robust implementation
-    current_theme_index = 0 if st.session_state.theme == 'dark' else 1
-    new_theme = st.selectbox(
-        "Theme",
-        ["Dark", "Light"],
-        index=current_theme_index,
-        key='theme_selector'
-    )
-    
-    # Check if theme has changed
-    if new_theme.lower() != st.session_state.theme:
-        st.session_state.theme = new_theme.lower()
-        # Force a rerun to apply the new theme
-        st.rerun()
 
 # Data Input Section
 st.markdown("""
