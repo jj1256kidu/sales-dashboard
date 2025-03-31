@@ -603,9 +603,10 @@ if df is not None:
         """, unsafe_allow_html=True)
         
         # Dynamic KPI display based on selected metrics
-        kpi_cols = st.columns(min(3, len(selected_metrics)))
+        num_cols = min(3, len(selected_metrics))
+        kpi_cols = st.columns(num_cols)
         for idx, metric in enumerate(selected_metrics):
-            with kpi_cols[idx % 3]:
+            with kpi_cols[idx % num_cols]:
                 if metric == 'Amount':
                     value = filtered_df['Amount'].sum() / 100000
                     st.metric(
