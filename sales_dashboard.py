@@ -647,7 +647,7 @@ if df is not None:
                         delta_color="normal"
                     )
 
-        # Dynamic graph display based on selection
+        # Display selected graphs in Overview tab
         for graph_name in selected_graphs:
             graph_id = graph_options[graph_name]
             
@@ -691,7 +691,7 @@ if df is not None:
                     marker_color=colors['primary']
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=f"quarter_breakdown_{graph_name}")
             
             elif graph_id == "hunting_farming" and 'Hunting/Farming' in filtered_df.columns:
                 # Hunting vs Farming Distribution
@@ -734,7 +734,7 @@ if df is not None:
                         )
                     )
                     
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True, key=f"hunting_farming_{graph_name}")
                     
                     # Display metrics table
                     hunting_farming_metrics = hunting_farming.copy()
@@ -822,7 +822,7 @@ if df is not None:
                 
                 fig.update_traces(texttemplate='₹%{x:.2f}L', textposition='auto')
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=f"sales_leaderboard_{graph_name}")
             
             elif graph_id == "monthly_trend":
                 # Monthly Trend
@@ -855,7 +855,7 @@ if df is not None:
                 
                 fig.update_traces(texttemplate='₹%{y:.2f}L', textposition='top center')
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=f"monthly_trend_{graph_name}")
             
             elif graph_id == "sales_funnel":
                 # Sales Funnel
@@ -881,7 +881,7 @@ if df is not None:
                     showlegend=False
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=f"sales_funnel_{graph_name}")
             
             elif graph_id == "strategy_view":
                 # Strategy View
@@ -906,7 +906,7 @@ if df is not None:
                     textposition='top center'
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=f"strategy_view_{graph_name}")
             
             elif graph_id == "geo_view":
                 # Geography View
@@ -940,7 +940,7 @@ if df is not None:
                         )
                     )
                     
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True, key=f"geo_view_{graph_name}")
                     
                     st.dataframe(
                         geo_metrics.style.format({
@@ -950,7 +950,8 @@ if df is not None:
                         use_container_width=True
                     )
 
-    # Sales Leaderboard Tab
+    # Remove duplicate graph displays from other tabs
+    # Keep only the detailed view and data tables in their respective tabs
     with tab2:
         st.markdown("""
             <div class="section-header">
@@ -982,42 +983,10 @@ if df is not None:
                 }),
                 use_container_width=True
             )
-            
-            # Create horizontal bar chart
-            fig = go.Figure()
-            
-            fig.add_trace(go.Bar(
-                y=owner_metrics['Sales Owner'],
-                x=owner_metrics['Total Pipeline'],
-                name='Total Pipeline',
-                orientation='h',
-                marker_color=colors['primary']
-            ))
-            
-            fig.add_trace(go.Bar(
-                y=owner_metrics['Sales Owner'],
-                x=owner_metrics['Closed Won'],
-                name='Closed Won',
-                orientation='h',
-                marker_color=colors['success']
-            ))
-            
-            fig = apply_theme_to_plot(fig)
-            fig.update_layout(
-                title='Sales Owner Performance',
-                barmode='overlay',
-                xaxis_title='Amount (Lakhs)',
-                yaxis_title='Sales Owner',
-                showlegend=True
-            )
-            
-            fig.update_traces(texttemplate='₹%{x:.2f}L', textposition='auto')
-            
-            st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("Sales Owner data is not available in the dataset.")
 
-    # Trend View Tab
+    # Keep the rest of the tabs for detailed data views
     with tab3:
         st.markdown("""
             <div class="section-header">
@@ -1025,7 +994,7 @@ if df is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        # Calculate monthly metrics
+        # Display monthly trend data table
         filtered_df['Date'] = pd.to_datetime(filtered_df['Expected Close Date'], errors='coerce')
         monthly_metrics = filtered_df.groupby(filtered_df['Date'].dt.to_period('M')).agg({
             'Amount': 'sum',
@@ -1035,30 +1004,13 @@ if df is not None:
         monthly_metrics['Date'] = monthly_metrics['Date'].astype(str)
         monthly_metrics['Amount'] = monthly_metrics['Amount'] / 100000
         
-        # Create line chart
-        fig = go.Figure()
-        
-        fig.add_trace(go.Scatter(
-            x=monthly_metrics['Date'],
-            y=monthly_metrics['Amount'],
-            name='Pipeline',
-            line=dict(color=colors['primary'], width=2),
-            mode='lines+markers'
-        ))
-        
-        fig = apply_theme_to_plot(fig)
-        fig.update_layout(
-            title='Monthly Pipeline Trend',
-            xaxis_title='Month',
-            yaxis_title='Amount (Lakhs)',
-            showlegend=True
+        st.dataframe(
+            monthly_metrics.style.format({
+                'Amount': '₹{:.2f}L'
+            }),
+            use_container_width=True
         )
-        
-        fig.update_traces(texttemplate='₹%{y:.2f}L', textposition='top center')
-        
-        st.plotly_chart(fig, use_container_width=True)
 
-    # Funnel View Tab
     with tab4:
         st.markdown("""
             <div class="section-header">
@@ -1066,7 +1018,7 @@ if df is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        # Calculate stage-wise metrics
+        # Display funnel data table
         stage_metrics = filtered_df.groupby('Sales Stage').agg({
             'Amount': 'sum',
             'Opportunity Number': 'count'
@@ -1074,25 +1026,13 @@ if df is not None:
         
         stage_metrics['Amount'] = stage_metrics['Amount'] / 100000
         
-        # Create funnel chart
-        fig = go.Figure(go.Funnel(
-            y=stage_metrics['Sales Stage'],
-            x=stage_metrics['Amount'],
-            textinfo='value+percent initial',
-            texttemplate='₹%{value:.2f}L',
-            textposition='inside',
-            marker=dict(color=colors['primary'])
-        ))
-        
-        fig = apply_theme_to_plot(fig)
-        fig.update_layout(
-            title='Sales Stage Funnel',
-            showlegend=False
+        st.dataframe(
+            stage_metrics.style.format({
+                'Amount': '₹{:.2f}L'
+            }),
+            use_container_width=True
         )
-        
-        st.plotly_chart(fig, use_container_width=True)
 
-    # Strategy View Tab
     with tab5:
         st.markdown("""
             <div class="section-header">
@@ -1100,31 +1040,23 @@ if df is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        # Create bubble chart
-        fig = px.scatter(
-            filtered_df,
-            x='Probability',
-            y='Amount',
-            size='Amount',
-            color='Practice',
-            hover_data=['Organization Name', 'Sales Stage'],
-            title='Deal Value vs Probability by Practice',
-            labels={
-                'Amount': 'Deal Value (Lakhs)',
-                'Probability': 'Probability (%)',
-                'Practice': 'Practice'
-            }
-        )
+        # Display strategy data table
+        strategy_metrics = filtered_df.groupby('Practice').agg({
+            'Amount': 'sum',
+            'Probability': 'mean',
+            'Opportunity Number': 'count'
+        }).reset_index()
         
-        fig = apply_theme_to_plot(fig)
-        fig.update_traces(
-            texttemplate='₹%{y:.2f}L',
-            textposition='top center'
-        )
+        strategy_metrics['Amount'] = strategy_metrics['Amount'] / 100000
         
-        st.plotly_chart(fig, use_container_width=True)
+        st.dataframe(
+            strategy_metrics.style.format({
+                'Amount': '₹{:.2f}L',
+                'Probability': '{:.1f}%'
+            }),
+            use_container_width=True
+        )
 
-    # Geo View Tab
     with tab6:
         st.markdown("""
             <div class="section-header">
@@ -1132,47 +1064,17 @@ if df is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        # Check for available geography columns
+        # Display geography data table
         geography_columns = ['Region', 'Country', 'Geography']
         available_geo_column = next((col for col in geography_columns if col in filtered_df.columns), None)
         
         if available_geo_column:
-            # Calculate geography-wise metrics
             geo_metrics = filtered_df.groupby(available_geo_column).agg({
                 'Amount': 'sum',
                 'Opportunity Number': 'count'
             }).reset_index()
             
             geo_metrics['Amount'] = geo_metrics['Amount'] / 100000
-            
-            # Create choropleth map
-            fig = px.choropleth(
-                geo_metrics,
-                locations=available_geo_column,
-                locationmode='country names' if available_geo_column in ['Country', 'Geography'] else None,
-                color='Amount',
-                hover_data=['Opportunity Number'],
-                title=f'{available_geo_column}-wise Pipeline Distribution',
-                color_continuous_scale='Viridis'
-            )
-            
-            fig = apply_theme_to_plot(fig)
-            fig.update_layout(
-                geo=dict(
-                    showframe=False,
-                    showcoastlines=True,
-                    projection_type='equirectangular'
-                )
-            )
-            
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # Display geography metrics table
-            st.markdown("""
-                <div class="section-header">
-                    <h3>📊 Geography Metrics</h3>
-                </div>
-            """, unsafe_allow_html=True)
             
             st.dataframe(
                 geo_metrics.style.format({
@@ -1184,7 +1086,7 @@ if df is not None:
         else:
             st.info("No geography data (Region, Country, or Geography) is available in the dataset.")
 
-    # Detailed View Tab
+    # Keep the Detailed View tab as is
     with tab7:
         st.markdown("""
             <div class="section-header">
