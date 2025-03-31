@@ -8,10 +8,11 @@ import numpy as np
 st.set_page_config(
     page_title="Sales Dashboard",
     page_icon="📊",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Custom CSS for KPI cards
+# Custom CSS for KPI cards and layout
 st.markdown("""
     <style>
     .kpi-card {
@@ -29,13 +30,49 @@ st.markdown("""
     .kpi-value {
         font-size: 24px;
         font-weight: bold;
-        color: #1f77b4;
+    }
+    .metric-card {
+        background-color: #ffffff;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin: 5px 0;
+    }
+    .stDataFrame {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }
     </style>
 """, unsafe_allow_html=True)
 
+# Helper function to format numbers in Lakhs
+def format_lakhs(value):
+    return f"₹{value:,.2f}L"
+
 # Title
 st.title("📊 Sales Dashboard")
+
+# Sidebar
+with st.sidebar:
+    st.header("Settings")
+    
+    # Theme toggle
+    theme = st.selectbox(
+        "Theme",
+        ["Light", "Dark"],
+        index=0
+    )
+    
+    # Sales Target Input
+    st.header("Sales Target")
+    sales_target = st.number_input(
+        "Enter Sales Target (in Lakhs)",
+        min_value=0.0,
+        value=100.0,
+        step=10.0
+    )
 
 # Data Input Section
 st.header("Data Input")
@@ -59,25 +96,31 @@ else:
             st.error(f"Error reading Google Sheet: {str(e)}")
 
 if df is not None:
-    # Sales Target Input
-    st.header("Sales Target")
-    sales_target = st.number_input("Enter Sales Target (in Lakhs)", min_value=0.0, value=100.0)
-
-    # Filters
-    st.header("Filters")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
+    # Sidebar Filters
+    with st.sidebar:
+        st.header("Filters")
+        
+        # Practice filter
         practices = ['All'] + sorted(df['Practice'].unique().tolist())
         selected_practice = st.selectbox("Practice", practices)
-    
-    with col2:
+        
+        # Quarter filter
         quarters = ['All'] + sorted(df['Quarter'].unique().tolist())
         selected_quarter = st.selectbox("Quarter", quarters)
-    
-    with col3:
+        
+        # Hunting/Farming filter
         deal_types = ['All'] + sorted(df['Hunting/Farming'].unique().tolist())
         selected_deal_type = st.selectbox("Hunting/Farming", deal_types)
+        
+        # Sales Owner filter (if available)
+        if 'Sales Owner' in df.columns:
+            sales_owners = ['All'] + sorted(df['Sales Owner'].unique().tolist())
+            selected_sales_owner = st.selectbox("Sales Owner", sales_owners)
+        
+        # Tech Owner filter (if available)
+        if 'Tech Owner' in df.columns:
+            tech_owners = ['All'] + sorted(df['Tech Owner'].unique().tolist())
+            selected_tech_owner = st.selectbox("Tech Owner", tech_owners)
 
     # Apply filters
     filtered_df = df.copy()
@@ -87,6 +130,10 @@ if df is not None:
         filtered_df = filtered_df[filtered_df['Quarter'] == selected_quarter]
     if selected_deal_type != 'All':
         filtered_df = filtered_df[filtered_df['Hunting/Farming'] == selected_deal_type]
+    if 'Sales Owner' in df.columns and selected_sales_owner != 'All':
+        filtered_df = filtered_df[filtered_df['Sales Owner'] == selected_sales_owner]
+    if 'Tech Owner' in df.columns and selected_tech_owner != 'All':
+        filtered_df = filtered_df[filtered_df['Tech Owner'] == selected_tech_owner]
 
     # Calculate KPIs
     current_pipeline = filtered_df['Amount'].sum()
@@ -94,72 +141,95 @@ if df is not None:
     closed_won = filtered_df[filtered_df['Sales Stage'].isin(['Closed Won', 'Won'])]['Amount'].sum()
     achieved_percentage = (closed_won / sales_target * 100) if sales_target > 0 else 0
 
-    # Display KPIs
+    # Display KPIs in 3 columns
     st.header("Key Performance Indicators")
-    kpi_col1, kpi_col2, kpi_col3, kpi_col4, kpi_col5 = st.columns(5)
+    kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
     
     with kpi_col1:
-        st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-title">Sales Target</div>
-                <div class="kpi-value">₹{sales_target:.2f}L</div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.metric(
+            "Sales Target",
+            format_lakhs(sales_target),
+            delta=None,
+            delta_color="normal"
+        )
+        st.metric(
+            "Current Pipeline",
+            format_lakhs(current_pipeline),
+            delta=None,
+            delta_color="normal"
+        )
     
     with kpi_col2:
-        st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-title">Current Pipeline</div>
-                <div class="kpi-value">₹{current_pipeline:.2f}L</div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.metric(
+            "Weighted Projection",
+            format_lakhs(weighted_projection),
+            delta=None,
+            delta_color="normal"
+        )
+        st.metric(
+            "Closed Won",
+            format_lakhs(closed_won),
+            delta=None,
+            delta_color="normal"
+        )
     
     with kpi_col3:
-        st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-title">Weighted Projection</div>
-                <div class="kpi-value">₹{weighted_projection:.2f}L</div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with kpi_col4:
-        st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-title">Closed Won</div>
-                <div class="kpi-value">₹{closed_won:.2f}L</div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with kpi_col5:
-        st.markdown(f"""
-            <div class="kpi-card">
-                <div class="kpi-title">Achieved %</div>
-                <div class="kpi-value">{achieved_percentage:.1f}%</div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.metric(
+            "Achieved %",
+            f"{achieved_percentage:.1f}%",
+            delta=None,
+            delta_color="normal"
+        )
 
     # Practice-wise Summary
     st.header("Practice-wise Summary")
     practice_summary = filtered_df.groupby('Practice')['Amount'].agg(['sum', 'count']).reset_index()
     practice_summary.columns = ['Practice', 'Total Amount (Lakhs)', 'Number of Deals']
     
-    fig = px.bar(practice_summary, x='Practice', y='Total Amount (Lakhs)',
-                 title='Practice-wise Sales Distribution')
+    # Create bar chart
+    fig = px.bar(
+        practice_summary,
+        x='Practice',
+        y='Total Amount (Lakhs)',
+        title='Practice-wise Sales Distribution',
+        color='Practice',
+        template='plotly_white'
+    )
+    fig.update_layout(
+        showlegend=False,
+        xaxis_title="Practice",
+        yaxis_title="Total Amount (Lakhs)",
+        yaxis_tickformat="₹.2fL"
+    )
     st.plotly_chart(fig, use_container_width=True)
 
     # Detailed Deals Table
     st.header("Detailed Deals")
-    selected_columns = [
-        'Organization Name', 'Opportunity Name', 'Geography', 'Expected Close Date',
-        'Probability', 'Amount', 'Sales Owner', 'Tech Owner'
-    ]
     
     # Add Weighted Revenue column
     filtered_df['Weighted Revenue'] = filtered_df['Amount'] * filtered_df['Probability'] / 100
     
-    # Display table with selected columns
+    # Define columns for display
+    columns_to_show = [
+        'Opportunity Number',
+        'Organization Name',
+        'Amount',
+        'Probability',
+        'Weighted Revenue',
+        'Quarter',
+        'Practice',
+        'Sales Stage',
+        'Tech Owner',
+        'Sales Owner',
+        'Expected Close Date'
+    ]
+    
+    # Filter columns that exist in the dataframe
+    available_columns = [col for col in columns_to_show if col in filtered_df.columns]
+    
+    # Display table with formatting
     st.dataframe(
-        filtered_df[selected_columns + ['Weighted Revenue']].style.format({
+        filtered_df[available_columns].style.format({
             'Amount': '₹{:.2f}L',
             'Weighted Revenue': '₹{:.2f}L',
             'Probability': '{:.1f}%'
@@ -168,7 +238,7 @@ if df is not None:
     )
 
     # Export to CSV option
-    csv = filtered_df[selected_columns + ['Weighted Revenue']].to_csv(index=False)
+    csv = filtered_df[available_columns].to_csv(index=False)
     st.download_button(
         label="Export to CSV",
         data=csv,
@@ -176,4 +246,4 @@ if df is not None:
         mime="text/csv"
     )
 else:
-    st.info("Please upload data to view the dashboard.") 
+    st.info("Please upload data to view the dashboard.")
