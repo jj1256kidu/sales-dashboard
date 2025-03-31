@@ -1106,6 +1106,13 @@ if df is not None:
         )
 
     # Navigation menu
+    st.markdown("""
+        <div class="section-header">
+            <h3>📊 Navigation</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Create navigation using Streamlit columns
     nav_items = {
         'overview': '📊 Overview',
         'trends': '📈 Trends',
@@ -1117,40 +1124,67 @@ if df is not None:
         'editor': '✏️ Data Editor',
         'probability': '🎯 Probability'
     }
-    
-    # Display navigation menu
-    st.markdown("""
-        <div class="nav-menu">
-            <div class="nav-container">
-                {nav_items}
-            </div>
-        </div>
-    """.format(nav_items=''.join([
-        f'<div class="nav-group"><a href="#" class="nav-item" onclick="setView(\'{k}\')">{v}</a></div>'
-        for k, v in nav_items.items()
-    ])), unsafe_allow_html=True)
-    
+
+    # Create two rows of buttons for navigation
+    nav_cols1 = st.columns(6)
+    nav_cols2 = st.columns(3)
+
+    # First row of navigation
+    for i, (key, label) in enumerate(list(nav_items.items())[:6]):
+        with nav_cols1[i]:
+            if st.button(label, key=f"nav_{key}", use_container_width=True):
+                st.session_state.current_view = key
+                st.experimental_rerun()
+
+    # Second row of navigation
+    for i, (key, label) in enumerate(list(nav_items.items())[6:]):
+        with nav_cols2[i]:
+            if st.button(label, key=f"nav_{key}", use_container_width=True):
+                st.session_state.current_view = key
+                st.experimental_rerun()
+
     # Show the selected view
     if st.session_state.current_view == 'editor':
         st.markdown("""
             <div class="full-page">
                 <div class="page-header">
                     <h2 class="page-title">✏️ Data Editor</h2>
-                    <div class="page-actions">
-                        <button onclick="saveChanges()">💾 Save Changes</button>
-                        <button onclick="exportData()">📥 Export</button>
-                    </div>
                 </div>
                 <div class="data-editor">
-                    {data_editor}
-                </div>
-            </div>
-        """.format(data_editor=st.data_editor(
+        """, unsafe_allow_html=True)
+        
+        edited_df = st.data_editor(
             filtered_df,
             num_rows="dynamic",
             use_container_width=True,
             key="data_editor"
-        )), unsafe_allow_html=True)
+        )
+        
+        # Add export buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            # Export to CSV
+            csv = edited_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Export to CSV",
+                data=csv,
+                file_name="filtered_deals.csv",
+                mime="text/csv"
+            )
+        with col2:
+            # Export to Excel
+            excel_buffer = io.BytesIO()
+            with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
+                edited_df.to_excel(writer, index=False, sheet_name='Deals')
+            excel_buffer.seek(0)
+            st.download_button(
+                label="📊 Export to Excel",
+                data=excel_buffer,
+                file_name="filtered_deals.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        
+        st.markdown("</div></div>", unsafe_allow_html=True)
     else:
         # Show the selected dashboard view
         view_functions = {
@@ -1165,11 +1199,7 @@ if df is not None:
         }
         
         if st.session_state.current_view in view_functions:
-            st.markdown("""
-                <div class="full-page">
-                    {content}
-                </div>
-            """.format(content=view_functions[st.session_state.current_view]()), unsafe_allow_html=True)
+            view_functions[st.session_state.current_view]()
 else:
     st.info("Please upload data to view the dashboard.")
 
