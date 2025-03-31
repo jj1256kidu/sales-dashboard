@@ -161,8 +161,8 @@ st.markdown(f"""
     /* Main Layout */
     .main {{
         padding: 0;
-        background-color: {colors['background']};
-        color: {colors['text']};
+        background-color: {colors['background']} !important;
+        color: {colors['text']} !important;
         font-family: 'Inter', sans-serif;
     }}
     
@@ -423,6 +423,22 @@ st.markdown(f"""
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     .stDeployButton {{display:none;}}
+    
+    /* Streamlit Elements Override */
+    .stApp {{
+        background-color: {colors['background']} !important;
+    }}
+    
+    .stSelectbox div[data-baseweb="select"] {{
+        background-color: {colors['select_bg']};
+        border-color: {colors['select_border']};
+    }}
+    
+    .stTextInput input {{
+        background-color: {colors['input_bg']};
+        border-color: {colors['input_border']};
+        color: {colors['input_text']};
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -431,13 +447,20 @@ col1, col2 = st.columns([6, 1])
 with col1:
     st.title("📊 Sales Dashboard")
 with col2:
-    theme = st.selectbox(
+    # Update theme selector with a more robust implementation
+    current_theme_index = 0 if st.session_state.theme == 'dark' else 1
+    new_theme = st.selectbox(
         "Theme",
         ["Dark", "Light"],
-        index=0 if st.session_state.theme == 'dark' else 1,
+        index=current_theme_index,
         key='theme_selector'
     )
-    st.session_state.theme = theme.lower()
+    
+    # Check if theme has changed
+    if new_theme.lower() != st.session_state.theme:
+        st.session_state.theme = new_theme.lower()
+        # Force a rerun to apply the new theme
+        st.rerun()
 
 # Data Input Section
 st.markdown("""
