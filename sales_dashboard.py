@@ -686,8 +686,14 @@ if df is not None:
             </div>
         """, unsafe_allow_html=True)
         
+        # Debug information
+        st.write("Debug: Available columns in filtered_df:", filtered_df.columns.tolist())
+        st.write("Debug: Unique values in Hunting/Farming:", filtered_df['Hunting/Farming'].unique())
+        
         # Calculate percentages
         hunting_farming = filtered_df.groupby('Hunting/Farming')['Amount'].sum().reset_index()
+        st.write("Debug: Hunting/Farming metrics before processing:", hunting_farming)
+        
         total_amount = hunting_farming['Amount'].sum()
         hunting_farming['Percentage'] = (hunting_farming['Amount'] / total_amount * 100).round(1)
         
@@ -736,6 +742,9 @@ if df is not None:
         
         hunting_farming_metrics = hunting_farming.copy()
         hunting_farming_metrics['Amount'] = hunting_farming_metrics['Amount'] / 100000
+        
+        # Debug information
+        st.write("Debug: Final Hunting/Farming metrics:", hunting_farming_metrics)
         
         # Create custom HTML table
         table_html = f"""
