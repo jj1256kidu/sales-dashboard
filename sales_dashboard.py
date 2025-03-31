@@ -13,59 +13,120 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for better styling
+# Custom CSS for modern styling
 st.markdown("""
     <style>
+    /* Main Layout */
     .main {
         padding: 2rem;
+        background-color: #f8fafc;
     }
+    
+    /* Sidebar Styling */
+    .css-1d391kg {
+        background-color: #ffffff;
+        padding: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Header Styling */
+    .css-1v0mbdj {
+        margin-bottom: 2rem;
+    }
+    
+    /* Tabs Styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 2rem;
+        background-color: transparent;
     }
     .stTabs [data-baseweb="tab"] {
         height: 50px;
         white-space: pre-wrap;
+        background-color: #f1f5f9;
+        border-radius: 8px;
+        padding: 0 1.5rem;
+        color: #64748b;
+        font-weight: 500;
     }
     .stTabs [aria-selected="true"] {
-        background-color: #1f77b4;
+        background-color: #3b82f6;
         color: white;
-        border-radius: 5px;
-    }
-    .kpi-card {
-        background-color: #f0f2f6;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 10px 0;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-    .kpi-title {
-        font-size: 14px;
-        color: #666;
-        margin-bottom: 5px;
-    }
-    .kpi-value {
-        font-size: 24px;
-        font-weight: bold;
-    }
-    .metric-card {
-        background-color: #ffffff;
-        padding: 15px;
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        margin: 5px 0;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
     }
-    .stDataFrame {
-        background-color: #ffffff;
-        border-radius: 8px;
-        padding: 10px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    }
+    
+    /* Metric Cards */
     .stMetric {
         background-color: #ffffff;
-        padding: 15px;
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        margin: 0.5rem 0;
+        border: 1px solid #e2e8f0;
+    }
+    .stMetric:hover {
+        transform: translateY(-2px);
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    /* DataFrames */
+    .stDataFrame {
+        background-color: #ffffff;
+        border-radius: 12px;
+        padding: 1rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+    }
+    
+    /* Headers */
+    h1, h2, h3 {
+        color: #1e293b;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    /* Selectbox Styling */
+    .stSelectbox {
+        background-color: #ffffff;
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        margin: 5px 0;
+        border: 1px solid #e2e8f0;
+    }
+    
+    /* Radio Buttons */
+    .stRadio > div {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 1rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    /* Number Input */
+    .stNumberInput input {
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+    }
+    
+    /* Download Button */
+    .stDownloadButton button {
+        background-color: #3b82f6;
+        color: white;
+        border-radius: 8px;
+        padding: 0.5rem 1rem;
+        border: none;
+        font-weight: 500;
+    }
+    .stDownloadButton button:hover {
+        background-color: #2563eb;
+    }
+    
+    /* Section Headers */
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e2e8f0;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -88,7 +149,11 @@ st.title("📊 Sales Dashboard")
 
 # Sidebar
 with st.sidebar:
-    st.header("Settings")
+    st.markdown("""
+        <div class="section-header">
+            <h3>⚙️ Settings</h3>
+        </div>
+    """, unsafe_allow_html=True)
     
     # Theme toggle
     theme = st.selectbox(
@@ -98,7 +163,12 @@ with st.sidebar:
     )
     
     # Sales Target Input
-    st.header("Sales Target")
+    st.markdown("""
+        <div class="section-header">
+            <h3>🎯 Sales Target</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
     sales_target = st.number_input(
         "Enter Sales Target (in Lakhs)",
         min_value=0.0,
@@ -107,7 +177,12 @@ with st.sidebar:
     )
 
 # Data Input Section
-st.header("Data Input")
+st.markdown("""
+    <div class="section-header">
+        <h3>📁 Data Input</h3>
+    </div>
+""", unsafe_allow_html=True)
+
 input_method = st.radio("Choose data input method:", ["Excel File", "Google Sheet URL"])
 
 df = None
@@ -138,7 +213,11 @@ else:
 if df is not None:
     # Sidebar Filters
     with st.sidebar:
-        st.header("Filters")
+        st.markdown("""
+            <div class="section-header">
+                <h3>🔍 Filters</h3>
+            </div>
+        """, unsafe_allow_html=True)
         
         # Practice filter
         practices = ['All'] + sorted(df['Practice'].astype(str).unique().tolist())
@@ -182,11 +261,16 @@ if df is not None:
     achieved_percentage = (closed_won / sales_target * 100) if sales_target > 0 else 0
 
     # Create tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Practice Analysis", "Deal Distribution", "Detailed View"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📈 Practice Analysis", "🎯 Deal Distribution", "📋 Detailed View"])
 
     # Overview Tab
     with tab1:
-        st.header("Key Performance Indicators")
+        st.markdown("""
+            <div class="section-header">
+                <h3>🎯 Key Performance Indicators</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
         kpi_col1, kpi_col2, kpi_col3 = st.columns(3)
         
         with kpi_col1:
@@ -227,7 +311,12 @@ if df is not None:
 
     # Practice Analysis Tab
     with tab2:
-        st.header("Practice-wise Summary")
+        st.markdown("""
+            <div class="section-header">
+                <h3>📈 Practice-wise Summary</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
         practice_summary = filtered_df.groupby('Practice').agg({
             'Amount': ['sum', 'count'],
             'Probability': 'mean'
@@ -247,7 +336,11 @@ if df is not None:
 
     # Deal Distribution Tab
     with tab3:
-        st.header("Hunting vs Farming Distribution")
+        st.markdown("""
+            <div class="section-header">
+                <h3>🎯 Hunting vs Farming Distribution</h3>
+            </div>
+        """, unsafe_allow_html=True)
         
         # Calculate percentages
         hunting_farming = filtered_df.groupby('Hunting/Farming')['Amount'].sum().reset_index()
@@ -266,14 +359,21 @@ if df is not None:
         fig.update_layout(
             title="Distribution of Hunting vs Farming (in Lakhs)",
             showlegend=True,
-            annotations=[dict(text='Hunting/Farming', x=0.5, y=0.5, font_size=20, showarrow=False)]
+            annotations=[dict(text='Hunting/Farming', x=0.5, y=0.5, font_size=20, showarrow=False)],
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family="Inter")
         )
         
         st.plotly_chart(fig, use_container_width=True)
 
     # Detailed View Tab
     with tab4:
-        st.header("Detailed Deals")
+        st.markdown("""
+            <div class="section-header">
+                <h3>📋 Detailed Deals</h3>
+            </div>
+        """, unsafe_allow_html=True)
         
         # Add Weighted Revenue column
         filtered_df['Weighted Revenue'] = filtered_df['Amount'] * filtered_df['Probability'] / 100
@@ -309,7 +409,7 @@ if df is not None:
         # Export to CSV option
         csv = filtered_df[available_columns].to_csv(index=False)
         st.download_button(
-            label="Export to CSV",
+            label="📥 Export to CSV",
             data=csv,
             file_name="filtered_deals.csv",
             mime="text/csv"
