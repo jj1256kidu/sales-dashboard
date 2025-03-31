@@ -151,8 +151,7 @@ if 'dashboard_config' not in st.session_state:
         'show_geo_view': True,
         'show_detailed_view': True,
         'show_weighted_revenue': True,
-        'show_win_rate': True,
-        'show_probability_distribution': True
+        'show_win_rate': True
     }
 
 # Custom CSS for modern corporate styling
@@ -456,8 +455,6 @@ if input_method == "Excel File":
             df = pd.read_excel(uploaded_file, sheet_name='Raw_Data')
             if 'Amount' in df.columns:
                 df['Amount'] = df['Amount'].apply(safe_float)
-            if 'Probability' in df.columns:
-                df['Probability'] = df['Probability'].apply(safe_float)
         except Exception as e:
             st.error(f"Error reading Excel file: {str(e)}")
 else:
@@ -468,8 +465,6 @@ else:
             df = pd.read_csv(csv_url)
             if 'Amount' in df.columns:
                 df['Amount'] = df['Amount'].apply(safe_float)
-            if 'Probability' in df.columns:
-                df['Probability'] = df['Probability'].apply(safe_float)
         except Exception as e:
             st.error(f"Error reading Google Sheet: {str(e)}")
 
@@ -502,18 +497,8 @@ if df is not None:
                 delta_color="normal"
             )
         
-        # Average Probability
-        with kpi_cols[1]:
-            avg_probability = filtered_df['Probability'].mean()
-            st.metric(
-                "Average Probability",
-                f"{avg_probability:.1f}%",
-                delta=None,
-                delta_color="normal"
-            )
-        
         # Closed Won Amount
-        with kpi_cols[2]:
+        with kpi_cols[1]:
             won_amount = filtered_df[filtered_df['Sales Stage'].astype(str).isin(['Closed Won', 'Won'])]['Amount'].sum() / 100000
             st.metric(
                 "Closed Won",
@@ -531,10 +516,9 @@ if df is not None:
             
             quarter_metrics = filtered_df.groupby('Quarter').agg({
                 'Amount': ['sum', 'count'],
-                'Probability': 'mean'
             }).reset_index()
             
-            quarter_metrics.columns = ['Quarter', 'Total Amount (Lakhs)', 'Number of Deals', 'Avg Probability']
+            quarter_metrics.columns = ['Quarter', 'Total Amount (Lakhs)', 'Number of Deals']
             quarter_metrics['Total Amount (Lakhs)'] = quarter_metrics['Total Amount (Lakhs)'] / 100000
             
             fig = px.bar(
@@ -558,8 +542,7 @@ if df is not None:
             # Display metrics table
             st.dataframe(
                 quarter_metrics.style.format({
-                    'Total Amount (Lakhs)': '₹{:.2f}L',
-                    'Avg Probability': '{:.1f}%'
+                    'Total Amount (Lakhs)': '₹{:.2f}L'
                 }),
                 use_container_width=True
             )
@@ -747,8 +730,8 @@ if df is not None:
         
         fig = px.scatter(
             filtered_df,
-            x='Probability',
-            y='Amount',
+            x='Amount',
+            y='Probability',
             size='Amount',
             color='Practice',
             hover_data=['Organization Name', 'Sales Stage'],
@@ -783,9 +766,6 @@ if df is not None:
             }),
             use_container_width=True
         )
-        
-        if st.session_state.dashboard_config['show_probability_distribution']:
-            show_probability_distribution()
 
     def show_leaderboard():
         if not st.session_state.dashboard_config['show_leaderboard']:
@@ -980,7 +960,7 @@ if df is not None:
         # Search filter
         search_term = st.text_input("🔍 Search", key="table_search")
         
-        # Column filters
+        # Column filters in two rows
         col1, col2, col3 = st.columns(3)
         with col1:
             practice_filter = st.multiselect(
@@ -1001,21 +981,52 @@ if df is not None:
                 default=[]
             )
         
+        # Add probability range filter in a new row
+        if 'Probability' in filtered_df.columns:
+            prob_col1, prob_col2 = st.columns(2)
+            with prob_col1:
+                min_prob = st.number_input(
+                    "Min Probability (%)",
+                    min_value=0,
+                    max_value=100,
+                    value=0,
+                    step=5
+                )
+            with prob_col2:
+                max_prob = st.number_input(
+                    "Max Probability (%)",
+                    min_value=0,
+                    max_value=100,
+                    value=100,
+                    step=5
+                )
+        
         st.markdown('</div>', unsafe_allow_html=True)
         
         # Apply filters
         filtered_table_df = filtered_df.copy()
+        
+        # Text search filter
         if search_term:
             filtered_table_df = filtered_table_df[
                 filtered_table_df['Organization Name'].astype(str).str.contains(search_term, case=False, na=False) |
                 filtered_table_df['Opportunity Number'].astype(str).str.contains(search_term, case=False, na=False)
             ]
+        
+        # Apply column filters
         if practice_filter:
             filtered_table_df = filtered_table_df[filtered_table_df['Practice'].astype(str).isin(practice_filter)]
         if stage_filter:
             filtered_table_df = filtered_table_df[filtered_table_df['Sales Stage'].astype(str).isin(stage_filter)]
         if quarter_filter:
             filtered_table_df = filtered_table_df[filtered_table_df['Quarter'].astype(str).isin(quarter_filter)]
+        
+        # Apply probability range filter
+        if 'Probability' in filtered_df.columns:
+            filtered_table_df = filtered_table_df[
+                (filtered_table_df['Probability'] >= min_prob) &
+                (filtered_table_df['Probability'] <= max_prob)
+            ]
         
         # Display table with formatting and column configuration
         st.dataframe(
@@ -1027,6 +1038,28 @@ if df is not None:
             use_container_width=True,
             height=600
         )
+        
+        # Add summary metrics for filtered data
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric(
+                "Total Amount (Filtered)",
+                format_lakhs(filtered_table_df['Amount'].sum()),
+                delta=None
+            )
+        with col2:
+            if 'Probability' in filtered_table_df.columns:
+                st.metric(
+                    "Average Probability (Filtered)",
+                    f"{filtered_table_df['Probability'].mean():.1f}%",
+                    delta=None
+                )
+        with col3:
+            st.metric(
+                "Number of Deals (Filtered)",
+                f"{len(filtered_table_df):,}",
+                delta=None
+            )
         
         # Export options
         col1, col2 = st.columns(2)
@@ -1051,59 +1084,6 @@ if df is not None:
                 file_name="filtered_deals.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
-
-    def show_probability_distribution():
-        st.markdown("""
-            <div class="section-header">
-                <h3>🎯 Probability Distribution</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Create probability bins
-        filtered_df['Probability Bin'] = pd.cut(
-            filtered_df['Probability'],
-            bins=[0, 25, 50, 75, 100],
-            labels=['0-25%', '26-50%', '51-75%', '76-100%']
-        )
-        
-        # Calculate metrics for each bin
-        prob_metrics = filtered_df.groupby('Probability Bin').agg({
-            'Amount': ['sum', 'count'],
-            'Probability': 'mean'
-        }).reset_index()
-        
-        prob_metrics.columns = ['Probability Range', 'Total Amount (Lakhs)', 'Number of Deals', 'Average Probability']
-        prob_metrics['Total Amount (Lakhs)'] = prob_metrics['Total Amount (Lakhs)'] / 100000
-        
-        # Create stacked bar chart
-        fig = go.Figure()
-        
-        fig.add_trace(go.Bar(
-            x=prob_metrics['Probability Range'],
-            y=prob_metrics['Total Amount (Lakhs)'],
-            text=prob_metrics['Total Amount (Lakhs)'].apply(lambda x: f'₹{x:.2f}L'),
-            textposition='auto',
-            marker_color=colors['primary']
-        ))
-        
-        fig = apply_theme_to_plot(fig)
-        fig.update_layout(
-            title='Pipeline Distribution by Probability Range',
-            xaxis_title='Probability Range',
-            yaxis_title='Amount (Lakhs)',
-            showlegend=False
-        )
-        
-        st.plotly_chart(fig, use_container_width=True, key="probability_distribution")
-        
-        # Display metrics table
-        st.dataframe(
-            prob_metrics.style.format({
-                'Total Amount (Lakhs)': '₹{:.2f}L',
-                'Average Probability': '{:.1f}%'
-            }),
-            use_container_width=True
-        )
 
     def show_all_in_one():
         """Shows all enabled dashboard components on a single page"""
@@ -1137,10 +1117,6 @@ if df is not None:
         if st.session_state.dashboard_config['show_geo_view']:
             show_geo()
         
-        # Probability Distribution
-        if st.session_state.dashboard_config['show_probability_distribution']:
-            show_probability_distribution()
-        
         # Detailed View
         if st.session_state.dashboard_config['show_detailed_view']:
             show_detailed()
@@ -1162,8 +1138,7 @@ if df is not None:
         'leaderboard': '👥 Leaderboard',
         'geo': '🌍 Geography',
         'detailed': '🧾 Detailed',
-        'editor': '✏️ Data Editor',
-        'probability': '🎯 Probability'
+        'editor': '✏️ Data Editor'
     }
 
     # Split items into two rows (5 items per row)
@@ -1240,8 +1215,7 @@ if df is not None:
             'strategy': show_strategy,
             'leaderboard': show_leaderboard,
             'geo': show_geo,
-            'detailed': show_detailed,
-            'probability': show_probability_distribution
+            'detailed': show_detailed
         }
         
         if st.session_state.current_view in view_functions:
@@ -1288,19 +1262,11 @@ with st.sidebar:
         "Show Strategy View",
         value=st.session_state.dashboard_config['show_strategy_view']
     )
-    st.session_state.dashboard_config['show_probability_distribution'] = st.checkbox(
-        "Show Probability Distribution",
-        value=st.session_state.dashboard_config['show_probability_distribution']
-    )
     
     st.markdown("**👥 Team Settings**")
     st.session_state.dashboard_config['show_leaderboard'] = st.checkbox(
         "Show Sales Leaderboard",
         value=st.session_state.dashboard_config['show_leaderboard']
-    )
-    st.session_state.dashboard_config['show_win_rate'] = st.checkbox(
-        "Show Win Rate Analysis",
-        value=st.session_state.dashboard_config['show_win_rate']
     )
     
     st.markdown("**🌍 Geography Settings**")
