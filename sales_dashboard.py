@@ -8,7 +8,7 @@ import io
 
 # Initialize session state for theme
 if 'theme' not in st.session_state:
-    st.session_state.theme = 'light'
+    st.session_state.theme = 'dark'
 
 # Borealis theme colors
 def get_theme_colors():
@@ -28,7 +28,23 @@ def get_theme_colors():
             'accent1': '#6366F1',     # Indigo accent
             'accent2': '#EC4899',     # Pink accent
             'warning': '#F59E0B',     # Amber warning
-            'error': '#EF4444'        # Red error
+            'error': '#EF4444',       # Red error
+            'input_bg': '#1E293B',    # Input background
+            'input_border': '#334155', # Input border
+            'input_text': '#E2E8F0',  # Input text
+            'select_bg': '#1E293B',   # Select background
+            'select_border': '#334155', # Select border
+            'select_text': '#E2E8F0', # Select text
+            'radio_bg': '#1E293B',    # Radio background
+            'radio_border': '#334155', # Radio border
+            'radio_text': '#E2E8F0',  # Radio text
+            'table_header': '#1E293B', # Table header background
+            'table_row': '#1E293B',   # Table row background
+            'table_hover': '#2D3748', # Table row hover
+            'table_border': '#334155', # Table border
+            'table_text': '#E2E8F0',  # Table text
+            'sidebar_bg': '#1E293B',  # Sidebar background
+            'sidebar_text': '#E2E8F0' # Sidebar text
         }
     else:
         return {
@@ -46,10 +62,26 @@ def get_theme_colors():
             'accent1': '#6366F1',     # Indigo accent
             'accent2': '#EC4899',     # Pink accent
             'warning': '#F59E0B',     # Amber warning
-            'error': '#EF4444'        # Red error
+            'error': '#EF4444',       # Red error
+            'input_bg': '#FFFFFF',    # Input background
+            'input_border': '#E2E8F0', # Input border
+            'input_text': '#1E293B',  # Input text
+            'select_bg': '#FFFFFF',   # Select background
+            'select_border': '#E2E8F0', # Select border
+            'select_text': '#1E293B', # Select text
+            'radio_bg': '#FFFFFF',    # Radio background
+            'radio_border': '#E2E8F0', # Radio border
+            'radio_text': '#1E293B',  # Radio text
+            'table_header': '#F8FAFC', # Table header background
+            'table_row': '#FFFFFF',   # Table row background
+            'table_hover': '#F1F5F9', # Table row hover
+            'table_border': '#E2E8F0', # Table border
+            'table_text': '#1E293B',  # Table text
+            'sidebar_bg': '#FFFFFF',  # Sidebar background
+            'sidebar_text': '#1E293B' # Sidebar text
         }
 
-# Set page config with full page mode
+# Set page config with full page mode and dark theme
 st.set_page_config(
     page_title="Sales Dashboard",
     page_icon="📊",
@@ -135,7 +167,7 @@ st.markdown(f"""
         padding: 1rem 2rem;
         margin-bottom: 2rem;
         border-bottom: 1px solid {colors['border']};
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }}
     
     /* Tab Styling */
@@ -163,12 +195,12 @@ st.markdown(f"""
         gap: 0.5rem;
         min-width: 200px;
         justify-content: center;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }}
     
     .stTabs [data-baseweb="tab"]:hover {{
         transform: translateY(-2px);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         background-color: {colors['hover']};
     }}
     
@@ -206,13 +238,13 @@ st.markdown(f"""
         border-radius: 12px;
         padding: 1.5rem;
         margin-bottom: 1rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         transition: all 0.3s ease;
     }}
     
     .stMetric:hover {{
         transform: translateY(-2px);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
     }}
     
     .stMetric [data-testid="stMetricValue"] {{
@@ -231,27 +263,28 @@ st.markdown(f"""
         background-color: {colors['card_bg']};
         border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         border: 1px solid {colors['border']};
         margin-top: 1rem;
     }}
     
     .stDataFrame thead th {{
-        background-color: {colors['hover']};
-        color: {colors['text']};
+        background-color: {colors['table_header']};
+        color: {colors['table_text']};
         font-weight: 600;
         padding: 1rem;
-        border-bottom: 1px solid {colors['border']};
+        border-bottom: 1px solid {colors['table_border']};
     }}
     
     .stDataFrame tbody td {{
         padding: 1rem;
-        border-bottom: 1px solid {colors['border']};
-        color: {colors['text']};
+        border-bottom: 1px solid {colors['table_border']};
+        color: {colors['table_text']};
+        background-color: {colors['table_row']};
     }}
     
     .stDataFrame tbody tr:hover {{
-        background-color: {colors['hover']};
+        background-color: {colors['table_hover']};
     }}
     
     /* Table Filters */
@@ -264,7 +297,7 @@ st.markdown(f"""
         padding: 1.5rem;
         border-radius: 12px;
         border: 1px solid {colors['border']};
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }}
     
     .table-filter-item {{
@@ -293,21 +326,34 @@ st.markdown(f"""
     
     /* Input Fields */
     .stTextInput input, .stNumberInput input {{
-        background-color: {colors['card_bg']};
-        border: 1px solid {colors['border']};
+        background-color: {colors['input_bg']};
+        border: 1px solid {colors['input_border']};
         border-radius: 8px;
-        color: {colors['text']};
+        color: {colors['input_text']};
         padding: 0.5rem;
         font-family: 'Inter', sans-serif;
     }}
     
+    /* Select Boxes */
+    .stSelectbox select {{
+        background-color: {colors['select_bg']};
+        border: 1px solid {colors['select_border']};
+        color: {colors['select_text']};
+    }}
+    
     /* Radio Buttons */
     .stRadio > div {{
-        background-color: {colors['card_bg']};
+        background-color: {colors['radio_bg']};
         border-radius: 12px;
         padding: 1rem;
-        border: 1px solid {colors['border']};
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border: 1px solid {colors['radio_border']};
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }}
+    
+    /* Sidebar */
+    .css-1d391kg {{
+        background-color: {colors['sidebar_bg']};
+        color: {colors['sidebar_text']};
     }}
     
     /* Responsive Design */
@@ -359,8 +405,8 @@ with col1:
 with col2:
     theme = st.selectbox(
         "Theme",
-        ["Light", "Dark"],
-        index=0 if st.session_state.theme == 'light' else 1,
+        ["Dark", "Light"],
+        index=0 if st.session_state.theme == 'dark' else 1,
         key='theme_selector'
     )
     st.session_state.theme = theme.lower()
@@ -971,4 +1017,4 @@ if df is not None:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 else:
-    st.info("Please upload data to view the dashboard.")
+    st.info("Please upload data to view the dashboard.") 
