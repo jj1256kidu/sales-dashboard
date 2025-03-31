@@ -1105,6 +1105,46 @@ if df is not None:
             use_container_width=True
         )
 
+    def show_all_in_one():
+        """Shows all enabled dashboard components on a single page"""
+        st.markdown("""
+            <div class="section-header">
+                <h3>🎯 All In One Dashboard View</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Overview Section
+        if st.session_state.dashboard_config['show_kpis']:
+            show_overview()
+        
+        # Trends Section
+        if st.session_state.dashboard_config['show_monthly_trend']:
+            show_trends()
+        
+        # Funnel Section
+        if st.session_state.dashboard_config['show_sales_funnel']:
+            show_funnel()
+        
+        # Strategy Section
+        if st.session_state.dashboard_config['show_strategy_view']:
+            show_strategy()
+        
+        # Leaderboard Section
+        if st.session_state.dashboard_config['show_leaderboard']:
+            show_leaderboard()
+        
+        # Geography Section
+        if st.session_state.dashboard_config['show_geo_view']:
+            show_geo()
+        
+        # Probability Distribution
+        if st.session_state.dashboard_config['show_probability_distribution']:
+            show_probability_distribution()
+        
+        # Detailed View
+        if st.session_state.dashboard_config['show_detailed_view']:
+            show_detailed()
+
     # Navigation menu
     st.markdown("""
         <div class="section-header">
@@ -1114,6 +1154,7 @@ if df is not None:
 
     # Create navigation using Streamlit columns
     nav_items = {
+        'all_in_one': '🎯 All In One',
         'overview': '📊 Overview',
         'trends': '📈 Trends',
         'funnel': '🔄 Funnel',
@@ -1134,14 +1175,14 @@ if df is not None:
         with nav_cols1[i]:
             if st.button(label, key=f"nav_{key}", use_container_width=True):
                 st.session_state.current_view = key
-                st.experimental_rerun()
+                st.rerun()
 
     # Second row of navigation
     for i, (key, label) in enumerate(list(nav_items.items())[6:]):
         with nav_cols2[i]:
             if st.button(label, key=f"nav_{key}", use_container_width=True):
                 st.session_state.current_view = key
-                st.experimental_rerun()
+                st.rerun()
 
     # Show the selected view
     if st.session_state.current_view == 'editor':
@@ -1188,6 +1229,7 @@ if df is not None:
     else:
         # Show the selected dashboard view
         view_functions = {
+            'all_in_one': show_all_in_one,
             'overview': show_overview,
             'trends': show_trends,
             'funnel': show_funnel,
