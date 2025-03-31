@@ -515,6 +515,9 @@ else:
             st.error(f"Error reading Google Sheet: {str(e)}")
 
 if df is not None:
+    # Initialize filtered_df with the original dataframe
+    filtered_df = df.copy()
+    
     # Configuration Section
     with st.sidebar:
         st.markdown("""
