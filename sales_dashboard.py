@@ -151,7 +151,8 @@ if 'dashboard_config' not in st.session_state:
         'show_geo_view': True,
         'show_detailed_view': True,
         'show_weighted_revenue': True,
-        'show_win_rate': True
+        'show_win_rate': True,
+        'show_financial_year': True
     }
 
 # Custom CSS for modern corporate styling
@@ -507,10 +508,105 @@ if df is not None:
                 delta_color="normal"
             )
         
+        if st.session_state.dashboard_config['show_financial_year']:
+            st.markdown("""
+                <div class="section-header">
+                    <h3>💰 Financial Year Analysis</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Convert Expected Close Date to datetime if it's not already
+            filtered_df['Date'] = pd.to_datetime(filtered_df['Expected Close Date'], errors='coerce')
+            
+            # Add Financial Year column
+            filtered_df['Financial Year'] = filtered_df['Date'].apply(
+                lambda x: f"FY{str(x.year)[2:]}-{str(x.year + 1)[2:]}" if x.month >= 4 
+                else f"FY{str(x.year - 1)[2:]}-{str(x.year)[2:]}" if pd.notnull(x) else "Unknown"
+            )
+            
+            # Calculate metrics by Financial Year
+            fy_metrics = filtered_df.groupby('Financial Year').agg({
+                'Amount': ['sum', 'count'],
+                'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum()
+            }).reset_index()
+            
+            fy_metrics.columns = ['Financial Year', 'Total Amount', 'Deal Count', 'Won Deals']
+            fy_metrics['Win Rate'] = (fy_metrics['Won Deals'] / fy_metrics['Deal Count'] * 100).round(1)
+            fy_metrics['Total Amount'] = fy_metrics['Total Amount'] / 100000  # Convert to Lakhs
+            
+            # Remove "Unknown" FY and sort by Financial Year
+            fy_metrics = fy_metrics[fy_metrics['Financial Year'] != "Unknown"].sort_values('Financial Year')
+            
+            # Create a combined bar and line chart
+            fig = go.Figure()
+            
+            # Add bar chart for Total Amount
+            fig.add_trace(go.Bar(
+                x=fy_metrics['Financial Year'],
+                y=fy_metrics['Total Amount'],
+                name='Total Amount',
+                marker_color=colors['primary'],
+                text=fy_metrics['Total Amount'].apply(lambda x: f'₹{x:.2f}L'),
+                textposition='outside'
+            ))
+            
+            # Add line chart for Win Rate
+            fig.add_trace(go.Scatter(
+                x=fy_metrics['Financial Year'],
+                y=fy_metrics['Win Rate'],
+                name='Win Rate',
+                yaxis='y2',
+                line=dict(color=colors['success'], width=2),
+                mode='lines+markers+text',
+                text=fy_metrics['Win Rate'].apply(lambda x: f'{x:.1f}%'),
+                textposition='top center'
+            ))
+            
+            fig = apply_theme_to_plot(fig)
+            fig.update_layout(
+                title='Financial Year Performance Overview',
+                xaxis=dict(title='Financial Year'),
+                yaxis=dict(
+                    title='Total Amount (Lakhs)',
+                    titlefont=dict(color=colors['primary']),
+                    tickfont=dict(color=colors['primary'])
+                ),
+                yaxis2=dict(
+                    title='Win Rate (%)',
+                    titlefont=dict(color=colors['success']),
+                    tickfont=dict(color=colors['success']),
+                    overlaying='y',
+                    side='right',
+                    range=[0, 100]
+                ),
+                showlegend=True,
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1
+                ),
+                barmode='group'
+            )
+            
+            st.plotly_chart(fig, use_container_width=True, key="financial_year")
+            
+            # Display metrics table with formatting
+            st.dataframe(
+                fy_metrics.style.format({
+                    'Total Amount': '₹{:.2f}L',
+                    'Deal Count': '{:,.0f}',
+                    'Won Deals': '{:,.0f}',
+                    'Win Rate': '{:.1f}%'
+                }),
+                use_container_width=True
+            )
+        
         if st.session_state.dashboard_config['show_quarter_breakdown']:
             st.markdown("""
                 <div class="section-header">
-                    <h3>📊 Quarter-wise Breakdown</h3>
+                    <h3>�� Quarter-wise Breakdown</h3>
                 </div>
             """, unsafe_allow_html=True)
             
@@ -1235,6 +1331,10 @@ with st.sidebar:
     st.session_state.dashboard_config['show_kpis'] = st.checkbox(
         "Show Key Performance Indicators",
         value=st.session_state.dashboard_config['show_kpis']
+    )
+    st.session_state.dashboard_config['show_financial_year'] = st.checkbox(
+        "Show Financial Year Breakdown",
+        value=st.session_state.dashboard_config['show_financial_year']
     )
     st.session_state.dashboard_config['show_quarter_breakdown'] = st.checkbox(
         "Show Quarter-wise Breakdown",
