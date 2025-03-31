@@ -81,13 +81,36 @@ def get_theme_colors():
             'sidebar_text': '#1A1A1A' # Sidebar text
         }
 
-# Set page config with full page mode
+# Set page config with full page mode and theme
 st.set_page_config(
     page_title="Sales Dashboard",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+# Title and Theme Selection
+col1, col2 = st.columns([6, 1])
+with col1:
+    st.title("📊 Sales Dashboard")
+with col2:
+    # Theme selector with proper state management
+    theme_options = {
+        "Dark": "dark",
+        "Light": "light"
+    }
+    selected_theme = st.selectbox(
+        "Theme",
+        options=list(theme_options.keys()),
+        index=0 if st.session_state.theme == 'dark' else 1,
+        key='theme_selector'
+    )
+    
+    # Update theme state if changed
+    new_theme = theme_options[selected_theme]
+    if new_theme != st.session_state.theme:
+        st.session_state.theme = new_theme
+        st.rerun()
 
 # Get current theme colors
 colors = get_theme_colors()
@@ -158,6 +181,58 @@ if 'dashboard_config' not in st.session_state:
 # Custom CSS for modern corporate styling
 st.markdown(f"""
     <style>
+    /* Base Theme */
+    :root {{
+        --background-color: {colors['background']};
+        --text-color: {colors['text']};
+        --card-bg-color: {colors['card_bg']};
+        --border-color: {colors['border']};
+        --primary-color: {colors['primary']};
+    }}
+    
+    /* Main Layout */
+    .main {{
+        background-color: var(--background-color) !important;
+        color: var(--text-color) !important;
+    }}
+    
+    .stApp {{
+        background-color: var(--background-color) !important;
+    }}
+    
+    /* Streamlit Elements Override */
+    div[data-testid="stToolbar"] {{
+        background-color: var(--background-color) !important;
+        color: var(--text-color) !important;
+    }}
+    
+    .stSelectbox div[data-baseweb="select"] {{
+        background-color: var(--card-bg-color) !important;
+        border-color: var(--border-color) !important;
+    }}
+    
+    .stTextInput input {{
+        background-color: var(--card-bg-color) !important;
+        border-color: var(--border-color) !important;
+        color: var(--text-color) !important;
+    }}
+    
+    /* Data Editor Specific Styles */
+    [data-testid="stDataEditor"] {{
+        background-color: var(--card-bg-color) !important;
+    }}
+    
+    [data-testid="stDataEditor"] div[role="grid"] {{
+        background-color: var(--card-bg-color) !important;
+        color: var(--text-color) !important;
+    }}
+    
+    [data-testid="stDataEditor"] div[role="gridcell"] {{
+        background-color: var(--card-bg-color) !important;
+        color: var(--text-color) !important;
+        border-color: var(--border-color) !important;
+    }}
+    
     /* Main Layout */
     .main {{
         padding: 0;
@@ -423,22 +498,6 @@ st.markdown(f"""
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     .stDeployButton {{display:none;}}
-    
-    /* Streamlit Elements Override */
-    .stApp {{
-        background-color: {colors['background']} !important;
-    }}
-    
-    .stSelectbox div[data-baseweb="select"] {{
-        background-color: {colors['select_bg']};
-        border-color: {colors['select_border']};
-    }}
-    
-    .stTextInput input {{
-        background-color: {colors['input_bg']};
-        border-color: {colors['input_border']};
-        color: {colors['input_text']};
-    }}
     </style>
 """, unsafe_allow_html=True)
 
