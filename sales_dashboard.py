@@ -46,6 +46,47 @@ st.set_page_config(
 # Get current theme colors
 colors = get_theme_colors()
 
+# Helper functions
+def format_lakhs(value):
+    try:
+        return f"₹{float(value)/100000:,.2f}L"
+    except (ValueError, TypeError):
+        return "₹0.00L"
+
+def safe_float(value):
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return 0.0
+
+def safe_sort_unique(series):
+    """Safely sort unique values from a series, handling mixed types."""
+    unique_values = series.unique()
+    # Convert all values to strings for consistent sorting
+    return sorted([str(x) for x in unique_values if pd.notna(x)])
+
+def apply_theme_to_plot(fig):
+    fig.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(
+            family="Inter",
+            color=colors['text']
+        ),
+        xaxis=dict(
+            gridcolor=colors['border'],
+            color=colors['text']
+        ),
+        yaxis=dict(
+            gridcolor=colors['border'],
+            color=colors['text']
+        ),
+        legend=dict(
+            font=dict(color=colors['text'])
+        )
+    )
+    return fig
+
 # Custom CSS for modern styling
 st.markdown(f"""
     <style>
@@ -191,41 +232,6 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
-# Helper functions
-def format_lakhs(value):
-    try:
-        return f"₹{float(value)/100000:,.2f}L"
-    except (ValueError, TypeError):
-        return "₹0.00L"
-
-def safe_float(value):
-    try:
-        return float(value)
-    except (ValueError, TypeError):
-        return 0.0
-
-def apply_theme_to_plot(fig):
-    fig.update_layout(
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-        font=dict(
-            family="Inter",
-            color=colors['text']
-        ),
-        xaxis=dict(
-            gridcolor=colors['border'],
-            color=colors['text']
-        ),
-        yaxis=dict(
-            gridcolor=colors['border'],
-            color=colors['text']
-        ),
-        legend=dict(
-            font=dict(color=colors['text'])
-        )
-    )
-    return fig
-
 # Title and Header
 st.title("📊 Sales Dashboard")
 
@@ -306,25 +312,25 @@ if df is not None:
         """, unsafe_allow_html=True)
         
         # Practice filter
-        practices = ['All'] + sorted(df['Practice'].astype(str).unique().tolist())
+        practices = ['All'] + safe_sort_unique(df['Practice'])
         selected_practice = st.selectbox("Practice", practices)
         
         # Quarter filter
-        quarters = ['All'] + sorted(df['Quarter'].astype(str).unique().tolist())
+        quarters = ['All'] + safe_sort_unique(df['Quarter'])
         selected_quarter = st.selectbox("Quarter", quarters)
         
         # Hunting/Farming filter
-        deal_types = ['All'] + sorted(df['Hunting/Farming'].astype(str).unique().tolist())
+        deal_types = ['All'] + safe_sort_unique(df['Hunting/Farming'])
         selected_deal_type = st.selectbox("Hunting/Farming", deal_types)
         
         # Sales Owner filter (if available)
         if 'Sales Owner' in df.columns:
-            sales_owners = ['All'] + sorted(df['Sales Owner'].astype(str).unique().tolist())
+            sales_owners = ['All'] + safe_sort_unique(df['Sales Owner'])
             selected_sales_owner = st.selectbox("Sales Owner", sales_owners)
         
         # Tech Owner filter (if available)
         if 'Tech Owner' in df.columns:
-            tech_owners = ['All'] + sorted(df['Tech Owner'].astype(str).unique().tolist())
+            tech_owners = ['All'] + safe_sort_unique(df['Tech Owner'])
             selected_tech_owner = st.selectbox("Tech Owner", tech_owners)
 
     # Apply filters
@@ -659,23 +665,27 @@ if df is not None:
             </div>
         """, unsafe_allow_html=True)
         
-        if 'Region' in filtered_df.columns:
-            # Calculate region-wise metrics
-            region_metrics = filtered_df.groupby('Region').agg({
+        # Check for available geography columns
+        geography_columns = ['Region', 'Country', 'Geography']
+        available_geo_column = next((col for col in geography_columns if col in filtered_df.columns), None)
+        
+        if available_geo_column:
+            # Calculate geography-wise metrics
+            geo_metrics = filtered_df.groupby(available_geo_column).agg({
                 'Amount': 'sum',
                 'Opportunity Number': 'count'
             }).reset_index()
             
-            region_metrics['Amount'] = region_metrics['Amount'] / 100000
+            geo_metrics['Amount'] = geo_metrics['Amount'] / 100000
             
             # Create choropleth map
             fig = px.choropleth(
-                region_metrics,
-                locations='Region',
-                locationmode='country names',
+                geo_metrics,
+                locations=available_geo_column,
+                locationmode='country names' if available_geo_column in ['Country', 'Geography'] else None,
                 color='Amount',
                 hover_data=['Opportunity Number'],
-                title='Regional Pipeline Distribution',
+                title=f'{available_geo_column}-wise Pipeline Distribution',
                 color_continuous_scale='Viridis'
             )
             
@@ -689,8 +699,23 @@ if df is not None:
             )
             
             st.plotly_chart(fig, use_container_width=True)
+            
+            # Display geography metrics table
+            st.markdown("""
+                <div class="section-header">
+                    <h3>📊 Geography Metrics</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            st.dataframe(
+                geo_metrics.style.format({
+                    'Amount': '₹{:.2f}L',
+                    'Opportunity Number': '{:,.0f}'
+                }),
+                use_container_width=True
+            )
         else:
-            st.info("Region data is not available in the dataset.")
+            st.info("No geography data (Region, Country, or Geography) is available in the dataset.")
 
     # Detailed View Tab
     with tab7:
@@ -732,19 +757,19 @@ if df is not None:
         with col1:
             practice_filter = st.multiselect(
                 "Practice",
-                options=sorted(filtered_df['Practice'].unique()),
+                options=safe_sort_unique(filtered_df['Practice']),
                 default=[]
             )
         with col2:
             stage_filter = st.multiselect(
                 "Sales Stage",
-                options=sorted(filtered_df['Sales Stage'].unique()),
+                options=safe_sort_unique(filtered_df['Sales Stage']),
                 default=[]
             )
         with col3:
             quarter_filter = st.multiselect(
                 "Quarter",
-                options=sorted(filtered_df['Quarter'].unique()),
+                options=safe_sort_unique(filtered_df['Quarter']),
                 default=[]
             )
         
@@ -754,15 +779,15 @@ if df is not None:
         filtered_table_df = filtered_df.copy()
         if search_term:
             filtered_table_df = filtered_table_df[
-                filtered_table_df['Organization Name'].str.contains(search_term, case=False, na=False) |
-                filtered_table_df['Opportunity Number'].str.contains(search_term, case=False, na=False)
+                filtered_table_df['Organization Name'].astype(str).str.contains(search_term, case=False, na=False) |
+                filtered_table_df['Opportunity Number'].astype(str).str.contains(search_term, case=False, na=False)
             ]
         if practice_filter:
-            filtered_table_df = filtered_table_df[filtered_table_df['Practice'].isin(practice_filter)]
+            filtered_table_df = filtered_table_df[filtered_table_df['Practice'].astype(str).isin(practice_filter)]
         if stage_filter:
-            filtered_table_df = filtered_table_df[filtered_table_df['Sales Stage'].isin(stage_filter)]
+            filtered_table_df = filtered_table_df[filtered_table_df['Sales Stage'].astype(str).isin(stage_filter)]
         if quarter_filter:
-            filtered_table_df = filtered_table_df[filtered_table_df['Quarter'].isin(quarter_filter)]
+            filtered_table_df = filtered_table_df[filtered_table_df['Quarter'].astype(str).isin(quarter_filter)]
         
         # Display table with formatting and column configuration
         st.dataframe(
@@ -799,5 +824,4 @@ if df is not None:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 else:
-    st.info("Please upload data to view the dashboard.") 
-    st.info("Please upload data to view the dashboard.") 
+    st.info("Please upload data to view the dashboard.")
