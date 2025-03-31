@@ -1166,19 +1166,23 @@ if df is not None:
         'probability': '🎯 Probability'
     }
 
-    # Create two rows of buttons for navigation
-    nav_cols1 = st.columns(6)
-    nav_cols2 = st.columns(3)
+    # Split items into two rows (5 items per row)
+    first_row_items = list(nav_items.items())[:5]
+    second_row_items = list(nav_items.items())[5:]
+
+    # Create rows with equal number of columns
+    nav_cols1 = st.columns(5)
+    nav_cols2 = st.columns(5)
 
     # First row of navigation
-    for i, (key, label) in enumerate(list(nav_items.items())[:6]):
+    for i, (key, label) in enumerate(first_row_items):
         with nav_cols1[i]:
             if st.button(label, key=f"nav_{key}", use_container_width=True):
                 st.session_state.current_view = key
                 st.rerun()
 
     # Second row of navigation
-    for i, (key, label) in enumerate(list(nav_items.items())[6:]):
+    for i, (key, label) in enumerate(second_row_items):
         with nav_cols2[i]:
             if st.button(label, key=f"nav_{key}", use_container_width=True):
                 st.session_state.current_view = key
