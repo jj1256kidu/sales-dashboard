@@ -1,269 +1,17 @@
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime
-import numpy as np
-
-# Set page config
-st.set_page_config(
-    page_title="Sales Dashboard",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Custom CSS for modern styling
-st.markdown("""
-    <style>
-    /* Main Layout */
-    .main {
-        padding: 2rem;
-        background-color: #f8fafc;
-    }
-    
-    /* Sidebar Styling */
-    .css-1d391kg {
-        background-color: #ffffff;
-        padding: 2rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
-    
-    /* Header Styling */
-    .css-1v0mbdj {
-        margin-bottom: 2rem;
-    }
-    
-    /* Tabs Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
-        background-color: transparent;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        white-space: pre-wrap;
-        background-color: #f1f5f9;
-        border-radius: 8px;
-        padding: 0 1.5rem;
-        color: #64748b;
-        font-weight: 500;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #3b82f6;
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-    }
-    
-    /* Metric Cards */
-    .stMetric {
-        background-color: #ffffff;
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        margin: 0.5rem 0;
-        border: 1px solid #e2e8f0;
-    }
-    .stMetric:hover {
-        transform: translateY(-2px);
-        transition: transform 0.2s ease-in-out;
-    }
-    
-    /* DataFrames */
-    .stDataFrame {
-        background-color: #ffffff;
-        border-radius: 12px;
-        padding: 1rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e2e8f0;
-    }
-    
-    /* Headers */
-    h1, h2, h3 {
-        color: #1e293b;
-        font-weight: 600;
-        margin-bottom: 1rem;
-    }
-    
-    /* Selectbox Styling */
-    .stSelectbox {
-        background-color: #ffffff;
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    /* Radio Buttons */
-    .stRadio > div {
-        background-color: #ffffff;
-        border-radius: 8px;
-        padding: 1rem;
-        border: 1px solid #e2e8f0;
-    }
-    
-    /* Number Input */
-    .stNumberInput input {
-        border-radius: 8px;
-        border: 1px solid #e2e8f0;
-    }
-    
-    /* Download Button */
-    .stDownloadButton button {
-        background-color: #3b82f6;
-        color: white;
-        border-radius: 8px;
-        padding: 0.5rem 1rem;
-        border: none;
-        font-weight: 500;
-    }
-    .stDownloadButton button:hover {
-        background-color: #2563eb;
-    }
-    
-    /* Section Headers */
-    .section-header {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 1.5rem;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid #e2e8f0;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# Helper functions
-def format_lakhs(value):
-    try:
-        return f"₹{float(value)/100000:,.2f}L"
-    except (ValueError, TypeError):
-        return "₹0.00L"
-
-def safe_float(value):
-    try:
-        return float(value)
-    except (ValueError, TypeError):
-        return 0.0
-
-# Title and Header
-st.title("📊 Sales Dashboard")
-
-# Sidebar
-with st.sidebar:
-    st.markdown("""
-        <div class="section-header">
-            <h3>⚙️ Settings</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Theme toggle
-    theme = st.selectbox(
-        "Theme",
-        ["Light", "Dark"],
-        index=0
-    )
-    
-    # Sales Target Input
-    st.markdown("""
-        <div class="section-header">
-            <h3>🎯 Sales Target</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    sales_target = st.number_input(
-        "Enter Sales Target (in Lakhs)",
-        min_value=0.0,
-        value=100.0,
-        step=10.0
-    )
-
-# Data Input Section
-st.markdown("""
-    <div class="section-header">
-        <h3>📁 Data Input</h3>
-    </div>
-""", unsafe_allow_html=True)
-
-input_method = st.radio("Choose data input method:", ["Excel File", "Google Sheet URL"])
-
-df = None
-if input_method == "Excel File":
-    uploaded_file = st.file_uploader("Upload Excel file", type=['xlsx'])
-    if uploaded_file is not None:
-        try:
-            df = pd.read_excel(uploaded_file, sheet_name='Raw_Data')
-            if 'Amount' in df.columns:
-                df['Amount'] = df['Amount'].apply(safe_float)
-            if 'Probability' in df.columns:
-                df['Probability'] = df['Probability'].apply(safe_float)
-        except Exception as e:
-            st.error(f"Error reading Excel file: {str(e)}")
-else:
-    sheet_url = st.text_input("Paste Google Sheet URL")
-    if sheet_url:
-        try:
-            csv_url = sheet_url.replace("/edit#gid=", "/export?format=csv&gid=")
-            df = pd.read_csv(csv_url)
-            if 'Amount' in df.columns:
-                df['Amount'] = df['Amount'].apply(safe_float)
-            if 'Probability' in df.columns:
-                df['Probability'] = df['Probability'].apply(safe_float)
-        except Exception as e:
-            st.error(f"Error reading Google Sheet: {str(e)}")
-
-if df is not None:
-    # Sidebar Filters
-    with st.sidebar:
-        st.markdown("""
-            <div class="section-header">
-                <h3>🔍 Filters</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Practice filter
-        practices = ['All'] + sorted(df['Practice'].astype(str).unique().tolist())
-        selected_practice = st.selectbox("Practice", practices)
-        
-        # Quarter filter
-        quarters = ['All'] + sorted(df['Quarter'].astype(str).unique().tolist())
-        selected_quarter = st.selectbox("Quarter", quarters)
-        
-        # Hunting/Farming filter
-        deal_types = ['All'] + sorted(df['Hunting/Farming'].astype(str).unique().tolist())
-        selected_deal_type = st.selectbox("Hunting/Farming", deal_types)
-        
-        # Sales Owner filter (if available)
-        if 'Sales Owner' in df.columns:
-            sales_owners = ['All'] + sorted(df['Sales Owner'].astype(str).unique().tolist())
-            selected_sales_owner = st.selectbox("Sales Owner", sales_owners)
-        
-        # Tech Owner filter (if available)
-        if 'Tech Owner' in df.columns:
-            tech_owners = ['All'] + sorted(df['Tech Owner'].astype(str).unique().tolist())
-            selected_tech_owner = st.selectbox("Tech Owner", tech_owners)
-
-    # Apply filters
-    filtered_df = df.copy()
-    if selected_practice != 'All':
-        filtered_df = filtered_df[filtered_df['Practice'].astype(str) == selected_practice]
-    if selected_quarter != 'All':
-        filtered_df = filtered_df[filtered_df['Quarter'].astype(str) == selected_quarter]
-    if selected_deal_type != 'All':
-        filtered_df = filtered_df[filtered_df['Hunting/Farming'].astype(str) == selected_deal_type]
-    if 'Sales Owner' in df.columns and selected_sales_owner != 'All':
-        filtered_df = filtered_df[filtered_df['Sales Owner'].astype(str) == selected_sales_owner]
-    if 'Tech Owner' in df.columns and selected_tech_owner != 'All':
-        filtered_df = filtered_df[filtered_df['Tech Owner'].astype(str) == selected_tech_owner]
-
-    # Calculate KPIs (in Lakhs)
-    current_pipeline = filtered_df['Amount'].sum() / 100000
-    amount = filtered_df['Amount'].sum() / 100000
-    closed_won = filtered_df[filtered_df['Sales Stage'].astype(str).isin(['Closed Won', 'Won'])]['Amount'].sum() / 100000
-    achieved_percentage = (closed_won / sales_target * 100) if sales_target > 0 else 0
+# ... existing code until tabs creation ...
 
     # Create tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["📊 Overview", "📈 Practice Analysis", "🎯 Deal Distribution", "📋 Detailed View"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+        "📊 Overview", 
+        "👤 Sales Leaderboard", 
+        "📈 Trend View", 
+        "🔄 Funnel View", 
+        "🎯 Strategy View", 
+        "🌍 Geo View", 
+        "📋 Detailed View"
+    ])
 
-    # Overview Tab
+    # Overview Tab (existing code)
     with tab1:
         st.markdown("""
             <div class="section-header">
@@ -361,33 +109,7 @@ if df is not None:
         
         st.plotly_chart(fig, use_container_width=True)
 
-    # Practice Analysis Tab
-    with tab2:
-        st.markdown("""
-            <div class="section-header">
-                <h3>📈 Practice-wise Summary</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        practice_summary = filtered_df.groupby('Practice').agg({
-            'Amount': ['sum', 'count'],
-            'Probability': 'mean'
-        }).reset_index()
-        
-        practice_summary.columns = ['Practice', 'Total Amount (Lakhs)', 'Number of Deals', 'Avg Probability']
-        practice_summary['Total Amount (Lakhs)'] = practice_summary['Total Amount (Lakhs)'] / 100000
-        
-        # Display practice summary table
-        st.dataframe(
-            practice_summary.style.format({
-                'Total Amount (Lakhs)': '₹{:.2f}L',
-                'Avg Probability': '{:.1f}%'
-            }),
-            use_container_width=True
-        )
-
-    # Deal Distribution Tab
-    with tab3:
+        # Hunting vs Farming Distribution
         st.markdown("""
             <div class="section-header">
                 <h3>🎯 Hunting vs Farming Distribution</h3>
@@ -419,8 +141,237 @@ if df is not None:
         
         st.plotly_chart(fig, use_container_width=True)
 
-    # Detailed View Tab
+    # Sales Leaderboard Tab
+    with tab2:
+        st.markdown("""
+            <div class="section-header">
+                <h3>👤 Sales Leaderboard</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        if 'Sales Owner' in filtered_df.columns:
+            # Calculate owner-wise metrics
+            owner_metrics = filtered_df.groupby('Sales Owner').agg({
+                'Amount': 'sum',
+                'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum()
+            }).reset_index()
+            
+            owner_metrics.columns = ['Sales Owner', 'Total Pipeline', 'Closed Won']
+            owner_metrics['Total Pipeline'] = owner_metrics['Total Pipeline'] / 100000
+            owner_metrics['Closed Won'] = owner_metrics['Closed Won'] / 100000
+            owner_metrics['Win Rate'] = (owner_metrics['Closed Won'] / owner_metrics['Total Pipeline'] * 100).round(1)
+            
+            # Sort by Total Pipeline
+            owner_metrics = owner_metrics.sort_values('Total Pipeline', ascending=False)
+            
+            # Display owner metrics table
+            st.dataframe(
+                owner_metrics.style.format({
+                    'Total Pipeline': '₹{:.2f}L',
+                    'Closed Won': '₹{:.2f}L',
+                    'Win Rate': '{:.1f}%'
+                }),
+                use_container_width=True
+            )
+            
+            # Create horizontal bar chart
+            fig = go.Figure()
+            
+            fig.add_trace(go.Bar(
+                y=owner_metrics['Sales Owner'],
+                x=owner_metrics['Total Pipeline'],
+                name='Total Pipeline',
+                orientation='h',
+                marker_color='#3b82f6'
+            ))
+            
+            fig.add_trace(go.Bar(
+                y=owner_metrics['Sales Owner'],
+                x=owner_metrics['Closed Won'],
+                name='Closed Won',
+                orientation='h',
+                marker_color='#10b981'
+            ))
+            
+            fig.update_layout(
+                title='Sales Owner Performance',
+                barmode='overlay',
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(family="Inter"),
+                xaxis_title='Amount (Lakhs)',
+                yaxis_title='Sales Owner',
+                showlegend=True
+            )
+            
+            fig.update_traces(texttemplate='₹%{x:.2f}L', textposition='auto')
+            
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Sales Owner data is not available in the dataset.")
+
+    # Trend View Tab
+    with tab3:
+        st.markdown("""
+            <div class="section-header">
+                <h3>📈 Trend View</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Calculate monthly metrics
+        filtered_df['Date'] = pd.to_datetime(filtered_df['Expected Close Date'], errors='coerce')
+        monthly_metrics = filtered_df.groupby(filtered_df['Date'].dt.to_period('M')).agg({
+            'Amount': 'sum',
+            'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum()
+        }).reset_index()
+        
+        monthly_metrics['Date'] = monthly_metrics['Date'].astype(str)
+        monthly_metrics['Amount'] = monthly_metrics['Amount'] / 100000
+        
+        # Create line chart
+        fig = go.Figure()
+        
+        fig.add_trace(go.Scatter(
+            x=monthly_metrics['Date'],
+            y=monthly_metrics['Amount'],
+            name='Pipeline',
+            line=dict(color='#3b82f6', width=2),
+            mode='lines+markers'
+        ))
+        
+        fig.update_layout(
+            title='Monthly Pipeline Trend',
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family="Inter"),
+            xaxis_title='Month',
+            yaxis_title='Amount (Lakhs)',
+            showlegend=True
+        )
+        
+        fig.update_traces(texttemplate='₹%{y:.2f}L', textposition='top center')
+        
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Funnel View Tab
     with tab4:
+        st.markdown("""
+            <div class="section-header">
+                <h3>🔄 Funnel View</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Calculate stage-wise metrics
+        stage_metrics = filtered_df.groupby('Sales Stage').agg({
+            'Amount': 'sum',
+            'Opportunity Number': 'count'
+        }).reset_index()
+        
+        stage_metrics['Amount'] = stage_metrics['Amount'] / 100000
+        
+        # Create funnel chart
+        fig = go.Figure(go.Funnel(
+            y=stage_metrics['Sales Stage'],
+            x=stage_metrics['Amount'],
+            textinfo='value+percent initial',
+            texttemplate='₹%{value:.2f}L',
+            textposition='inside',
+            marker=dict(color='#3b82f6')
+        ))
+        
+        fig.update_layout(
+            title='Sales Stage Funnel',
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family="Inter"),
+            showlegend=False
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Strategy View Tab
+    with tab5:
+        st.markdown("""
+            <div class="section-header">
+                <h3>🎯 Strategy View</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Create bubble chart
+        fig = px.scatter(
+            filtered_df,
+            x='Probability',
+            y='Amount',
+            size='Amount',
+            color='Practice',
+            hover_data=['Organization Name', 'Sales Stage'],
+            title='Deal Value vs Probability by Practice',
+            labels={
+                'Amount': 'Deal Value (Lakhs)',
+                'Probability': 'Probability (%)',
+                'Practice': 'Practice'
+            }
+        )
+        
+        fig.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(family="Inter"),
+            showlegend=True
+        )
+        
+        fig.update_traces(
+            texttemplate='₹%{y:.2f}L',
+            textposition='top center'
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+
+    # Geo View Tab
+    with tab6:
+        st.markdown("""
+            <div class="section-header">
+                <h3>🌍 Geo View</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        if 'Region' in filtered_df.columns:
+            # Calculate region-wise metrics
+            region_metrics = filtered_df.groupby('Region').agg({
+                'Amount': 'sum',
+                'Opportunity Number': 'count'
+            }).reset_index()
+            
+            region_metrics['Amount'] = region_metrics['Amount'] / 100000
+            
+            # Create choropleth map
+            fig = px.choropleth(
+                region_metrics,
+                locations='Region',
+                locationmode='country names',
+                color='Amount',
+                hover_data=['Opportunity Number'],
+                title='Regional Pipeline Distribution',
+                color_continuous_scale='Viridis'
+            )
+            
+            fig.update_layout(
+                paper_bgcolor='rgba(0,0,0,0)',
+                plot_bgcolor='rgba(0,0,0,0)',
+                font=dict(family="Inter"),
+                geo=dict(
+                    showframe=False,
+                    showcoastlines=True,
+                    projection_type='equirectangular'
+                )
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("Region data is not available in the dataset.")
+
+    # Detailed View Tab (existing code)
+    with tab7:
         st.markdown("""
             <div class="section-header">
                 <h3>📋 Detailed Deals</h3>
@@ -466,5 +417,5 @@ if df is not None:
             file_name="filtered_deals.csv",
             mime="text/csv"
         )
-else:
-    st.info("Please upload data to view the dashboard.")
+
+# ... rest of the code ...
