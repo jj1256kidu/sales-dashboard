@@ -8,9 +8,9 @@ import io
 
 # Initialize session state for theme
 if 'theme' not in st.session_state:
-    st.session_state.theme = 'dark'
+    st.session_state.theme = 'light'
 
-# Borealis theme colors
+# Borealis-inspired theme colors
 def get_theme_colors():
     if st.session_state.theme == 'dark':
         return {
@@ -48,40 +48,40 @@ def get_theme_colors():
         }
     else:
         return {
-            'background': '#F8FAFC',  # Light background
-            'text': '#1E293B',        # Dark text
+            'background': '#FAFBFF',  # Soft pastel background
+            'text': '#222222',        # Dark gray text
             'card_bg': '#FFFFFF',     # White cards
-            'border': '#E2E8F0',      # Light border
-            'primary': '#3B82F6',     # Blue accent
-            'secondary': '#64748B',   # Muted gray
-            'success': '#10B981',     # Green for success
-            'hover': '#F1F5F9',       # Hover state
+            'border': '#E5E7EB',      # Light border
+            'primary': '#60A5FA',     # Sky blue accent
+            'secondary': '#6B7280',   # Muted gray
+            'success': '#3DD598',     # Mint green
+            'hover': '#F3F4F6',       # Hover state
             'header': '#FFFFFF',      # Header background
             'metric_bg': '#FFFFFF',   # Metric card background
-            'metric_border': '#E2E8F0', # Metric card border
-            'accent1': '#6366F1',     # Indigo accent
-            'accent2': '#EC4899',     # Pink accent
+            'metric_border': '#E5E7EB', # Metric card border
+            'accent1': '#A78BFA',     # Lavender accent
+            'accent2': '#3DD598',     # Mint green accent
             'warning': '#F59E0B',     # Amber warning
             'error': '#EF4444',       # Red error
             'input_bg': '#FFFFFF',    # Input background
-            'input_border': '#E2E8F0', # Input border
-            'input_text': '#1E293B',  # Input text
+            'input_border': '#E5E7EB', # Input border
+            'input_text': '#222222',  # Input text
             'select_bg': '#FFFFFF',   # Select background
-            'select_border': '#E2E8F0', # Select border
-            'select_text': '#1E293B', # Select text
+            'select_border': '#E5E7EB', # Select border
+            'select_text': '#222222', # Select text
             'radio_bg': '#FFFFFF',    # Radio background
-            'radio_border': '#E2E8F0', # Radio border
-            'radio_text': '#1E293B',  # Radio text
+            'radio_border': '#E5E7EB', # Radio border
+            'radio_text': '#222222',  # Radio text
             'table_header': '#F8FAFC', # Table header background
             'table_row': '#FFFFFF',   # Table row background
-            'table_hover': '#F1F5F9', # Table row hover
-            'table_border': '#E2E8F0', # Table border
-            'table_text': '#1E293B',  # Table text
+            'table_hover': '#F3F4F6', # Table row hover
+            'table_border': '#E5E7EB', # Table border
+            'table_text': '#222222',  # Table text
             'sidebar_bg': '#FFFFFF',  # Sidebar background
-            'sidebar_text': '#1E293B' # Sidebar text
+            'sidebar_text': '#222222' # Sidebar text
         }
 
-# Set page config with full page mode and dark theme
+# Set page config with full page mode
 st.set_page_config(
     page_title="Sales Dashboard",
     page_icon="📊",
@@ -148,6 +148,8 @@ st.markdown(f"""
         background-color: {colors['header']};
         border-bottom: 1px solid {colors['border']};
         padding: 1rem 2rem;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }}
     
     /* Title Styling */
@@ -156,6 +158,7 @@ st.markdown(f"""
         font-weight: 700;
         color: {colors['text']};
         margin-bottom: 2rem;
+        letter-spacing: -0.025em;
     }}
     
     /* Sticky Navigation */
@@ -167,7 +170,9 @@ st.markdown(f"""
         padding: 1rem 2rem;
         margin-bottom: 2rem;
         border-bottom: 1px solid {colors['border']};
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }}
     
     /* Tab Styling */
@@ -184,7 +189,7 @@ st.markdown(f"""
         height: 60px;
         white-space: pre-wrap;
         background-color: {colors['card_bg']};
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 0 1.5rem;
         color: {colors['secondary']};
         font-weight: 500;
@@ -195,20 +200,20 @@ st.markdown(f"""
         gap: 0.5rem;
         min-width: 200px;
         justify-content: center;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     }}
     
     .stTabs [data-baseweb="tab"]:hover {{
         transform: translateY(-2px);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         background-color: {colors['hover']};
     }}
     
     .stTabs [aria-selected="true"] {{
         background-color: {colors['primary']};
         color: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        border-radius: 16px;
+        box-shadow: 0 4px 6px -1px rgba(96, 165, 250, 0.2);
         border: none;
         font-weight: 600;
     }}
@@ -229,22 +234,25 @@ st.markdown(f"""
         font-weight: 600;
         color: {colors['text']};
         font-family: 'Inter', sans-serif;
+        letter-spacing: -0.025em;
     }}
     
     /* Metric Cards */
     .stMetric {{
         background-color: {colors['metric_bg']};
         border: 1px solid {colors['metric_border']};
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 1.5rem;
         margin-bottom: 1rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         transition: all 0.3s ease;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }}
     
     .stMetric:hover {{
         transform: translateY(-2px);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }}
     
     .stMetric [data-testid="stMetricValue"] {{
@@ -261,11 +269,13 @@ st.markdown(f"""
     /* Detailed View Table */
     .stDataFrame {{
         background-color: {colors['card_bg']};
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         border: 1px solid {colors['border']};
         margin-top: 1rem;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }}
     
     .stDataFrame thead th {{
@@ -295,9 +305,11 @@ st.markdown(f"""
         flex-wrap: wrap;
         background-color: {colors['card_bg']};
         padding: 1.5rem;
-        border-radius: 12px;
+        border-radius: 16px;
         border: 1px solid {colors['border']};
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }}
     
     .table-filter-item {{
@@ -310,28 +322,35 @@ st.markdown(f"""
         background-color: {colors['primary']};
         color: white;
         border: none;
-        border-radius: 8px;
+        border-radius: 12px;
         padding: 0.5rem 1rem;
         font-weight: 500;
         transition: all 0.3s ease;
         font-family: 'Inter', sans-serif;
+        box-shadow: 0 2px 4px rgba(96, 165, 250, 0.2);
     }}
     
     .stButton button:hover {{
         background-color: {colors['primary']};
         opacity: 0.9;
         transform: translateY(-1px);
-        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        box-shadow: 0 4px 6px -1px rgba(96, 165, 250, 0.3);
     }}
     
     /* Input Fields */
     .stTextInput input, .stNumberInput input {{
         background-color: {colors['input_bg']};
         border: 1px solid {colors['input_border']};
-        border-radius: 8px;
+        border-radius: 12px;
         color: {colors['input_text']};
         padding: 0.5rem;
         font-family: 'Inter', sans-serif;
+        transition: all 0.3s ease;
+    }}
+    
+    .stTextInput input:focus, .stNumberInput input:focus {{
+        border-color: {colors['primary']};
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.1);
     }}
     
     /* Select Boxes */
@@ -339,21 +358,33 @@ st.markdown(f"""
         background-color: {colors['select_bg']};
         border: 1px solid {colors['select_border']};
         color: {colors['select_text']};
+        border-radius: 12px;
+        padding: 0.5rem;
+        transition: all 0.3s ease;
+    }}
+    
+    .stSelectbox select:focus {{
+        border-color: {colors['primary']};
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.1);
     }}
     
     /* Radio Buttons */
     .stRadio > div {{
         background-color: {colors['radio_bg']};
-        border-radius: 12px;
+        border-radius: 16px;
         padding: 1rem;
         border: 1px solid {colors['radio_border']};
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }}
     
     /* Sidebar */
     .css-1d391kg {{
         background-color: {colors['sidebar_bg']};
         color: {colors['sidebar_text']};
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
     }}
     
     /* Responsive Design */
