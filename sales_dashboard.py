@@ -48,8 +48,8 @@ def get_theme_colors():
         }
     else:
         return {
-            'background': '#FAFBFF',  # Soft pastel background
-            'text': '#222222',        # Dark gray text
+            'background': '#F2F6FF',  # Soft pastel background
+            'text': '#1A1A1A',        # Dark text
             'card_bg': '#FFFFFF',     # White cards
             'border': '#E5E7EB',      # Light border
             'primary': '#60A5FA',     # Sky blue accent
@@ -65,20 +65,20 @@ def get_theme_colors():
             'error': '#EF4444',       # Red error
             'input_bg': '#FFFFFF',    # Input background
             'input_border': '#E5E7EB', # Input border
-            'input_text': '#222222',  # Input text
+            'input_text': '#1A1A1A',  # Input text
             'select_bg': '#FFFFFF',   # Select background
             'select_border': '#E5E7EB', # Select border
-            'select_text': '#222222', # Select text
+            'select_text': '#1A1A1A', # Select text
             'radio_bg': '#FFFFFF',    # Radio background
             'radio_border': '#E5E7EB', # Radio border
-            'radio_text': '#222222',  # Radio text
+            'radio_text': '#1A1A1A',  # Radio text
             'table_header': '#F8FAFC', # Table header background
             'table_row': '#FFFFFF',   # Table row background
             'table_hover': '#F3F4F6', # Table row hover
             'table_border': '#E5E7EB', # Table border
-            'table_text': '#222222',  # Table text
+            'table_text': '#1A1A1A',  # Table text
             'sidebar_bg': '#FFFFFF',  # Sidebar background
-            'sidebar_text': '#222222' # Sidebar text
+            'sidebar_text': '#1A1A1A' # Sidebar text
         }
 
 # Set page config with full page mode
@@ -387,6 +387,44 @@ st.markdown(f"""
         -webkit-backdrop-filter: blur(10px);
     }}
     
+    /* Custom Table Styling */
+    .custom-table {{
+        background-color: {colors['card_bg']};
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        border: 1px solid {colors['border']};
+        margin-top: 1rem;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }}
+    
+    .custom-table table {{
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }}
+    
+    .custom-table th {{
+        background-color: {colors['table_header']};
+        color: {colors['table_text']};
+        font-weight: 600;
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid {colors['table_border']};
+    }}
+    
+    .custom-table td {{
+        padding: 1rem;
+        border-bottom: 1px solid {colors['table_border']};
+        color: {colors['table_text']};
+        background-color: {colors['table_row']};
+    }}
+    
+    .custom-table tr:hover td {{
+        background-color: {colors['table_hover']};
+    }}
+    
     /* Responsive Design */
     @media (max-width: 768px) {{
         .stTabs [data-baseweb="tab"] {{
@@ -689,7 +727,7 @@ if df is not None:
         
         st.plotly_chart(fig, use_container_width=True)
 
-        # Display hunting/farming metrics table
+        # Display hunting/farming metrics table with custom HTML
         st.markdown("""
             <div class="section-header">
                 <h3>📊 Hunting/Farming Metrics</h3>
@@ -699,13 +737,36 @@ if df is not None:
         hunting_farming_metrics = hunting_farming.copy()
         hunting_farming_metrics['Amount'] = hunting_farming_metrics['Amount'] / 100000
         
-        st.dataframe(
-            hunting_farming_metrics.style.format({
-                'Amount': '₹{:.2f}L',
-                'Percentage': '{:.1f}%'
-            }),
-            use_container_width=True
-        )
+        # Create custom HTML table
+        table_html = f"""
+        <div class="custom-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Amount (Lakhs)</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody>
+        """
+        
+        for _, row in hunting_farming_metrics.iterrows():
+            table_html += f"""
+                    <tr>
+                        <td>{row['Hunting/Farming']}</td>
+                        <td>₹{row['Amount']:.2f}L</td>
+                        <td>{row['Percentage']:.1f}%</td>
+                    </tr>
+            """
+        
+        table_html += """
+                </tbody>
+            </table>
+        </div>
+        """
+        
+        st.markdown(table_html, unsafe_allow_html=True)
 
     # Sales Leaderboard Tab
     with tab2:
