@@ -14,37 +14,34 @@ if 'theme' not in st.session_state:
 def get_theme_colors():
     if st.session_state.theme == 'dark':
         return {
-            'background': '#0F172A',  # Dark slate background
-            'text': '#E2E8F0',        # Light gray text
-            'card_bg': '#1E293B',     # Slightly lighter slate for cards
-            'border': '#334155',      # Border color
-            'primary': '#3B82F6',     # Blue accent
-            'secondary': '#94A3B8',   # Muted gray
-            'success': '#10B981',     # Green for success
-            'hover': '#2D3748',       # Hover state
-            'header': '#1E293B',      # Header background
-            'metric_bg': '#1E293B',   # Metric card background
-            'metric_border': '#334155', # Metric card border
-            'accent1': '#6366F1',     # Indigo accent
-            'accent2': '#EC4899',     # Pink accent
-            'warning': '#F59E0B',     # Amber warning
-            'error': '#EF4444',       # Red error
-            'input_bg': '#1E293B',    # Input background
-            'input_border': '#334155', # Input border
-            'input_text': '#E2E8F0',  # Input text
-            'select_bg': '#1E293B',   # Select background
-            'select_border': '#334155', # Select border
-            'select_text': '#E2E8F0', # Select text
-            'radio_bg': '#1E293B',    # Radio background
-            'radio_border': '#334155', # Radio border
-            'radio_text': '#E2E8F0',  # Radio text
-            'table_header': '#1E293B', # Table header background
-            'table_row': '#1E293B',   # Table row background
-            'table_hover': '#2D3748', # Table row hover
-            'table_border': '#334155', # Table border
-            'table_text': '#E2E8F0',  # Table text
-            'sidebar_bg': '#1E293B',  # Sidebar background
-            'sidebar_text': '#E2E8F0' # Sidebar text
+            'background': '#0F172A',     # Dark slate background
+            'text': '#F8FAFC',           # Brighter white text for better contrast
+            'card_bg': '#1E293B',        # Slightly lighter slate for cards
+            'border': '#334155',         # Border color
+            'primary': '#60A5FA',        # Brighter blue accent
+            'secondary': '#CBD5E1',      # Lighter gray for better visibility
+            'success': '#4ADE80',        # Brighter green for success
+            'hover': '#2D3748',          # Hover state
+            'header': '#1E293B',         # Header background
+            'metric_bg': '#1E293B',      # Metric card background
+            'metric_border': '#334155',  # Metric card border
+            'accent1': '#818CF8',        # Brighter indigo accent
+            'accent2': '#F472B6',        # Brighter pink accent
+            'warning': '#FBBF24',        # Brighter amber warning
+            'error': '#F87171',          # Brighter red error
+            'input_bg': '#1E293B',       # Input background
+            'input_border': '#475569',   # Lighter input border
+            'input_text': '#F8FAFC',     # Bright input text
+            'select_bg': '#1E293B',      # Select background
+            'select_border': '#475569',  # Lighter select border
+            'select_text': '#F8FAFC',    # Bright select text
+            'table_header': '#1E293B',   # Table header background
+            'table_row': '#1E293B',      # Table row background
+            'table_hover': '#2D3748',    # Table row hover
+            'table_border': '#475569',   # Lighter table border
+            'table_text': '#F8FAFC',     # Bright table text
+            'sidebar_bg': '#1E293B',     # Sidebar background
+            'sidebar_text': '#F8FAFC'    # Bright sidebar text
         }
     else:
         return {
@@ -198,6 +195,7 @@ st.markdown(f"""
     
     .stApp {{
         background-color: var(--background-color) !important;
+        color: var(--text-color) !important;
     }}
     
     /* Streamlit Elements Override */
@@ -206,31 +204,79 @@ st.markdown(f"""
         color: var(--text-color) !important;
     }}
     
+    /* Improve text visibility in dark theme */
+    .element-container, .stMarkdown, .stText {{
+        color: var(--text-color) !important;
+    }}
+    
+    /* Make metric values more visible */
+    [data-testid="stMetricValue"] {{
+        color: {colors['primary']} !important;
+        font-weight: 600 !important;
+    }}
+    
+    [data-testid="stMetricLabel"] {{
+        color: var(--text-color) !important;
+    }}
+    
+    /* Improve table text visibility */
+    .dataframe {{
+        color: var(--text-color) !important;
+    }}
+    
+    .dataframe th {{
+        background-color: {colors['card_bg']} !important;
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+    }}
+    
+    .dataframe td {{
+        color: var(--text-color) !important;
+    }}
+    
+    /* Improve select box text visibility */
     .stSelectbox div[data-baseweb="select"] {{
         background-color: var(--card-bg-color) !important;
         border-color: var(--border-color) !important;
     }}
     
+    .stSelectbox div[data-baseweb="select"] span {{
+        color: var(--text-color) !important;
+    }}
+    
+    /* Improve button text visibility */
+    .stButton button {{
+        color: var(--text-color) !important;
+        border-color: var(--border-color) !important;
+    }}
+    
+    .stButton button:hover {{
+        border-color: var(--primary-color) !important;
+        color: var(--primary-color) !important;
+    }}
+    
+    /* Improve checkbox text visibility */
+    .stCheckbox label {{
+        color: var(--text-color) !important;
+    }}
+    
+    /* Improve radio button text visibility */
+    .stRadio label {{
+        color: var(--text-color) !important;
+    }}
+    
+    /* Improve text input visibility */
     .stTextInput input {{
         background-color: var(--card-bg-color) !important;
         border-color: var(--border-color) !important;
         color: var(--text-color) !important;
     }}
     
-    /* Data Editor Specific Styles */
-    [data-testid="stDataEditor"] {{
+    /* Improve number input visibility */
+    .stNumberInput input {{
         background-color: var(--card-bg-color) !important;
-    }}
-    
-    [data-testid="stDataEditor"] div[role="grid"] {{
-        background-color: var(--card-bg-color) !important;
-        color: var(--text-color) !important;
-    }}
-    
-    [data-testid="stDataEditor"] div[role="gridcell"] {{
-        background-color: var(--card-bg-color) !important;
-        color: var(--text-color) !important;
         border-color: var(--border-color) !important;
+        color: var(--text-color) !important;
     }}
     
     /* Main Layout */
