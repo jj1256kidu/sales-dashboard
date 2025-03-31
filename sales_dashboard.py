@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from datetime import datetime
 import numpy as np
 
@@ -50,7 +51,7 @@ st.markdown("""
 # Helper function to format numbers in Lakhs
 def format_lakhs(value):
     try:
-        return f"₹{float(value):,.2f}L"
+        return f"₹{float(value)/100000:,.2f}L"
     except (ValueError, TypeError):
         return "₹0.00L"
 
@@ -155,10 +156,10 @@ if df is not None:
     if 'Tech Owner' in df.columns and selected_tech_owner != 'All':
         filtered_df = filtered_df[filtered_df['Tech Owner'].astype(str) == selected_tech_owner]
 
-    # Calculate KPIs
-    current_pipeline = filtered_df['Amount'].sum()
-    weighted_projection = (filtered_df['Amount'] * filtered_df['Probability'] / 100).sum()
-    closed_won = filtered_df[filtered_df['Sales Stage'].astype(str).isin(['Closed Won', 'Won'])]['Amount'].sum()
+    # Calculate KPIs (in Lakhs)
+    current_pipeline = filtered_df['Amount'].sum() / 100000
+    weighted_projection = (filtered_df['Amount'] * filtered_df['Probability'] / 100).sum() / 100000
+    closed_won = filtered_df[filtered_df['Sales Stage'].astype(str).isin(['Closed Won', 'Won'])]['Amount'].sum() / 100000
     achieved_percentage = (closed_won / sales_target * 100) if sales_target > 0 else 0
 
     # Display KPIs in 3 columns
@@ -168,13 +169,13 @@ if df is not None:
     with kpi_col1:
         st.metric(
             "Sales Target",
-            format_lakhs(sales_target),
+            format_lakhs(sales_target * 100000),
             delta=None,
             delta_color="normal"
         )
         st.metric(
             "Current Pipeline",
-            format_lakhs(current_pipeline),
+            format_lakhs(current_pipeline * 100000),
             delta=None,
             delta_color="normal"
         )
@@ -182,13 +183,13 @@ if df is not None:
     with kpi_col2:
         st.metric(
             "Weighted Projection",
-            format_lakhs(weighted_projection),
+            format_lakhs(weighted_projection * 100000),
             delta=None,
             delta_color="normal"
         )
         st.metric(
             "Closed Won",
-            format_lakhs(closed_won),
+            format_lakhs(closed_won * 100000),
             delta=None,
             delta_color="normal"
         )
@@ -201,26 +202,48 @@ if df is not None:
             delta_color="normal"
         )
 
-    # Practice-wise Summary
+    # Practice-wise Summary (Tabular Format)
     st.header("Practice-wise Summary")
-    practice_summary = filtered_df.groupby('Practice')['Amount'].agg(['sum', 'count']).reset_index()
-    practice_summary.columns = ['Practice', 'Total Amount (Lakhs)', 'Number of Deals']
+    practice_summary = filtered_df.groupby('Practice').agg({
+        'Amount': ['sum', 'count'],
+        'Probability': 'mean'
+    }).reset_index()
     
-    # Create bar chart
-    fig = px.bar(
-        practice_summary,
-        x='Practice',
-        y='Total Amount (Lakhs)',
-        title='Practice-wise Sales Distribution',
-        color='Practice',
-        template='plotly_white'
+    practice_summary.columns = ['Practice', 'Total Amount (Lakhs)', 'Number of Deals', 'Avg Probability']
+    practice_summary['Total Amount (Lakhs)'] = practice_summary['Total Amount (Lakhs)'] / 100000
+    
+    # Display practice summary table
+    st.dataframe(
+        practice_summary.style.format({
+            'Total Amount (Lakhs)': '₹{:.2f}L',
+            'Avg Probability': '{:.1f}%'
+        }),
+        use_container_width=True
     )
+
+    # Hunting/Farming Distribution (Donut Chart)
+    st.header("Hunting vs Farming Distribution")
+    
+    # Calculate percentages
+    hunting_farming = filtered_df.groupby('Hunting/Farming')['Amount'].sum().reset_index()
+    total_amount = hunting_farming['Amount'].sum()
+    hunting_farming['Percentage'] = (hunting_farming['Amount'] / total_amount * 100).round(1)
+    
+    # Create donut chart
+    fig = go.Figure(data=[go.Pie(
+        labels=hunting_farming['Hunting/Farming'],
+        values=hunting_farming['Amount'] / 100000,  # Convert to Lakhs
+        hole=.4,
+        textinfo='label+percent',
+        textposition='outside'
+    )])
+    
     fig.update_layout(
-        showlegend=False,
-        xaxis_title="Practice",
-        yaxis_title="Total Amount (Lakhs)",
-        yaxis_tickformat="₹.2fL"
+        title="Distribution of Hunting vs Farming (in Lakhs)",
+        showlegend=True,
+        annotations=[dict(text='Hunting/Farming', x=0.5, y=0.5, font_size=20, showarrow=False)]
     )
+    
     st.plotly_chart(fig, use_container_width=True)
 
     # Detailed Deals Table
