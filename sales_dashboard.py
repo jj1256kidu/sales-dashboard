@@ -5,6 +5,35 @@ import plotly.graph_objects as go
 from datetime import datetime
 import numpy as np
 
+# Initialize session state for theme
+if 'theme' not in st.session_state:
+    st.session_state.theme = 'light'
+
+# Theme colors
+def get_theme_colors():
+    if st.session_state.theme == 'dark':
+        return {
+            'background': '#1a1a1a',
+            'text': '#ffffff',
+            'card_bg': '#2d2d2d',
+            'border': '#404040',
+            'primary': '#3b82f6',
+            'secondary': '#64748b',
+            'success': '#10b981',
+            'hover': '#3d3d3d'
+        }
+    else:
+        return {
+            'background': '#f8fafc',
+            'text': '#1e293b',
+            'card_bg': '#ffffff',
+            'border': '#e2e8f0',
+            'primary': '#3b82f6',
+            'secondary': '#64748b',
+            'success': '#10b981',
+            'hover': '#f1f5f9'
+        }
+
 # Set page config
 st.set_page_config(
     page_title="Sales Dashboard",
@@ -13,121 +42,172 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Get current theme colors
+colors = get_theme_colors()
+
 # Custom CSS for modern styling
-st.markdown("""
+st.markdown(f"""
     <style>
     /* Main Layout */
-    .main {
+    .main {{
         padding: 2rem;
-        background-color: #f8fafc;
-    }
+        background-color: {colors['background']};
+        color: {colors['text']};
+    }}
     
     /* Sidebar Styling */
-    .css-1d391kg {
-        background-color: #ffffff;
+    .css-1d391kg {{
+        background-color: {colors['card_bg']};
         padding: 2rem;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
+        border: 1px solid {colors['border']};
+    }}
     
     /* Header Styling */
-    .css-1v0mbdj {
+    .css-1v0mbdj {{
         margin-bottom: 2rem;
-    }
+        color: {colors['text']};
+    }}
     
     /* Tabs Styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
+    .stTabs [data-baseweb="tab-list"] {{
+        gap: 1rem;
         background-color: transparent;
-    }
-    .stTabs [data-baseweb="tab"] {
+        padding: 0.5rem;
+    }}
+    .stTabs [data-baseweb="tab"] {{
         height: 50px;
         white-space: pre-wrap;
-        background-color: #f1f5f9;
-        border-radius: 8px;
+        background-color: {colors['hover']};
+        border-radius: 12px;
         padding: 0 1.5rem;
-        color: #64748b;
+        color: {colors['secondary']};
         font-weight: 500;
-    }
-    .stTabs [aria-selected="true"] {
-        background-color: #3b82f6;
+        transition: all 0.3s ease;
+        border: 1px solid {colors['border']};
+    }}
+    .stTabs [data-baseweb="tab"]:hover {{
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }}
+    .stTabs [aria-selected="true"] {{
+        background-color: {colors['primary']};
         color: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-    }
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+        border: none;
+    }}
     
     /* Metric Cards */
-    .stMetric {
-        background-color: #ffffff;
+    .stMetric {{
+        background-color: {colors['card_bg']};
         padding: 1.5rem;
         border-radius: 12px;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         margin: 0.5rem 0;
-        border: 1px solid #e2e8f0;
-    }
-    .stMetric:hover {
+        border: 1px solid {colors['border']};
+        transition: all 0.3s ease;
+    }}
+    .stMetric:hover {{
         transform: translateY(-2px);
-        transition: transform 0.2s ease-in-out;
-    }
+        box-shadow: 0 6px 8px -1px rgba(0, 0, 0, 0.15);
+    }}
+    .stMetric [data-testid="stMetricValue"] {{
+        color: {colors['text']};
+    }}
+    .stMetric [data-testid="stMetricLabel"] {{
+        color: {colors['secondary']};
+    }}
     
     /* DataFrames */
-    .stDataFrame {
-        background-color: #ffffff;
+    .stDataFrame {{
+        background-color: {colors['card_bg']};
         border-radius: 12px;
         padding: 1rem;
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        border: 1px solid #e2e8f0;
-    }
+        border: 1px solid {colors['border']};
+    }}
     
     /* Headers */
-    h1, h2, h3 {
-        color: #1e293b;
+    h1, h2, h3 {{
+        color: {colors['text']};
         font-weight: 600;
         margin-bottom: 1rem;
-    }
+        font-family: 'Inter', sans-serif;
+    }}
     
     /* Selectbox Styling */
-    .stSelectbox {
-        background-color: #ffffff;
+    .stSelectbox {{
+        background-color: {colors['card_bg']};
         border-radius: 8px;
-        border: 1px solid #e2e8f0;
-    }
+        border: 1px solid {colors['border']};
+    }}
+    .stSelectbox select {{
+        color: {colors['text']};
+    }}
     
     /* Radio Buttons */
-    .stRadio > div {
-        background-color: #ffffff;
+    .stRadio > div {{
+        background-color: {colors['card_bg']};
         border-radius: 8px;
         padding: 1rem;
-        border: 1px solid #e2e8f0;
-    }
+        border: 1px solid {colors['border']};
+    }}
+    .stRadio label {{
+        color: {colors['text']};
+    }}
     
     /* Number Input */
-    .stNumberInput input {
+    .stNumberInput input {{
         border-radius: 8px;
-        border: 1px solid #e2e8f0;
-    }
+        border: 1px solid {colors['border']};
+        background-color: {colors['card_bg']};
+        color: {colors['text']};
+    }}
     
     /* Download Button */
-    .stDownloadButton button {
-        background-color: #3b82f6;
+    .stDownloadButton button {{
+        background-color: {colors['primary']};
         color: white;
         border-radius: 8px;
         padding: 0.5rem 1rem;
         border: none;
         font-weight: 500;
-    }
-    .stDownloadButton button:hover {
-        background-color: #2563eb;
-    }
+        transition: all 0.3s ease;
+    }}
+    .stDownloadButton button:hover {{
+        background-color: {colors['primary']};
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+    }}
     
     /* Section Headers */
-    .section-header {
+    .section-header {{
         display: flex;
         align-items: center;
         gap: 0.5rem;
         margin-bottom: 1.5rem;
         padding-bottom: 0.5rem;
-        border-bottom: 1px solid #e2e8f0;
-    }
+        border-bottom: 1px solid {colors['border']};
+    }}
+    
+    /* Info Messages */
+    .stInfo {{
+        background-color: {colors['card_bg']};
+        border: 1px solid {colors['border']};
+        border-radius: 8px;
+        padding: 1rem;
+        color: {colors['text']};
+    }}
+    
+    /* Error Messages */
+    .stError {{
+        background-color: {colors['card_bg']};
+        border: 1px solid #ef4444;
+        border-radius: 8px;
+        padding: 1rem;
+        color: #ef4444;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -144,6 +224,28 @@ def safe_float(value):
     except (ValueError, TypeError):
         return 0.0
 
+def apply_theme_to_plot(fig):
+    fig.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(
+            family="Inter",
+            color=colors['text']
+        ),
+        xaxis=dict(
+            gridcolor=colors['border'],
+            color=colors['text']
+        ),
+        yaxis=dict(
+            gridcolor=colors['border'],
+            color=colors['text']
+        ),
+        legend=dict(
+            font=dict(color=colors['text'])
+        )
+    )
+    return fig
+
 # Title and Header
 st.title("📊 Sales Dashboard")
 
@@ -159,8 +261,12 @@ with st.sidebar:
     theme = st.selectbox(
         "Theme",
         ["Light", "Dark"],
-        index=0
+        index=0 if st.session_state.theme == 'light' else 1,
+        key='theme_selector'
     )
+    
+    # Update session state theme
+    st.session_state.theme = theme.lower()
     
     # Sales Target Input
     st.markdown("""
@@ -260,7 +366,7 @@ if df is not None:
     closed_won = filtered_df[filtered_df['Sales Stage'].astype(str).isin(['Closed Won', 'Won'])]['Amount'].sum() / 100000
     achieved_percentage = (closed_won / sales_target * 100) if sales_target > 0 else 0
 
-    # Create tabs
+    # Create tabs with improved styling
     tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
         "📊 Overview", 
         "👤 Sales Leaderboard", 
@@ -352,19 +458,11 @@ if df is not None:
             labels={'Total Amount (Lakhs)': 'Amount (Lakhs)'}
         )
         
-        fig.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="Inter"),
-            xaxis_title="Quarter",
-            yaxis_title="Amount (Lakhs)",
-            showlegend=False
-        )
-        
+        fig = apply_theme_to_plot(fig)
         fig.update_traces(
             texttemplate='₹%{text:.2f}L',
             textposition='outside',
-            marker_color='#3b82f6'
+            marker_color=colors['primary']
         )
         
         st.plotly_chart(fig, use_container_width=True)
@@ -390,13 +488,11 @@ if df is not None:
             textposition='outside'
         )])
         
+        fig = apply_theme_to_plot(fig)
         fig.update_layout(
             title="Distribution of Hunting vs Farming (in Lakhs)",
             showlegend=True,
-            annotations=[dict(text='Hunting/Farming', x=0.5, y=0.5, font_size=20, showarrow=False)],
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="Inter")
+            annotations=[dict(text='Hunting/Farming', x=0.5, y=0.5, font_size=20, showarrow=False)]
         )
         
         st.plotly_chart(fig, use_container_width=True)
@@ -442,7 +538,7 @@ if df is not None:
                 x=owner_metrics['Total Pipeline'],
                 name='Total Pipeline',
                 orientation='h',
-                marker_color='#3b82f6'
+                marker_color=colors['primary']
             ))
             
             fig.add_trace(go.Bar(
@@ -450,15 +546,13 @@ if df is not None:
                 x=owner_metrics['Closed Won'],
                 name='Closed Won',
                 orientation='h',
-                marker_color='#10b981'
+                marker_color=colors['success']
             ))
             
+            fig = apply_theme_to_plot(fig)
             fig.update_layout(
                 title='Sales Owner Performance',
                 barmode='overlay',
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font=dict(family="Inter"),
                 xaxis_title='Amount (Lakhs)',
                 yaxis_title='Sales Owner',
                 showlegend=True
@@ -495,15 +589,13 @@ if df is not None:
             x=monthly_metrics['Date'],
             y=monthly_metrics['Amount'],
             name='Pipeline',
-            line=dict(color='#3b82f6', width=2),
+            line=dict(color=colors['primary'], width=2),
             mode='lines+markers'
         ))
         
+        fig = apply_theme_to_plot(fig)
         fig.update_layout(
             title='Monthly Pipeline Trend',
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="Inter"),
             xaxis_title='Month',
             yaxis_title='Amount (Lakhs)',
             showlegend=True
@@ -536,14 +628,12 @@ if df is not None:
             textinfo='value+percent initial',
             texttemplate='₹%{value:.2f}L',
             textposition='inside',
-            marker=dict(color='#3b82f6')
+            marker=dict(color=colors['primary'])
         ))
         
+        fig = apply_theme_to_plot(fig)
         fig.update_layout(
             title='Sales Stage Funnel',
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="Inter"),
             showlegend=False
         )
         
@@ -573,13 +663,7 @@ if df is not None:
             }
         )
         
-        fig.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(family="Inter"),
-            showlegend=True
-        )
-        
+        fig = apply_theme_to_plot(fig)
         fig.update_traces(
             texttemplate='₹%{y:.2f}L',
             textposition='top center'
@@ -615,10 +699,8 @@ if df is not None:
                 color_continuous_scale='Viridis'
             )
             
+            fig = apply_theme_to_plot(fig)
             fig.update_layout(
-                paper_bgcolor='rgba(0,0,0,0)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                font=dict(family="Inter"),
                 geo=dict(
                     showframe=False,
                     showcoastlines=True,
