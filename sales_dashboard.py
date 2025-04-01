@@ -175,6 +175,9 @@ def show_overview():
     
     df = st.session_state.df.copy()
     
+    # Print available columns for debugging
+    st.write("Available columns:", df.columns.tolist())
+    
     # Initialize target if not in session state
     if 'sales_target' not in st.session_state:
         st.session_state.sales_target = 0
@@ -233,9 +236,18 @@ def show_overview():
         # II. Practice
         st.markdown("### Practice")
         
-        if 'Practice' in df.columns and not df['Practice'].isna().all():
+        # Check for Practice column or alternative column names
+        practice_column = None
+        possible_names = ['Practice', 'practice', 'PRACTICE', 'Business Unit', 'business_unit', 'BUSINESS_UNIT', 'Division', 'division', 'DIVISION']
+        
+        for name in possible_names:
+            if name in df.columns:
+                practice_column = name
+                break
+        
+        if practice_column:
             # Calculate practice metrics
-            practice_metrics = df.groupby('Practice').agg({
+            practice_metrics = df.groupby(practice_column).agg({
                 'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
                 'id': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count(),
                 'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
@@ -244,7 +256,7 @@ def show_overview():
             practice_metrics.columns = ['Practice', 'Closed Amount', 'Closed Deals', 'Pipeline Deals']
             
             # Calculate total pipeline amount by practice
-            total_pipeline = df.groupby('Practice')['Amount'].sum() / 100000
+            total_pipeline = df.groupby(practice_column)['Amount'].sum() / 100000
             practice_metrics['Total Pipeline'] = practice_metrics['Practice'].map(total_pipeline)
             
             # Create a comprehensive view
@@ -370,7 +382,8 @@ def show_overview():
                 use_container_width=True
             )
         else:
-            st.info("Practice data is not available in the dataset")
+            st.info("Practice/Business Unit data is not available in the dataset. Please check if the column exists with a different name.")
+            st.write("Available columns in your dataset:", df.columns.tolist())
         
         # III. Business Type Distribution
         st.markdown("### Business Type Distribution")
