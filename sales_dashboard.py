@@ -83,7 +83,7 @@ st.set_page_config(
     page_title="Sales Dashboard",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # Title and Theme Selection
@@ -544,6 +544,64 @@ st.markdown(f"""
     #MainMenu {{visibility: hidden;}}
     footer {{visibility: hidden;}}
     .stDeployButton {{display:none;}}
+    
+    /* Vertical Sidebar Styling */
+    .sidebar .sidebar-content {{
+        background-color: {colors['card_bg']} !important;
+        padding: 1rem 0.5rem !important;
+    }}
+    
+    .sidebar-icon {{
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        margin: 0.5rem auto;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+    }}
+    
+    .sidebar-icon:hover {{
+        background-color: {colors['hover']};
+        transform: translateY(-2px);
+    }}
+    
+    .sidebar-icon.active {{
+        background-color: {colors['primary']};
+        color: white;
+    }}
+    
+    .sidebar-icon::after {{
+        content: attr(data-tooltip);
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        background-color: {colors['card_bg']};
+        color: {colors['text']};
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        font-size: 0.875rem;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+    }}
+    
+    .sidebar-icon:hover::after {{
+        opacity: 1;
+        visibility: visible;
+    }}
+    
+    /* Adjust main content area */
+    .main .block-container {{
+        padding-left: 5rem !important;
+    }}
     </style>
 """, unsafe_allow_html=True)
 
@@ -1293,6 +1351,133 @@ if df is not None:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
+    def show_compare():
+        st.markdown("""
+            <div class="section-header">
+                <h3>⚖️ Comparison Analysis</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Create comparison options
+        comparison_dimensions = ['Practice', 'Quarter', 'Sales Stage', 'Hunting/Farming']
+        available_dimensions = [dim for dim in comparison_dimensions if dim in filtered_df.columns]
+        
+        if not available_dimensions:
+            st.info("No comparison dimensions available in the dataset.")
+            return
+        
+        # Dimension selection
+        col1, col2 = st.columns(2)
+        with col1:
+            dimension1 = st.selectbox(
+                "Select First Dimension",
+                options=available_dimensions,
+                key="dim1"
+            )
+        with col2:
+            # Filter out the selected first dimension from second dimension options
+            remaining_dimensions = [dim for dim in available_dimensions if dim != dimension1]
+            dimension2 = st.selectbox(
+                "Select Second Dimension",
+                options=remaining_dimensions,
+                key="dim2"
+            )
+        
+        # Calculate comparison metrics
+        comparison_metrics = filtered_df.groupby([dimension1, dimension2]).agg({
+            'Amount': ['sum', 'count'],
+            'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum()
+        }).reset_index()
+        
+        # Flatten column names
+        comparison_metrics.columns = [
+            dimension1, dimension2, 'Total Amount', 'Deal Count', 'Won Deals'
+        ]
+        
+        # Calculate additional metrics
+        comparison_metrics['Total Amount'] = comparison_metrics['Total Amount'] / 100000  # Convert to Lakhs
+        comparison_metrics['Win Rate'] = (comparison_metrics['Won Deals'] / comparison_metrics['Deal Count'] * 100).round(1)
+        
+        # Create comparison visualizations
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Amount comparison
+            fig_amount = px.bar(
+                comparison_metrics,
+                x=dimension1,
+                y='Total Amount',
+                color=dimension2,
+                title=f'Total Amount by {dimension1} and {dimension2}',
+                barmode='group'
+            )
+            
+            fig_amount = apply_theme_to_plot(fig_amount)
+            fig_amount.update_traces(
+                texttemplate='₹%{y:.2f}L',
+                textposition='outside'
+            )
+            
+            st.plotly_chart(fig_amount, use_container_width=True, key="amount_comparison")
+        
+        with col2:
+            # Win rate comparison
+            fig_win_rate = px.bar(
+                comparison_metrics,
+                x=dimension1,
+                y='Win Rate',
+                color=dimension2,
+                title=f'Win Rate by {dimension1} and {dimension2}',
+                barmode='group'
+            )
+            
+            fig_win_rate = apply_theme_to_plot(fig_win_rate)
+            fig_win_rate.update_traces(
+                texttemplate='%{y:.1f}%',
+                textposition='outside'
+            )
+            
+            st.plotly_chart(fig_win_rate, use_container_width=True, key="win_rate_comparison")
+        
+        # Display detailed comparison table
+        st.markdown("""
+            <div class="section-header">
+                <h3>📊 Detailed Comparison Metrics</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Format and display the comparison table
+        st.dataframe(
+            comparison_metrics.style.format({
+                'Total Amount': '₹{:.2f}L',
+                'Deal Count': '{:,.0f}',
+                'Won Deals': '{:,.0f}',
+                'Win Rate': '{:.1f}%'
+            }),
+            use_container_width=True
+        )
+        
+        # Add summary metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric(
+                "Total Pipeline",
+                format_lakhs(comparison_metrics['Total Amount'].sum() * 100000),
+                delta=None
+            )
+        with col2:
+            st.metric(
+                "Total Deals",
+                f"{comparison_metrics['Deal Count'].sum():,}",
+                delta=None
+            )
+        with col3:
+            st.metric(
+                "Overall Win Rate",
+                f"{comparison_metrics['Win Rate'].mean():.1f}%",
+                delta=None
+            )
+
     def show_all_in_one():
         """Shows all enabled dashboard components on a single page"""
         st.markdown("""
@@ -1329,165 +1514,75 @@ if df is not None:
         if st.session_state.dashboard_config['show_detailed_view']:
             show_detailed()
 
-    # Navigation menu
-    st.markdown("""
-        <div class="section-header">
-            <h3>📊 Navigation</h3>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Create navigation using Streamlit columns
-    nav_items = {
-        'all_in_one': '🎯 All In One',
-        'overview': '📊 Overview',
-        'trends': '📈 Trends',
-        'funnel': '🔄 Funnel',
-        'strategy': '🎯 Strategy',
-        'leaderboard': '👥 Leaderboard',
-        'geo': '🌍 Geography',
-        'detailed': '🧾 Detailed',
-        'editor': '✏️ Data Editor'
-    }
-
-    # Split items into two rows (5 items per row)
-    first_row_items = list(nav_items.items())[:5]
-    second_row_items = list(nav_items.items())[5:]
-
-    # Create rows with equal number of columns
-    nav_cols1 = st.columns(5)
-    nav_cols2 = st.columns(5)
-
-    # First row of navigation
-    for i, (key, label) in enumerate(first_row_items):
-        with nav_cols1[i]:
-            if st.button(label, key=f"nav_{key}", use_container_width=True):
-                st.session_state.current_view = key
-                st.rerun()
-
-    # Second row of navigation
-    for i, (key, label) in enumerate(second_row_items):
-        with nav_cols2[i]:
-            if st.button(label, key=f"nav_{key}", use_container_width=True):
-                st.session_state.current_view = key
-                st.rerun()
-
-    # Show the selected view
-    if st.session_state.current_view == 'editor':
+    # Create the vertical sidebar
+    with st.sidebar:
         st.markdown("""
-            <div class="full-page">
-                <div class="page-header">
-                    <h2 class="page-title">✏️ Data Editor</h2>
-                </div>
-                <div class="data-editor">
+            <div style="display: flex; flex-direction: column; align-items: center; padding: 1rem;">
         """, unsafe_allow_html=True)
         
-        try:
-            # Create a copy of the dataframe to avoid modifying the original
-            editor_df = filtered_df.copy()
-            
-            # Ensure all columns are properly formatted
-            for col in editor_df.columns:
-                if editor_df[col].dtype == 'float64':
-                    editor_df[col] = editor_df[col].fillna(0)
-                elif editor_df[col].dtype == 'object':
-                    editor_df[col] = editor_df[col].fillna('')
-            
-            # Define column types for the editor
-            column_types = {
-                'Amount': st.column_config.NumberColumn(
-                    'Amount',
-                    format="₹%.2f",
-                    min_value=0,
-                    step=1000
-                ),
-                'Probability': st.column_config.NumberColumn(
-                    'Probability',
-                    format="%.1f%%",
-                    min_value=0,
-                    max_value=100,
-                    step=5
-                ),
-                'Expected Close Date': st.column_config.DateColumn(
-                    'Expected Close Date',
-                    format="YYYY-MM-DD"
-                ),
-                'Quarter': st.column_config.SelectboxColumn(
-                    'Quarter',
-                    options=safe_sort_unique(editor_df['Quarter'])
-                ),
-                'Practice': st.column_config.SelectboxColumn(
-                    'Practice',
-                    options=safe_sort_unique(editor_df['Practice'])
-                ),
-                'Sales Stage': st.column_config.SelectboxColumn(
-                    'Sales Stage',
-                    options=safe_sort_unique(editor_df['Sales Stage'])
-                ),
-                'Hunting/Farming': st.column_config.SelectboxColumn(
-                    'Hunting/Farming',
-                    options=safe_sort_unique(editor_df['Hunting/Farming'])
-                )
-            }
-            
-            # Filter column types to only include columns that exist in the dataframe
-            available_column_types = {
-                col: config for col, config in column_types.items() 
-                if col in editor_df.columns
-            }
-            
-            # Display the data editor with proper configuration
-            edited_df = st.data_editor(
-                editor_df,
-                column_config=available_column_types,
-                num_rows="dynamic",
-                use_container_width=True,
-                key="data_editor"
-            )
-            
-            # Add export buttons
-            col1, col2 = st.columns(2)
-            with col1:
-                # Export to CSV
-                csv = edited_df.to_csv(index=False)
-                st.download_button(
-                    label="📥 Export to CSV",
-                    data=csv,
-                    file_name="edited_deals.csv",
-                    mime="text/csv"
-                )
-            with col2:
-                # Export to Excel
-                excel_buffer = io.BytesIO()
-                with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
-                    edited_df.to_excel(writer, index=False, sheet_name='Deals')
-                excel_buffer.seek(0)
-                st.download_button(
-                    label="📊 Export to Excel",
-                    data=excel_buffer,
-                    file_name="edited_deals.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-                
-        except Exception as e:
-            st.error(f"Error in Data Editor: {str(e)}")
-            st.info("Please try refreshing the page or check if the data is properly formatted.")
+        # Navigation icons with tooltips
+        nav_items = [
+            {'icon': '🌍', 'tooltip': 'Overview', 'view': 'overview'},
+            {'icon': '⚖️', 'tooltip': 'Compare', 'view': 'compare'},
+            {'icon': '📈', 'tooltip': 'Trends', 'view': 'trends'},
+            {'icon': '👥', 'tooltip': 'Team Performance', 'view': 'leaderboard'},
+            {'icon': '🌐', 'tooltip': 'Map View', 'view': 'geo'},
+            {'icon': '🧾', 'tooltip': 'Detailed View', 'view': 'detailed'},
+            {'icon': '✏️', 'tooltip': 'Editor', 'view': 'editor'}
+        ]
         
-        st.markdown("</div></div>", unsafe_allow_html=True)
-    else:
-        # Show the selected dashboard view
-        view_functions = {
-            'all_in_one': show_all_in_one,
-            'overview': show_overview,
-            'trends': show_trends,
-            'funnel': show_funnel,
-            'strategy': show_strategy,
-            'leaderboard': show_leaderboard,
-            'geo': show_geo,
-            'detailed': show_detailed
+        for item in nav_items:
+            is_active = st.session_state.current_view == item['view']
+            st.markdown(f"""
+                <div class="sidebar-icon {'active' if is_active else ''}" 
+                     data-tooltip="{item['tooltip']}"
+                     onclick="document.getElementById('nav_{item['view']}').click()">
+                    {item['icon']}
+                </div>
+            """, unsafe_allow_html=True)
+            # Hidden button for navigation
+            if st.button("", key=f"nav_{item['view']}", help=item['tooltip']):
+                st.session_state.current_view = item['view']
+                st.rerun()
+        
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Theme selector at the bottom of sidebar
+        st.markdown("<div style='margin-top: auto; padding: 1rem;'>", unsafe_allow_html=True)
+        theme_options = {
+            "Dark": "dark",
+            "Light": "light"
         }
+        selected_theme = st.selectbox(
+            "Theme",
+            options=list(theme_options.keys()),
+            index=0 if st.session_state.theme == 'dark' else 1,
+            key='theme_selector_sidebar'
+        )
         
-        if st.session_state.current_view in view_functions:
-            view_functions[st.session_state.current_view]()
+        if theme_options[selected_theme] != st.session_state.theme:
+            st.session_state.theme = theme_options[selected_theme]
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # Main content area
+    st.title("📊 Sales Dashboard")
+
+    # Show the selected view
+    view_functions = {
+        'overview': show_overview,
+        'trends': show_trends,
+        'leaderboard': show_leaderboard,
+        'geo': show_geo,
+        'detailed': show_detailed,
+        'editor': show_editor,
+        'compare': show_compare  # You'll need to implement this function
+    }
+
+    if st.session_state.current_view in view_functions:
+        view_functions[st.session_state.current_view]()
+    else:
+        st.info("Please select a view from the sidebar.")
 else:
     st.info("Please upload data to view the dashboard.")
 
