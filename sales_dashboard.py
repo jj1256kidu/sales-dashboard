@@ -181,7 +181,7 @@ def show_overview():
     
     # Date filtering
     if 'Expected Close Date' in df.columns:
-        df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'])
+        df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
         current_date = pd.Timestamp.now()
         
         # Calculate MTD and YTD flags
@@ -189,67 +189,22 @@ def show_overview():
         df['YTD'] = (df['Expected Close Date'].dt.year == current_date.year) & (df['Expected Close Date'].dt.month <= current_date.month)
     
     if 'Sales Stage' in df.columns and 'Amount' in df.columns:
-        # Add filters at the top
-        st.markdown("### 🔍 Filters")
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            if 'Expected Close Date' in df.columns:
-                # Get unique dates and sort them
-                unique_dates = sorted(df['Expected Close Date'].unique())
-                date_options = [date.strftime('%b %Y') for date in unique_dates]
-                
-                selected_month = st.selectbox(
-                    "Select Month",
-                    options=date_options,
-                    index=len(date_options) - 1
-                )
-                
-                # Convert selected month back to datetime for filtering
-                selected_date = pd.to_datetime(selected_month, format='%b %Y')
-        
-        with col2:
-            if 'Practice' in df.columns:
-                selected_practice = st.selectbox(
-                    "Select Practice",
-                    options=['All'] + sorted(df['Practice'].unique().tolist())
-                )
-        
-        with col3:
-            if 'Sales Stage' in df.columns:
-                selected_stage = st.selectbox(
-                    "Select Stage",
-                    options=['All'] + sorted(df['Sales Stage'].unique().tolist())
-                )
-        
-        # Apply filters
-        filtered_df = df.copy()
-        if 'Expected Close Date' in df.columns:
-            filtered_df = filtered_df[
-                (filtered_df['Expected Close Date'].dt.year == selected_date.year) & 
-                (filtered_df['Expected Close Date'].dt.month == selected_date.month)
-            ]
-        if selected_practice != 'All':
-            filtered_df = filtered_df[filtered_df['Practice'] == selected_practice]
-        if selected_stage != 'All':
-            filtered_df = filtered_df[filtered_df['Sales Stage'] == selected_stage]
-        
         # I. Top KPI Cards
         st.markdown("### 🔝 Key Performance Indicators")
         
         # Calculate core metrics
-        won_deals = filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
+        won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
         won_amount = won_deals['Amount'].sum() / 100000
         
-        pipeline_df = filtered_df[~filtered_df['Sales Stage'].str.contains('Won|Lost', case=False, na=False)]
+        pipeline_df = df[~df['Sales Stage'].str.contains('Won|Lost', case=False, na=False)]
         total_pipeline = pipeline_df['Amount'].sum() / 100000
         
         # Calculate Committed vs Upside if Status column exists
         committed_deals = 0
         upside_deals = 0
-        if 'Status' in filtered_df.columns:
-            committed_deals = filtered_df[filtered_df['Status'] == 'Committed for the Month']['Amount'].sum() / 100000
-            upside_deals = filtered_df[filtered_df['Status'] == 'Upside for the Month']['Amount'].sum() / 100000
+        if 'Status' in df.columns:
+            committed_deals = df[df['Status'] == 'Committed for the Month']['Amount'].sum() / 100000
+            upside_deals = df[df['Status'] == 'Upside for the Month']['Amount'].sum() / 100000
         
         target = float(st.session_state.sales_target)
         achievement_pct = (won_amount / target * 100) if target > 0 else 0
@@ -290,7 +245,7 @@ def show_overview():
             )
         
         with col3:
-            if 'Status' in filtered_df.columns:
+            if 'Status' in df.columns:
                 st.metric(
                     "💼 Committed Deals",
                     f"₹{committed_deals:,.2f}L",
@@ -305,8 +260,8 @@ def show_overview():
             else:
                 st.metric(
                     "🎯 Win Rate",
-                    f"{(len(won_deals) / len(filtered_df) * 100):.1f}%",
-                    f"{len(won_deals)}/{len(filtered_df)} deals"
+                    f"{(len(won_deals) / len(df) * 100):.1f}%",
+                    f"{len(won_deals)}/{len(df)} deals"
                 )
         
         # II. Business Mix Analysis
@@ -316,8 +271,8 @@ def show_overview():
         
         with col1:
             # Hunting vs Farming Split
-            if 'Type' in filtered_df.columns:
-                type_data = filtered_df.groupby('Type').agg({
+            if 'Type' in df.columns:
+                type_data = df.groupby('Type').agg({
                     'Amount': 'sum',
                     'id': 'count'
                 }).reset_index()
@@ -349,8 +304,8 @@ def show_overview():
         
         with col2:
             # Geographical Split
-            if 'Region' in filtered_df.columns:
-                region_data = filtered_df.groupby('Region').agg({
+            if 'Region' in df.columns:
+                region_data = df.groupby('Region').agg({
                     'Amount': 'sum',
                     'id': 'count'
                 }).reset_index()
@@ -383,10 +338,10 @@ def show_overview():
         # III. Target vs Achievement
         st.markdown("### 🎯 Target vs Achievement")
         
-        if 'Expected Close Date' in filtered_df.columns:
+        if 'Expected Close Date' in df.columns:
             # Monthly performance trend
-            monthly_performance = filtered_df.groupby(filtered_df['Expected Close Date'].dt.strftime('%b %Y')).agg({
-                'Amount': lambda x: x[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000
+            monthly_performance = df.groupby(df['Expected Close Date'].dt.strftime('%b %Y', na='Unknown')).agg({
+                'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000
             }).reset_index()
             monthly_performance.columns = ['Month', 'Achievement']
             
@@ -427,7 +382,7 @@ def show_overview():
         
         with col1:
             # Sales Funnel
-            stage_data = filtered_df.groupby('Sales Stage').agg({
+            stage_data = df.groupby('Sales Stage').agg({
                 'Amount': 'sum',
                 'id': 'count'
             }).reset_index()
