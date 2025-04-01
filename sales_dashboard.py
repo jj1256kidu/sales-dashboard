@@ -1623,6 +1623,8 @@ if df is not None:
             {'icon': '🌍', 'tooltip': 'Overview', 'view': 'overview'},
             {'icon': '⚖️', 'tooltip': 'Compare', 'view': 'compare'},
             {'icon': '📈', 'tooltip': 'Trends', 'view': 'trends'},
+            {'icon': '🔄', 'tooltip': 'Funnel', 'view': 'funnel'},
+            {'icon': '🎯', 'tooltip': 'Strategy', 'view': 'strategy'},
             {'icon': '👥', 'tooltip': 'Team Performance', 'view': 'leaderboard'},
             {'icon': '🌐', 'tooltip': 'Map View', 'view': 'geo'},
             {'icon': '🧾', 'tooltip': 'Detailed View', 'view': 'detailed'},
@@ -1670,11 +1672,13 @@ if df is not None:
     view_functions = {
         'overview': show_overview,
         'trends': show_trends,
+        'funnel': show_funnel,
+        'strategy': show_strategy,
         'leaderboard': show_leaderboard,
         'geo': show_geo,
         'detailed': show_detailed,
         'editor': show_editor,
-        'compare': show_compare  # You'll need to implement this function
+        'compare': show_compare
     }
 
     if st.session_state.current_view in view_functions:
@@ -1682,70 +1686,4 @@ if df is not None:
     else:
         st.info("Please select a view from the sidebar.")
 else:
-    st.info("Please upload data to view the dashboard.")
-
-# Add configuration section in sidebar
-with st.sidebar:
-    st.markdown("""
-        <div class="section-header">
-            <h3>⚙️ Dashboard Configuration</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("**📊 Overview Settings**")
-    st.session_state.dashboard_config['show_kpis'] = st.checkbox(
-        "Show Key Performance Indicators",
-        value=st.session_state.dashboard_config['show_kpis']
-    )
-    st.session_state.dashboard_config['show_financial_year'] = st.checkbox(
-        "Show Financial Year Breakdown",
-        value=st.session_state.dashboard_config['show_financial_year']
-    )
-    st.session_state.dashboard_config['show_quarter_breakdown'] = st.checkbox(
-        "Show Quarter-wise Breakdown",
-        value=st.session_state.dashboard_config['show_quarter_breakdown']
-    )
-    st.session_state.dashboard_config['show_hunting_farming'] = st.checkbox(
-        "Show Hunting/Farming Distribution",
-        value=st.session_state.dashboard_config['show_hunting_farming']
-    )
-    
-    st.markdown("**📈 Trend Settings**")
-    st.session_state.dashboard_config['show_monthly_trend'] = st.checkbox(
-        "Show Monthly Pipeline Trend",
-        value=st.session_state.dashboard_config['show_monthly_trend']
-    )
-    
-    st.markdown("**🔄 Funnel Settings**")
-    st.session_state.dashboard_config['show_sales_funnel'] = st.checkbox(
-        "Show Sales Stage Funnel",
-        value=st.session_state.dashboard_config['show_sales_funnel']
-    )
-    
-    st.markdown("**🎯 Strategy Settings**")
-    st.session_state.dashboard_config['show_strategy_view'] = st.checkbox(
-        "Show Strategy View",
-        value=st.session_state.dashboard_config['show_strategy_view']
-    )
-    
-    st.markdown("**👥 Team Settings**")
-    st.session_state.dashboard_config['show_leaderboard'] = st.checkbox(
-        "Show Sales Leaderboard",
-        value=st.session_state.dashboard_config['show_leaderboard']
-    )
-    
-    st.markdown("**🌍 Geography Settings**")
-    st.session_state.dashboard_config['show_geo_view'] = st.checkbox(
-        "Show Geography View",
-        value=st.session_state.dashboard_config['show_geo_view']
-    )
-    
-    st.markdown("**📊 Detailed View Settings**")
-    st.session_state.dashboard_config['show_detailed_view'] = st.checkbox(
-        "Show Detailed Deals View",
-        value=st.session_state.dashboard_config['show_detailed_view']
-    )
-    st.session_state.dashboard_config['show_weighted_revenue'] = st.checkbox(
-        "Show Weighted Revenue",
-        value=st.session_state.dashboard_config['show_weighted_revenue']
-    ) 
+    st.info("Please upload data to view the dashboard.") 
