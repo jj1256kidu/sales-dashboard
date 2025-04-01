@@ -1614,38 +1614,24 @@ if df is not None:
 
     # Create the vertical sidebar
     with st.sidebar:
-        st.markdown("""
-            <div style="display: flex; flex-direction: column; align-items: center; padding: 1rem;">
-        """, unsafe_allow_html=True)
+        # Navigation options with icons
+        nav_options = {
+            "🌍 Overview": "overview",
+            "⚖️ Compare": "compare",
+            "📈 Trends": "trends",
+            "🔄 Funnel": "funnel",
+            "🎯 Strategy": "strategy",
+            "👥 Team Performance": "leaderboard",
+            "🌐 Map View": "geo",
+            "🧾 Detailed View": "detailed",
+            "✏️ Editor": "editor"
+        }
         
-        # Navigation icons with tooltips
-        nav_items = [
-            {'icon': '🌍', 'tooltip': 'Overview', 'view': 'overview'},
-            {'icon': '⚖️', 'tooltip': 'Compare', 'view': 'compare'},
-            {'icon': '📈', 'tooltip': 'Trends', 'view': 'trends'},
-            {'icon': '🔄', 'tooltip': 'Funnel', 'view': 'funnel'},
-            {'icon': '🎯', 'tooltip': 'Strategy', 'view': 'strategy'},
-            {'icon': '👥', 'tooltip': 'Team Performance', 'view': 'leaderboard'},
-            {'icon': '🌐', 'tooltip': 'Map View', 'view': 'geo'},
-            {'icon': '🧾', 'tooltip': 'Detailed View', 'view': 'detailed'},
-            {'icon': '✏️', 'tooltip': 'Editor', 'view': 'editor'}
-        ]
+        st.markdown("## 📊 Navigation")
+        selected = st.radio("Go to", list(nav_options.keys()))
         
-        for item in nav_items:
-            is_active = st.session_state.current_view == item['view']
-            st.markdown(f"""
-                <div class="sidebar-icon {'active' if is_active else ''}" 
-                     data-tooltip="{item['tooltip']}"
-                     onclick="document.getElementById('nav_{item['view']}').click()">
-                    {item['icon']}
-                </div>
-            """, unsafe_allow_html=True)
-            # Hidden button for navigation
-            if st.button("", key=f"nav_{item['view']}", help=item['tooltip']):
-                st.session_state.current_view = item['view']
-                st.rerun()
-        
-        st.markdown("</div>", unsafe_allow_html=True)
+        # Set the session view
+        st.session_state.current_view = nav_options[selected]
         
         # Theme selector at the bottom of sidebar
         st.markdown("<div style='margin-top: auto; padding: 1rem;'>", unsafe_allow_html=True)
