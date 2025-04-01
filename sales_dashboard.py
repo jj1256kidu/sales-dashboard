@@ -190,7 +190,11 @@ def show_overview():
     
     if 'Sales Stage' in df.columns and 'Amount' in df.columns:
         # I. Top KPI Cards
-        st.markdown("### 🔝 Key Performance Indicators")
+        st.markdown("""
+            <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
+                <h2 style='color: white; margin: 0; text-align: center;'>🎯 Key Performance Indicators</h2>
+            </div>
+        """, unsafe_allow_html=True)
         
         # Calculate core metrics
         won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
@@ -209,13 +213,19 @@ def show_overview():
         target = float(st.session_state.sales_target)
         achievement_pct = (won_amount / target * 100) if target > 0 else 0
         
-        # Display KPIs in three columns
+        # Display KPIs in three columns with custom styling
         col1, col2, col3 = st.columns(3)
         
         with col1:
+            st.markdown("""
+                <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; border-left: 4px solid #4A90E2;'>
+                    <h3 style='margin: 0; color: #4A90E2;'>🎯 Target Setting</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
             # Target with edit option
             new_target = st.number_input(
-                "🎯 Sales Target (Lakhs)",
+                "Annual Target (Lakhs)",
                 value=float(st.session_state.sales_target),
                 step=1.0,
                 format="%.2f",
@@ -225,44 +235,56 @@ def show_overview():
                 st.session_state.sales_target = new_target
                 st.rerun()
             
-            st.metric(
-                "✅ Closed Won",
-                f"₹{won_amount:,.2f}L",
-                f"{achievement_pct:.1f}% of Target"
-            )
+            st.markdown(f"""
+                <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; border-left: 4px solid #2ecc71; margin-top: 10px;'>
+                    <h3 style='margin: 0; color: #2ecc71;'>✅ Closed Won</h3>
+                    <h2 style='margin: 10px 0; color: #2ecc71;'>₹{won_amount:,.2f}L</h2>
+                    <p style='margin: 0; color: #666;'>Achievement: {achievement_pct:.1f}% of Target</p>
+                </div>
+            """, unsafe_allow_html=True)
         
         with col2:
-            st.metric(
-                "📈 Total Pipeline",
-                f"₹{total_pipeline:,.2f}L",
-                f"{(total_pipeline/target*100 if target > 0 else 0):.1f}% of Target"
-            )
+            st.markdown(f"""
+                <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; border-left: 4px solid #3498db;'>
+                    <h3 style='margin: 0; color: #3498db;'>📈 Pipeline Health</h3>
+                    <h2 style='margin: 10px 0; color: #3498db;'>₹{total_pipeline:,.2f}L</h2>
+                    <p style='margin: 0; color: #666;'>{(total_pipeline/target*100 if target > 0 else 0):.1f}% of Target</p>
+                </div>
+            """, unsafe_allow_html=True)
             
-            st.metric(
-                "📉 Target Gap",
-                f"₹{(target - won_amount):,.2f}L",
-                f"{(100 - achievement_pct):.1f}% remaining"
-            )
+            st.markdown(f"""
+                <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; border-left: 4px solid #e74c3c; margin-top: 10px;'>
+                    <h3 style='margin: 0; color: #e74c3c;'>📉 Target Gap</h3>
+                    <h2 style='margin: 10px 0; color: #e74c3c;'>₹{(target - won_amount):,.2f}L</h2>
+                    <p style='margin: 0; color: #666;'>{(100 - achievement_pct):.1f}% remaining</p>
+                </div>
+            """, unsafe_allow_html=True)
         
         with col3:
             if 'Status' in df.columns:
-                st.metric(
-                    "💼 Committed Deals",
-                    f"₹{committed_deals:,.2f}L",
-                    f"{(committed_deals/total_pipeline*100 if total_pipeline > 0 else 0):.1f}% of Pipeline"
-                )
+                st.markdown(f"""
+                    <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; border-left: 4px solid #f1c40f;'>
+                        <h3 style='margin: 0; color: #f1c40f;'>💼 Deal Mix</h3>
+                        <h2 style='margin: 10px 0; color: #f1c40f;'>₹{committed_deals:,.2f}L</h2>
+                        <p style='margin: 0; color: #666;'>Committed: {(committed_deals/total_pipeline*100 if total_pipeline > 0 else 0):.1f}%</p>
+                    </div>
+                """, unsafe_allow_html=True)
                 
-                st.metric(
-                    "📊 Upside Deals",
-                    f"₹{upside_deals:,.2f}L",
-                    f"{(upside_deals/total_pipeline*100 if total_pipeline > 0 else 0):.1f}% of Pipeline"
-                )
+                st.markdown(f"""
+                    <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; border-left: 4px solid #9b59b6; margin-top: 10px;'>
+                        <h3 style='margin: 0; color: #9b59b6;'>📊 Upside Potential</h3>
+                        <h2 style='margin: 10px 0; color: #9b59b6;'>₹{upside_deals:,.2f}L</h2>
+                        <p style='margin: 0; color: #666;'>Upside: {(upside_deals/total_pipeline*100 if total_pipeline > 0 else 0):.1f}%</p>
+                    </div>
+                """, unsafe_allow_html=True)
             else:
-                st.metric(
-                    "🎯 Win Rate",
-                    f"{(len(won_deals) / len(df) * 100):.1f}%",
-                    f"{len(won_deals)}/{len(df)} deals"
-                )
+                st.markdown(f"""
+                    <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; border-left: 4px solid #2ecc71;'>
+                        <h3 style='margin: 0; color: #2ecc71;'>🎯 Win Rate</h3>
+                        <h2 style='margin: 10px 0; color: #2ecc71;'>{(len(won_deals) / len(df) * 100):.1f}%</h2>
+                        <p style='margin: 0; color: #666;'>{len(won_deals)}/{len(df)} deals</p>
+                    </div>
+                """, unsafe_allow_html=True)
         
         # II. Business Mix Analysis
         st.markdown("### 📊 Business Mix Analysis")
@@ -271,7 +293,7 @@ def show_overview():
         
         with col1:
             # Hunting vs Farming Split
-            if 'Type' in df.columns:
+            if 'Type' in df.columns and not df['Type'].isna().all():
                 type_data = df.groupby('Type').agg({
                     'Amount': 'sum',
                     'id': 'count'
@@ -301,10 +323,12 @@ def show_overview():
                 )
                 
                 st.plotly_chart(fig_type, use_container_width=True)
+            else:
+                st.info("Hunting vs Farming data is not available in the dataset.")
         
         with col2:
             # Geographical Split
-            if 'Region' in df.columns:
+            if 'Region' in df.columns and not df['Region'].isna().all():
                 region_data = df.groupby('Region').agg({
                     'Amount': 'sum',
                     'id': 'count'
@@ -334,6 +358,8 @@ def show_overview():
                 )
                 
                 st.plotly_chart(fig_geo, use_container_width=True)
+            else:
+                st.info("Geographical data is not available in the dataset.")
         
         # III. Target vs Achievement
         st.markdown("### 🎯 Target vs Achievement")
