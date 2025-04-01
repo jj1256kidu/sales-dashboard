@@ -323,6 +323,7 @@ def show_overview():
                     name='Total Pipeline',
                     text=practice_metrics['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L"),
                     textposition='outside',
+                    textfont=dict(size=14, color='#4A90E2'),
                     marker_color='#4A90E2'
                 ))
                 
@@ -332,6 +333,7 @@ def show_overview():
                     name='Closed Won',
                     text=practice_metrics['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L"),
                     textposition='outside',
+                    textfont=dict(size=14, color='#2ecc71'),
                     marker_color='#2ecc71'
                 ))
                 
@@ -341,7 +343,11 @@ def show_overview():
                     barmode='group',
                     xaxis_title="Practice",
                     yaxis_title="Amount (Lakhs)",
-                    showlegend=True
+                    showlegend=True,
+                    font=dict(size=14),
+                    title_font=dict(size=20),
+                    xaxis=dict(tickfont=dict(size=12)),
+                    yaxis=dict(tickfont=dict(size=12))
                 )
                 
                 st.plotly_chart(fig_pipeline, use_container_width=True)
@@ -356,6 +362,7 @@ def show_overview():
                     name='Pipeline Deals',
                     text=practice_metrics['Pipeline Deals'],
                     textposition='outside',
+                    textfont=dict(size=14, color='#4A90E2'),
                     marker_color='#4A90E2'
                 ))
                 
@@ -365,6 +372,7 @@ def show_overview():
                     name='Closed Deals',
                     text=practice_metrics['Closed Deals'],
                     textposition='outside',
+                    textfont=dict(size=14, color='#2ecc71'),
                     marker_color='#2ecc71'
                 ))
                 
@@ -374,7 +382,11 @@ def show_overview():
                     barmode='group',
                     xaxis_title="Practice",
                     yaxis_title="Number of Deals",
-                    showlegend=True
+                    showlegend=True,
+                    font=dict(size=14),
+                    title_font=dict(size=20),
+                    xaxis=dict(tickfont=dict(size=12)),
+                    yaxis=dict(tickfont=dict(size=12))
                 )
                 
                 st.plotly_chart(fig_deals, use_container_width=True)
@@ -463,6 +475,7 @@ def show_overview():
                 name='Closed Amount',
                 text=region_data.apply(lambda x: f"₹{x['Closed Amount']:,.1f}L<br>{x['Closed Deals']} deals", axis=1),
                 textposition='outside',
+                textfont=dict(size=14, color='#4A90E2'),
                 marker_color='#4A90E2'
             ))
             
@@ -471,7 +484,11 @@ def show_overview():
                 height=400,
                 xaxis_title="Region",
                 yaxis_title="Amount (Lakhs)",
-                showlegend=True
+                showlegend=True,
+                font=dict(size=14),
+                title_font=dict(size=20),
+                xaxis=dict(tickfont=dict(size=12)),
+                yaxis=dict(tickfont=dict(size=12))
             )
             
             st.plotly_chart(fig_geo, use_container_width=True)
@@ -508,7 +525,8 @@ def show_overview():
                     y=status_data['Amount'],
                     name=status,
                     text=status_data['Amount'].apply(lambda x: f"₹{x:,.1f}L"),
-                    textposition='inside'
+                    textposition='inside',
+                    textfont=dict(size=12, color='white')
                 ))
             
             fig_status.update_layout(
@@ -517,7 +535,11 @@ def show_overview():
                 barmode='stack',
                 xaxis_title="Month",
                 yaxis_title="Amount (Lakhs)",
-                showlegend=True
+                showlegend=True,
+                font=dict(size=14),
+                title_font=dict(size=20),
+                xaxis=dict(tickfont=dict(size=12)),
+                yaxis=dict(tickfont=dict(size=12))
             )
             
             st.plotly_chart(fig_status, use_container_width=True)
