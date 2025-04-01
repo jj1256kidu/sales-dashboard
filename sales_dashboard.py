@@ -58,22 +58,62 @@ st.markdown("""
 
     /* Number formatting */
     .big-number {
-        font-size: 2.5em;
-        font-weight: bold;
+        font-size: 3.5em;
+        font-weight: 800;
         color: #2ecc71;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        letter-spacing: -1px;
     }
 
     .metric-value {
-        font-size: 1.8em;
-        font-weight: bold;
+        font-size: 2.5em;
+        font-weight: 700;
         color: #4A90E2;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
     }
 
     .metric-label {
+        font-size: 1.4em;
+        color: #333;
+        margin-bottom: 8px;
+        font-weight: 600;
+    }
+
+    /* Section headers */
+    .section-header {
+        font-size: 2.2em;
+        font-weight: 800;
+        color: #2c3e50;
+        margin: 30px 0 20px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* Chart text styling */
+    .js-plotly-plot .plotly .main-svg {
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    /* Table styling */
+    .dataframe {
+        font-size: 1.2em;
+        background-color: white;
+        border-radius: 8px;
+        padding: 15px;
+    }
+
+    .dataframe th {
+        background-color: #4A90E2;
+        color: white;
+        font-weight: 700;
+        padding: 15px;
         font-size: 1.1em;
-        color: #666;
-        margin-bottom: 5px;
+    }
+
+    .dataframe td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        font-weight: 500;
     }
 
     /* Upload container styling */
@@ -122,31 +162,6 @@ st.markdown("""
         padding: 15px;
         border-radius: 4px;
         margin: 10px 0;
-    }
-
-    /* Table styling */
-    .dataframe {
-        font-size: 1.1em;
-        background-color: white;
-        border-radius: 8px;
-        padding: 10px;
-    }
-
-    .dataframe th {
-        background-color: #4A90E2;
-        color: white;
-        font-weight: bold;
-        padding: 12px;
-    }
-
-    .dataframe td {
-        padding: 10px;
-        border-bottom: 1px solid #eee;
-    }
-
-    /* Chart text styling */
-    .js-plotly-plot .plotly .main-svg {
-        font-size: 14px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -251,24 +266,24 @@ def show_overview():
         
         # Enhanced horizontal progress bar with metrics
         st.markdown(f"""
-            <div style='background: #f0f2f6; padding: 25px; border-radius: 10px; margin-top: 20px;'>
-                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;'>
+            <div style='background: #f0f2f6; padding: 30px; border-radius: 15px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
                     <div>
-                        <h3 style='margin: 0; color: #2ecc71; font-size: 1.2em;'>Closed Won</h3>
-                        <h2 style='margin: 5px 0; color: #2ecc71; font-size: 2.5em; font-weight: bold;'>₹{won_amount:,.2f}L</h2>
+                        <h3 style='margin: 0; color: #2ecc71; font-size: 1.5em; font-weight: 600;'>Closed Won</h3>
+                        <h2 style='margin: 10px 0; color: #2ecc71; font-size: 3.5em; font-weight: 800; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);'>₹{won_amount:,.2f}L</h2>
                     </div>
                     <div style='text-align: right;'>
-                        <h3 style='margin: 0; color: #e74c3c; font-size: 1.2em;'>Target</h3>
-                        <h2 style='margin: 5px 0; color: #e74c3c; font-size: 2.5em; font-weight: bold;'>₹{new_target:,.2f}L</h2>
+                        <h3 style='margin: 0; color: #e74c3c; font-size: 1.5em; font-weight: 600;'>Target</h3>
+                        <h2 style='margin: 10px 0; color: #e74c3c; font-size: 3.5em; font-weight: 800; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);'>₹{new_target:,.2f}L</h2>
                     </div>
                 </div>
-                <div style='background: #e74c3c; height: 40px; border-radius: 20px; overflow: hidden; position: relative;'>
+                <div style='background: #e74c3c; height: 50px; border-radius: 25px; overflow: hidden; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);'>
                     <div style='background: #2ecc71; height: 100%; width: {min(100, achievement_pct)}%; transition: width 0.5s ease-in-out;'></div>
-                    <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: bold; font-size: 1.2em; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);'>
+                    <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 700; font-size: 1.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);'>
                         {achievement_pct:.1f}% Complete
                     </div>
                 </div>
-                <div style='display: flex; justify-content: space-between; margin-top: 10px; color: #666; font-size: 1.1em;'>
+                <div style='display: flex; justify-content: space-between; margin-top: 15px; color: #666; font-size: 1.3em; font-weight: 500;'>
                     <span>₹0L</span>
                     <span>₹{new_target:,.1f}L</span>
                 </div>
@@ -323,7 +338,7 @@ def show_overview():
                     name='Total Pipeline',
                     text=practice_metrics['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L"),
                     textposition='outside',
-                    textfont=dict(size=14, color='#4A90E2'),
+                    textfont=dict(size=16, color='#4A90E2', family='Segoe UI'),
                     marker_color='#4A90E2'
                 ))
                 
@@ -333,21 +348,24 @@ def show_overview():
                     name='Closed Won',
                     text=practice_metrics['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L"),
                     textposition='outside',
-                    textfont=dict(size=14, color='#2ecc71'),
+                    textfont=dict(size=16, color='#2ecc71', family='Segoe UI'),
                     marker_color='#2ecc71'
                 ))
                 
                 fig_pipeline.update_layout(
-                    title="Practice-wise Pipeline Amount",
-                    height=400,
+                    title=dict(
+                        text="Practice-wise Pipeline Amount",
+                        font=dict(size=24, family='Segoe UI', color='#2c3e50')
+                    ),
+                    height=500,
                     barmode='group',
-                    xaxis_title="Practice",
-                    yaxis_title="Amount (Lakhs)",
+                    xaxis_title=dict(text="Practice", font=dict(size=18, family='Segoe UI')),
+                    yaxis_title=dict(text="Amount (Lakhs)", font=dict(size=18, family='Segoe UI')),
                     showlegend=True,
-                    font=dict(size=14),
-                    title_font=dict(size=20),
-                    xaxis=dict(tickfont=dict(size=12)),
-                    yaxis=dict(tickfont=dict(size=12))
+                    font=dict(size=16, family='Segoe UI'),
+                    xaxis=dict(tickfont=dict(size=14, family='Segoe UI')),
+                    yaxis=dict(tickfont=dict(size=14, family='Segoe UI')),
+                    legend=dict(font=dict(size=16, family='Segoe UI'))
                 )
                 
                 st.plotly_chart(fig_pipeline, use_container_width=True)
