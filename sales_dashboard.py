@@ -180,10 +180,10 @@ def show_overview():
         st.session_state.sales_target = 0
     
     if 'Sales Stage' in df.columns and 'Amount' in df.columns:
-        # I. Target Setting
+        # I. Target Setting & Achievement
         st.markdown("""
             <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
-                <h2 style='color: white; margin: 0; text-align: center;'>🎯 Target Setting</h2>
+                <h2 style='color: white; margin: 0; text-align: center;'>🎯 Target Setting & Achievement</h2>
             </div>
         """, unsafe_allow_html=True)
         
@@ -226,6 +226,11 @@ def show_overview():
             }).reset_index()
             monthly_performance.columns = ['Month', 'Achievement']
             
+            # Sort months chronologically
+            month_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            monthly_performance['Month'] = pd.Categorical(monthly_performance['Month'], categories=month_order, ordered=True)
+            monthly_performance = monthly_performance.sort_values('Month')
+            
             # Add target line
             monthly_target = new_target / 12
             
@@ -251,7 +256,10 @@ def show_overview():
             fig_achievement.update_layout(
                 title="Monthly Target vs Achievement",
                 height=400,
-                barmode='group'
+                barmode='group',
+                xaxis_title="Month",
+                yaxis_title="Amount (Lakhs)",
+                showlegend=True
             )
             
             st.plotly_chart(fig_achievement, use_container_width=True)
@@ -269,22 +277,38 @@ def show_overview():
             total_amount = type_data['Amount'].sum()
             total_count = type_data['id'].sum()
             
-            fig_type = go.Figure(go.Pie(
-                values=type_data['Amount'],
-                labels=type_data['Type'],
-                hole=0.6,
-                textinfo='label+percent+value',
-                text=type_data.apply(lambda x: f"{x['Type']}<br>₹{x['Amount']:,.1f}L<br>{(x['Amount']/total_amount*100):.1f}%<br>{x['id']} deals", axis=1),
-                hovertemplate="<b>%{label}</b><br>" +
-                            "Amount: ₹%{value:,.1f}L<br>" +
-                            "Percentage: %{percent}<br>" +
-                            "Deal Count: %{text}<br>" +
-                            "<extra></extra>"
+            # Create a bar chart for better comparison
+            fig_type = go.Figure()
+            
+            # Add amount bars
+            fig_type.add_trace(go.Bar(
+                x=type_data['Type'],
+                y=type_data['Amount'],
+                name='Amount (Lakhs)',
+                text=type_data.apply(lambda x: f"₹{x['Amount']:,.1f}L<br>{(x['Amount']/total_amount*100):.1f}%", axis=1),
+                textposition='outside'
+            ))
+            
+            # Add deal count as secondary axis
+            fig_type.add_trace(go.Scatter(
+                x=type_data['Type'],
+                y=type_data['id'],
+                name='Deal Count',
+                yaxis='y2',
+                text=type_data['id'],
+                textposition='top center'
             ))
             
             fig_type.update_layout(
                 title="Hunting vs Farming Distribution",
                 height=400,
+                barmode='group',
+                yaxis=dict(title='Amount (Lakhs)'),
+                yaxis2=dict(
+                    title='Deal Count',
+                    overlaying='y',
+                    side='right'
+                ),
                 showlegend=True
             )
             
@@ -292,35 +316,34 @@ def show_overview():
         else:
             st.info("Hunting vs Farming data is not available in the dataset.")
         
-        # IV. Geographical Split
-        st.markdown("### 🌍 Geographical Distribution")
+        # IV. Geography-wise Deal Split
+        st.markdown("### 🌍 Geography-wise Deal Split")
         
         if 'Region' in df.columns and not df['Region'].isna().all():
             region_data = df.groupby('Region').agg({
-                'Amount': 'sum',
-                'id': 'count'
+                'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
+                'id': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
             }).reset_index()
             
-            region_data['Amount'] = region_data['Amount'] / 100000
-            total_amount = region_data['Amount'].sum()
-            total_count = region_data['id'].sum()
+            region_data.columns = ['Region', 'Closed Amount', 'Closed Deals']
             
-            fig_geo = go.Figure(go.Pie(
-                values=region_data['Amount'],
-                labels=region_data['Region'],
-                hole=0.6,
-                textinfo='label+percent+value',
-                text=region_data.apply(lambda x: f"{x['Region']}<br>₹{x['Amount']:,.1f}L<br>{(x['Amount']/total_amount*100):.1f}%<br>{x['id']} deals", axis=1),
-                hovertemplate="<b>%{label}</b><br>" +
-                            "Amount: ₹%{value:,.1f}L<br>" +
-                            "Percentage: %{percent}<br>" +
-                            "Deal Count: %{text}<br>" +
-                            "<extra></extra>"
+            # Create a heatmap-like bar chart
+            fig_geo = go.Figure()
+            
+            fig_geo.add_trace(go.Bar(
+                x=region_data['Region'],
+                y=region_data['Closed Amount'],
+                name='Closed Amount',
+                text=region_data.apply(lambda x: f"₹{x['Closed Amount']:,.1f}L<br>{x['Closed Deals']} deals", axis=1),
+                textposition='outside',
+                marker_color='#4A90E2'
             ))
             
             fig_geo.update_layout(
-                title="Regional Distribution",
+                title="Regional Performance",
                 height=400,
+                xaxis_title="Region",
+                yaxis_title="Amount (Lakhs)",
                 showlegend=True
             )
             
@@ -331,38 +354,47 @@ def show_overview():
         # V. Committed vs Upside Analysis
         st.markdown("### 💼 Committed vs Upside Analysis")
         
-        if 'Status' in df.columns:
-            status_data = df.groupby('Status').agg({
-                'Amount': 'sum',
-                'id': 'count'
+        if 'Status' in df.columns and 'Expected Close Date' in df.columns:
+            # Monthly committed vs upside
+            monthly_status = df.groupby([
+                df['Expected Close Date'].dt.strftime('%b %Y', na='Unknown'),
+                'Status'
+            ]).agg({
+                'Amount': 'sum'
             }).reset_index()
             
-            status_data['Amount'] = status_data['Amount'] / 100000
-            total_amount = status_data['Amount'].sum()
-            total_count = status_data['id'].sum()
+            monthly_status['Amount'] = monthly_status['Amount'] / 100000
+            monthly_status.columns = ['Month', 'Status', 'Amount']
             
-            fig_status = go.Figure(go.Pie(
-                values=status_data['Amount'],
-                labels=status_data['Status'],
-                hole=0.6,
-                textinfo='label+percent+value',
-                text=status_data.apply(lambda x: f"{x['Status']}<br>₹{x['Amount']:,.1f}L<br>{(x['Amount']/total_amount*100):.1f}%<br>{x['id']} deals", axis=1),
-                hovertemplate="<b>%{label}</b><br>" +
-                            "Amount: ₹%{value:,.1f}L<br>" +
-                            "Percentage: %{percent}<br>" +
-                            "Deal Count: %{text}<br>" +
-                            "<extra></extra>"
-            ))
+            # Sort months chronologically
+            monthly_status['Month'] = pd.Categorical(monthly_status['Month'], categories=month_order, ordered=True)
+            monthly_status = monthly_status.sort_values('Month')
+            
+            # Create stacked column chart
+            fig_status = go.Figure()
+            
+            for status in monthly_status['Status'].unique():
+                status_data = monthly_status[monthly_status['Status'] == status]
+                fig_status.add_trace(go.Bar(
+                    x=status_data['Month'],
+                    y=status_data['Amount'],
+                    name=status,
+                    text=status_data['Amount'].apply(lambda x: f"₹{x:,.1f}L"),
+                    textposition='inside'
+                ))
             
             fig_status.update_layout(
-                title="Committed vs Upside Distribution",
+                title="Monthly Committed vs Upside",
                 height=400,
+                barmode='stack',
+                xaxis_title="Month",
+                yaxis_title="Amount (Lakhs)",
                 showlegend=True
             )
             
             st.plotly_chart(fig_status, use_container_width=True)
         else:
-            st.info("Status data is not available in the dataset.")
+            st.info("Status and date data are not available in the dataset.")
     
     else:
         st.error("Required columns (Sales Stage, Amount) not found in the dataset")
