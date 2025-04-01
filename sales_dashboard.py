@@ -441,7 +441,7 @@ def show_overview():
                 
                 fig_deals.update_layout(
                     title=dict(
-                        text="Practice-wise Deal Count",
+                        text="Practice-wise Pipeline vs Closed Deals",
                         font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
                         x=0.5,
                         y=0.95,
@@ -499,23 +499,23 @@ def show_overview():
                     <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                         <div class='metric-label'>Total Pipeline</div>
                         <div class='metric-value'>₹{total_pipeline:,.1f}L</div>
-                        <div style='color: #666; font-size: 0.9em;'>{practice_metrics['Total Pipeline'].sum() - practice_metrics['Closed Amount'].sum():,.1f}L remaining</div>
+                        <div style='color: #666; font-size: 0.9em;'>Active pipeline value</div>
                     </div>
                 """, unsafe_allow_html=True)
             
             with col2:
-                total_deals = practice_metrics['Pipeline Deals'].sum() + practice_metrics['Closed Deals'].sum()
+                total_deals = practice_metrics['Pipeline Deals'].sum()
                 st.markdown(f"""
                     <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
-                        <div class='metric-label'>Total Deals</div>
+                        <div class='metric-label'>Pipeline Deals</div>
                         <div class='metric-value'>{total_deals:,}</div>
-                        <div style='color: #666; font-size: 0.9em;'>{practice_metrics['Pipeline Deals'].sum():,} in pipeline</div>
+                        <div style='color: #666; font-size: 0.9em;'>Active opportunities</div>
                     </div>
                 """, unsafe_allow_html=True)
             
             with col3:
                 total_won = practice_metrics['Closed Deals'].sum()
-                win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0
+                win_rate = (total_won / (total_won + total_deals) * 100) if (total_won + total_deals) > 0 else 0
                 st.markdown(f"""
                     <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                         <div class='metric-label'>Win Rate</div>
@@ -538,16 +538,14 @@ def show_overview():
             st.markdown("### Practice-wise Details")
             summary_data = practice_metrics.copy()
             summary_data['Win Rate'] = (summary_data['Closed Deals'] / (summary_data['Closed Deals'] + summary_data['Pipeline Deals']) * 100).round(1)
-            summary_data['Pipeline Value'] = summary_data['Total Pipeline'] - summary_data['Closed Amount']
             
             # Format the summary table
             summary_data['Closed Amount'] = summary_data['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L")
             summary_data['Total Pipeline'] = summary_data['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L")
-            summary_data['Pipeline Value'] = summary_data['Pipeline Value'].apply(lambda x: f"₹{x:,.1f}L")
             summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x:.1f}%")
             
             st.dataframe(
-                summary_data[['Practice', 'Closed Amount', 'Pipeline Value', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals', 'Win Rate']],
+                summary_data[['Practice', 'Closed Amount', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals', 'Win Rate']],
                 use_container_width=True
             )
         else:
