@@ -587,8 +587,19 @@ def show_overview():
         # Sort by Total Amount in descending order
         focus_metrics = focus_metrics.sort_values('Total Amount', ascending=False)
         
-        # Create a single column layout
-        # Create donut chart
+        # First show the summary table
+        st.markdown("### Focus Areas Summary")
+        summary_data = focus_metrics.copy()
+        summary_data['Total Amount'] = summary_data['Total Amount'].apply(lambda x: f"₹{x:,.1f}L")
+        summary_data['Share %'] = summary_data['Share %'].apply(lambda x: f"{x:.1f}%")
+        
+        st.dataframe(
+            summary_data[['Focus Area', 'Total Amount', 'Share %', 'Total Deals', 'Closed Deals']],
+            use_container_width=True
+        )
+        
+        # Then show the donut chart
+        st.markdown("### Focus Areas Distribution")
         fig_focus = go.Figure(data=[go.Pie(
             labels=focus_metrics['Focus Area'],
             values=focus_metrics['Total Amount'],
@@ -630,17 +641,6 @@ def show_overview():
         )
         
         st.plotly_chart(fig_focus, use_container_width=True)
-        
-        # Add a simplified summary table
-        st.markdown("### Focus Areas Summary")
-        summary_data = focus_metrics.copy()
-        summary_data['Total Amount'] = summary_data['Total Amount'].apply(lambda x: f"₹{x:,.1f}L")
-        summary_data['Share %'] = summary_data['Share %'].apply(lambda x: f"{x:.1f}%")
-        
-        st.dataframe(
-            summary_data[['Focus Area', 'Total Amount', 'Share %', 'Total Deals', 'Closed Deals']],
-            use_container_width=True
-        )
     else:
         st.info("KritiKal Focus Areas column not found in the dataset")
 
