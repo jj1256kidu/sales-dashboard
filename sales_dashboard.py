@@ -86,12 +86,33 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Title and Theme Selection
-col1, col2 = st.columns([6, 1])
-with col1:
-    st.title("📊 Sales Dashboard")
-with col2:
-    # Theme selector with proper state management
+# Initialize session state for navigation if not exists
+if 'current_view' not in st.session_state:
+    st.session_state.current_view = 'data_input'
+
+# Create the vertical sidebar
+with st.sidebar:
+    # Navigation options with icons
+    pages = {
+        "📁 Data Input": "data_input",
+        "🌍 Overview": "overview",
+        "📈 Trends": "trends",
+        "🔄 Funnel": "funnel",
+        "🎯 Strategy": "strategy",
+        "👥 Leaderboard": "leaderboard",
+        "🌐 Geography": "geo",
+        "🧾 Detailed View": "detailed",
+        "✏️ Editor": "editor"
+    }
+    
+    st.markdown("## 📊 Navigation")
+    selected_page = st.radio("Go to", list(pages.keys()))
+    
+    # Save selected page
+    st.session_state.current_view = pages[selected_page]
+    
+    # Theme selector at the bottom of sidebar
+    st.markdown("<div style='margin-top: auto; padding: 1rem;'>", unsafe_allow_html=True)
     theme_options = {
         "Dark": "dark",
         "Light": "light"
@@ -100,14 +121,13 @@ with col2:
         "Theme",
         options=list(theme_options.keys()),
         index=0 if st.session_state.theme == 'dark' else 1,
-        key='theme_selector_main'
+        key='theme_selector_sidebar'
     )
     
-    # Update theme state if changed
-    new_theme = theme_options[selected_theme]
-    if new_theme != st.session_state.theme:
-        st.session_state.theme = new_theme
+    if theme_options[selected_theme] != st.session_state.theme:
+        st.session_state.theme = theme_options[selected_theme]
         st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # Get current theme colors
 colors = get_theme_colors()
@@ -151,12 +171,6 @@ def apply_theme_to_plot(fig):
         )
     )
     return fig
-
-# Initialize session state for navigation and filters
-if 'current_view' not in st.session_state:
-    st.session_state.current_view = 'overview'
-if 'filters' not in st.session_state:
-    st.session_state.filters = {}
 
 # Initialize session state for configuration
 if 'dashboard_config' not in st.session_state:
@@ -604,6 +618,149 @@ st.markdown(f"""
     }}
     </style>
 """, unsafe_allow_html=True)
+
+# Render the correct page based on selection
+if st.session_state.current_view == "data_input":
+    st.title("📁 Data Input")
+    input_method = st.radio("Choose data input method:", ["Excel File", "Google Sheet URL"])
+    
+    df = None
+    if input_method == "Excel File":
+        uploaded_file = st.file_uploader("Upload Excel file", type=['xlsx'])
+        if uploaded_file is not None:
+            try:
+                df = pd.read_excel(uploaded_file, sheet_name='Raw_Data')
+                if 'Amount' in df.columns:
+                    df['Amount'] = df['Amount'].apply(safe_float)
+            except Exception as e:
+                st.error(f"Error reading Excel file: {str(e)}")
+    else:
+        sheet_url = st.text_input("Paste Google Sheet URL")
+        if sheet_url:
+            try:
+                csv_url = sheet_url.replace("/edit#gid=", "/export?format=csv&gid=")
+                df = pd.read_csv(csv_url)
+                if 'Amount' in df.columns:
+                    df['Amount'] = df['Amount'].apply(safe_float)
+            except Exception as e:
+                st.error(f"Error reading Google Sheet: {str(e)}")
+    
+    if df is not None:
+        st.success("Data loaded successfully!")
+        st.dataframe(df.head(), use_container_width=True)
+else:
+    # Check if data is loaded
+    if 'df' not in locals() or df is None:
+        st.warning("Please go to the Data Input page and upload your data first.")
+    else:
+        # Initialize filtered_df with the original dataframe
+        filtered_df = df.copy()
+        
+        # Show the selected view
+        view_functions = {
+            'overview': show_overview,
+            'trends': show_trends,
+            'funnel': show_funnel,
+            'strategy': show_strategy,
+            'leaderboard': show_leaderboard,
+            'geo': show_geo,
+            'detailed': show_detailed,
+            'editor': show_editor
+        }
+        
+        if st.session_state.current_view in view_functions:
+            view_functions[st.session_state.current_view]()
+        else:
+            st.info("Please select a view from the sidebar.")
+
+# Title and Theme Selection
+col1, col2 = st.columns([6, 1])
+with col1:
+    st.title("📊 Sales Dashboard")
+with col2:
+    # Theme selector with proper state management
+    theme_options = {
+        "Dark": "dark",
+        "Light": "light"
+    }
+    selected_theme = st.selectbox(
+        "Theme",
+        options=list(theme_options.keys()),
+        index=0 if st.session_state.theme == 'dark' else 1,
+        key='theme_selector_main'
+    )
+    
+    # Update theme state if changed
+    new_theme = theme_options[selected_theme]
+    if new_theme != st.session_state.theme:
+        st.session_state.theme = new_theme
+        st.rerun()
+
+# Get current theme colors
+colors = get_theme_colors()
+
+# Helper functions
+def format_lakhs(value):
+    try:
+        return f"₹{float(value)/100000:,.2f}L"
+    except (ValueError, TypeError):
+        return "₹0.00L"
+
+def safe_float(value):
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return 0.0
+
+def safe_sort_unique(series):
+    """Safely sort unique values from a series, handling mixed types."""
+    unique_values = series.unique()
+    return sorted([str(x) for x in unique_values if pd.notna(x)])
+
+def apply_theme_to_plot(fig):
+    fig.update_layout(
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        font=dict(
+            family="Inter",
+            color=colors['text']
+        ),
+        xaxis=dict(
+            gridcolor=colors['border'],
+            color=colors['text']
+        ),
+        yaxis=dict(
+            gridcolor=colors['border'],
+            color=colors['text']
+        ),
+        legend=dict(
+            font=dict(color=colors['text'])
+        )
+    )
+    return fig
+
+# Initialize session state for navigation and filters
+if 'current_view' not in st.session_state:
+    st.session_state.current_view = 'overview'
+if 'filters' not in st.session_state:
+    st.session_state.filters = {}
+
+# Initialize session state for configuration
+if 'dashboard_config' not in st.session_state:
+    st.session_state.dashboard_config = {
+        'show_kpis': True,
+        'show_quarter_breakdown': True,
+        'show_hunting_farming': True,
+        'show_monthly_trend': True,
+        'show_sales_funnel': True,
+        'show_strategy_view': True,
+        'show_leaderboard': True,
+        'show_geo_view': True,
+        'show_detailed_view': True,
+        'show_weighted_revenue': True,
+        'show_win_rate': True,
+        'show_financial_year': True
+    }
 
 # Data Input Section
 st.markdown("""
@@ -1351,169 +1508,6 @@ if df is not None:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
 
-    def show_compare():
-        st.markdown("""
-            <div class="section-header">
-                <h3>⚖️ Comparison Analysis</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Create comparison options
-        comparison_dimensions = ['Practice', 'Quarter', 'Sales Stage', 'Hunting/Farming']
-        available_dimensions = [dim for dim in comparison_dimensions if dim in filtered_df.columns]
-        
-        if not available_dimensions:
-            st.info("No comparison dimensions available in the dataset.")
-            return
-        
-        # Dimension selection
-        col1, col2 = st.columns(2)
-        with col1:
-            dimension1 = st.selectbox(
-                "Select First Dimension",
-                options=available_dimensions,
-                key="dim1"
-            )
-        with col2:
-            # Filter out the selected first dimension from second dimension options
-            remaining_dimensions = [dim for dim in available_dimensions if dim != dimension1]
-            dimension2 = st.selectbox(
-                "Select Second Dimension",
-                options=remaining_dimensions,
-                key="dim2"
-            )
-        
-        # Calculate comparison metrics
-        comparison_metrics = filtered_df.groupby([dimension1, dimension2]).agg({
-            'Amount': ['sum', 'count'],
-            'Sales Stage': lambda x: (x.isin(['Closed Won', 'Won'])).sum()
-        }).reset_index()
-        
-        # Flatten column names
-        comparison_metrics.columns = [
-            dimension1, dimension2, 'Total Amount', 'Deal Count', 'Won Deals'
-        ]
-        
-        # Calculate additional metrics
-        comparison_metrics['Total Amount'] = comparison_metrics['Total Amount'] / 100000  # Convert to Lakhs
-        comparison_metrics['Win Rate'] = (comparison_metrics['Won Deals'] / comparison_metrics['Deal Count'] * 100).round(1)
-        
-        # Create comparison visualizations
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Amount comparison
-            fig_amount = px.bar(
-                comparison_metrics,
-                x=dimension1,
-                y='Total Amount',
-                color=dimension2,
-                title=f'Total Amount by {dimension1} and {dimension2}',
-                barmode='group'
-            )
-            
-            fig_amount = apply_theme_to_plot(fig_amount)
-            fig_amount.update_traces(
-                texttemplate='₹%{y:.2f}L',
-                textposition='outside'
-            )
-            
-            st.plotly_chart(fig_amount, use_container_width=True, key="amount_comparison")
-        
-        with col2:
-            # Win rate comparison
-            fig_win_rate = px.bar(
-                comparison_metrics,
-                x=dimension1,
-                y='Win Rate',
-                color=dimension2,
-                title=f'Win Rate by {dimension1} and {dimension2}',
-                barmode='group'
-            )
-            
-            fig_win_rate = apply_theme_to_plot(fig_win_rate)
-            fig_win_rate.update_traces(
-                texttemplate='%{y:.1f}%',
-                textposition='outside'
-            )
-            
-            st.plotly_chart(fig_win_rate, use_container_width=True, key="win_rate_comparison")
-        
-        # Display detailed comparison table
-        st.markdown("""
-            <div class="section-header">
-                <h3>📊 Detailed Comparison Metrics</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Format and display the comparison table
-        st.dataframe(
-            comparison_metrics.style.format({
-                'Total Amount': '₹{:.2f}L',
-                'Deal Count': '{:,.0f}',
-                'Won Deals': '{:,.0f}',
-                'Win Rate': '{:.1f}%'
-            }),
-            use_container_width=True
-        )
-        
-        # Add summary metrics
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric(
-                "Total Pipeline",
-                format_lakhs(comparison_metrics['Total Amount'].sum() * 100000),
-                delta=None
-            )
-        with col2:
-            st.metric(
-                "Total Deals",
-                f"{comparison_metrics['Deal Count'].sum():,}",
-                delta=None
-            )
-        with col3:
-            st.metric(
-                "Overall Win Rate",
-                f"{comparison_metrics['Win Rate'].mean():.1f}%",
-                delta=None
-            )
-
-    def show_all_in_one():
-        """Shows all enabled dashboard components on a single page"""
-        st.markdown("""
-            <div class="section-header">
-                <h3>🎯 All In One Dashboard View</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Overview Section
-        if st.session_state.dashboard_config['show_kpis']:
-            show_overview()
-        
-        # Trends Section
-        if st.session_state.dashboard_config['show_monthly_trend']:
-            show_trends()
-        
-        # Funnel Section
-        if st.session_state.dashboard_config['show_sales_funnel']:
-            show_funnel()
-        
-        # Strategy Section
-        if st.session_state.dashboard_config['show_strategy_view']:
-            show_strategy()
-        
-        # Leaderboard Section
-        if st.session_state.dashboard_config['show_leaderboard']:
-            show_leaderboard()
-        
-        # Geography Section
-        if st.session_state.dashboard_config['show_geo_view']:
-            show_geo()
-        
-        # Detailed View
-        if st.session_state.dashboard_config['show_detailed_view']:
-            show_detailed()
-
     def show_editor():
         st.markdown("""
             <div class="section-header">
@@ -1612,45 +1606,6 @@ if df is not None:
             st.error(f"Error in Data Editor: {str(e)}")
             st.info("Please try refreshing the page or check if the data is properly formatted.")
 
-    # Create the vertical sidebar
-    with st.sidebar:
-        # Navigation options with icons
-        nav_options = {
-            "🌍 Overview": "overview",
-            "⚖️ Compare": "compare",
-            "📈 Trends": "trends",
-            "🔄 Funnel": "funnel",
-            "🎯 Strategy": "strategy",
-            "👥 Team Performance": "leaderboard",
-            "🌐 Map View": "geo",
-            "🧾 Detailed View": "detailed",
-            "✏️ Editor": "editor"
-        }
-        
-        st.markdown("## 📊 Navigation")
-        selected = st.radio("Go to", list(nav_options.keys()))
-        
-        # Set the session view
-        st.session_state.current_view = nav_options[selected]
-        
-        # Theme selector at the bottom of sidebar
-        st.markdown("<div style='margin-top: auto; padding: 1rem;'>", unsafe_allow_html=True)
-        theme_options = {
-            "Dark": "dark",
-            "Light": "light"
-        }
-        selected_theme = st.selectbox(
-            "Theme",
-            options=list(theme_options.keys()),
-            index=0 if st.session_state.theme == 'dark' else 1,
-            key='theme_selector_sidebar'
-        )
-        
-        if theme_options[selected_theme] != st.session_state.theme:
-            st.session_state.theme = theme_options[selected_theme]
-            st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
-
     # Main content area
     st.title("📊 Sales Dashboard")
 
@@ -1663,13 +1618,10 @@ if df is not None:
         'leaderboard': show_leaderboard,
         'geo': show_geo,
         'detailed': show_detailed,
-        'editor': show_editor,
-        'compare': show_compare
+        'editor': show_editor
     }
 
     if st.session_state.current_view in view_functions:
         view_functions[st.session_state.current_view]()
     else:
-        st.info("Please select a view from the sidebar.")
-else:
-    st.info("Please upload data to view the dashboard.") 
+        st.info("Please select a view from the sidebar.") 
