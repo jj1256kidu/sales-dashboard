@@ -110,8 +110,8 @@ def show_data_input():
     # Custom header
     st.markdown("""
         <div class="custom-header">
-            <h1>📊 Sales Dashboard</h1>
-            <p style="font-size: 1.2em; margin: 0;">Upload your sales data to get started</p>
+            <h1>Sales Performance Dashboard</h1>
+            <p style="font-size: 1.2em; margin: 0;">Upload your sales data to begin analysis</p>
         </div>
     """, unsafe_allow_html=True)
 
@@ -121,9 +121,9 @@ def show_data_input():
     with col1:
         st.markdown('<div class="upload-container">', unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
-            "Drop your Excel or CSV file here",
+            "Upload Sales Data",
             type=['xlsx', 'csv'],
-            help="Upload your sales data file (Excel or CSV format)"
+            help="Upload your sales data file in Excel or CSV format"
         )
         st.markdown("</div>", unsafe_allow_html=True)
         
@@ -132,14 +132,14 @@ def show_data_input():
                 if uploaded_file.name.endswith('.xlsx'):
                     # Handle Excel files
                     excel_file = pd.ExcelFile(uploaded_file)
-                    sheet_name = st.selectbox("Select Sheet", excel_file.sheet_names)
+                    sheet_name = st.selectbox("Select Worksheet", excel_file.sheet_names)
                     df = pd.read_excel(uploaded_file, sheet_name=sheet_name)
                 else:
                     # Handle CSV files
                     df = pd.read_csv(uploaded_file)
                 
                 st.session_state.df = df
-                st.success(f"✅ Successfully loaded {len(df):,} rows of data!")
+                st.success(f"Successfully loaded {len(df):,} records")
                 
                 # Preview the data
                 st.subheader("Data Preview")
@@ -151,14 +151,14 @@ def show_data_input():
     with col2:
         st.markdown("""
         <div class="info-box">
-            <h4>📋 Required Columns</h4>
+            <h4>Required Data Fields</h4>
             <ul>
                 <li>Amount</li>
                 <li>Sales Stage</li>
                 <li>Expected Close Date</li>
                 <li>Practice/Region</li>
             </ul>
-            <h4>📁 Supported Formats</h4>
+            <h4>File Formats</h4>
             <ul>
                 <li>Excel (.xlsx)</li>
                 <li>CSV (.csv)</li>
@@ -168,10 +168,10 @@ def show_data_input():
 
 def show_overview():
     if st.session_state.df is None:
-        st.warning("Please upload your data first!")
+        st.warning("Please upload your sales data to view the dashboard")
         return
     
-    st.title("Sales Overview")
+    st.title("Sales Performance Overview")
     
     df = st.session_state.df.copy()
     
@@ -180,10 +180,10 @@ def show_overview():
         st.session_state.sales_target = 0
     
     if 'Sales Stage' in df.columns and 'Amount' in df.columns:
-        # I. Target Setting & Achievement
+        # I. Target vs Closed Won
         st.markdown("""
             <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
-                <h2 style='color: white; margin: 0; text-align: center;'>🎯 Target vs Closed Won</h2>
+                <h2 style='color: white; margin: 0; text-align: center;'>Target vs Closed Won</h2>
             </div>
         """, unsafe_allow_html=True)
         
@@ -194,11 +194,11 @@ def show_overview():
         
         # Manual target input
         new_target = st.number_input(
-            "Annual Target (Lakhs)",
+            "Annual Sales Target (Lakhs)",
             value=float(st.session_state.sales_target),
             step=1.0,
             format="%.2f",
-            help="Enter annual target in Lakhs (1L = ₹100,000)"
+            help="Enter the annual sales target in Lakhs (1L = ₹100,000)"
         )
         if new_target != st.session_state.sales_target:
             st.session_state.sales_target = new_target
@@ -230,15 +230,15 @@ def show_overview():
             </div>
         """, unsafe_allow_html=True)
         
-        # II. Target vs Achievement Trend
-        st.markdown("### 📈 Target vs Achievement Trend")
+        # II. Monthly Performance
+        st.markdown("### Monthly Performance")
         
         if 'Expected Close Date' in df.columns:
             # Monthly performance trend
             monthly_performance = df.groupby(df['Expected Close Date'].dt.strftime('%b %Y', na='Unknown')).agg({
                 'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000
             }).reset_index()
-            monthly_performance.columns = ['Month', 'Achievement']
+            monthly_performance.columns = ['Month', 'Closed Won']
             
             # Sort months chronologically
             month_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -261,14 +261,14 @@ def show_overview():
             # Add achievement bars
             fig_achievement.add_trace(go.Bar(
                 x=monthly_performance['Month'],
-                y=monthly_performance['Achievement'],
-                name='Achievement',
-                text=monthly_performance['Achievement'].apply(lambda x: f'₹{x:,.1f}L<br>{(x/monthly_target*100 if monthly_target > 0 else 0):.1f}%'),
+                y=monthly_performance['Closed Won'],
+                name='Closed Won',
+                text=monthly_performance['Closed Won'].apply(lambda x: f'₹{x:,.1f}L<br>{(x/monthly_target*100 if monthly_target > 0 else 0):.1f}%'),
                 textposition='outside'
             ))
             
             fig_achievement.update_layout(
-                title="Monthly Target vs Achievement",
+                title="Monthly Target vs Closed Won",
                 height=400,
                 barmode='group',
                 xaxis_title="Month",
@@ -278,8 +278,8 @@ def show_overview():
             
             st.plotly_chart(fig_achievement, use_container_width=True)
         
-        # III. Hunting vs Farming Split
-        st.markdown("### 🎯 Hunting vs Farming Split")
+        # III. Business Type Distribution
+        st.markdown("### Business Type Distribution")
         
         if 'Type' in df.columns and not df['Type'].isna().all():
             type_data = df.groupby('Type').agg({
@@ -314,7 +314,7 @@ def show_overview():
             ))
             
             fig_type.update_layout(
-                title="Hunting vs Farming Distribution",
+                title="Business Type Distribution",
                 height=400,
                 barmode='group',
                 yaxis=dict(title='Amount (Lakhs)'),
@@ -328,10 +328,10 @@ def show_overview():
             
             st.plotly_chart(fig_type, use_container_width=True)
         else:
-            st.info("Hunting vs Farming data is not available in the dataset.")
+            st.info("Business type data is not available in the dataset")
         
-        # IV. Geography-wise Deal Split
-        st.markdown("### 🌍 Geography-wise Deal Split")
+        # IV. Regional Performance
+        st.markdown("### Regional Performance")
         
         if 'Region' in df.columns and not df['Region'].isna().all():
             region_data = df.groupby('Region').agg({
@@ -363,10 +363,10 @@ def show_overview():
             
             st.plotly_chart(fig_geo, use_container_width=True)
         else:
-            st.info("Geographical data is not available in the dataset.")
+            st.info("Regional data is not available in the dataset")
         
-        # V. Committed vs Upside Analysis
-        st.markdown("### 💼 Committed vs Upside Analysis")
+        # V. Deal Status Analysis
+        st.markdown("### Deal Status Analysis")
         
         if 'Status' in df.columns and 'Expected Close Date' in df.columns:
             # Monthly committed vs upside
@@ -398,7 +398,7 @@ def show_overview():
                 ))
             
             fig_status.update_layout(
-                title="Monthly Committed vs Upside",
+                title="Monthly Deal Status Distribution",
                 height=400,
                 barmode='stack',
                 xaxis_title="Month",
@@ -408,22 +408,22 @@ def show_overview():
             
             st.plotly_chart(fig_status, use_container_width=True)
         else:
-            st.info("Status and date data are not available in the dataset.")
+            st.info("Deal status data is not available in the dataset")
     
     else:
-        st.error("Required columns (Sales Stage, Amount) not found in the dataset")
+        st.error("Required data fields (Sales Stage, Amount) not found in the dataset")
 
 def show_detailed():
     if st.session_state.df is None:
-        st.warning("Please upload your data first!")
+        st.warning("Please upload your sales data to view detailed information")
         return
     
-    st.title("🔍 Detailed View")
+    st.title("Detailed Sales Data")
     
     df = st.session_state.df
     
     # Search and filters
-    search = st.text_input("🔍 Search", placeholder="Search in any column...")
+    search = st.text_input("Search", placeholder="Search in any field...")
     
     # Filter the dataframe based on search
     if search:
@@ -441,7 +441,7 @@ def main():
         
         selected = st.radio(
             "Select View",
-            options=["Data Input", "Overview", "Detailed View"],
+            options=["Data Input", "Overview", "Detailed Data"],
             key="navigation"
         )
         
@@ -452,7 +452,7 @@ def main():
         show_data_input()
     elif st.session_state.current_view == "overview":
         show_overview()
-    elif st.session_state.current_view == "detailed_view":
+    elif st.session_state.current_view == "detailed_data":
         show_detailed()
 
 if __name__ == "__main__":
