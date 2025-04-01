@@ -19,6 +19,8 @@ if 'file_name' not in st.session_state:
     st.session_state.file_name = None
 if 'sheet_name' not in st.session_state:
     st.session_state.sheet_name = None
+if 'data_uploaded' not in st.session_state:
+    st.session_state.data_uploaded = False
 
 # Borealis-inspired theme colors
 def get_theme_colors():
@@ -636,301 +638,250 @@ st.markdown(f"""
 # Custom CSS for premium UI
 st.markdown("""
     <style>
-    /* Premium UI Elements */
-    .premium-container {
-        background: linear-gradient(135deg, var(--card-bg-color) 0%, var(--background-color) 100%);
-        border-radius: 20px;
-        padding: 2rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-        margin: 1rem 0;
-        border: 1px solid var(--border-color);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+    /* Animated Background */
+    .landing-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: linear-gradient(135deg, var(--background-color) 0%, var(--card-bg-color) 100%);
+        overflow: hidden;
+        z-index: -1;
     }
     
-    .premium-title {
+    .bubble {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        animation: float 8s infinite;
+    }
+    
+    @keyframes float {
+        0% { transform: translateY(0) translateX(0); }
+        50% { transform: translateY(-20px) translateX(10px); }
+        100% { transform: translateY(0) translateX(0); }
+    }
+    
+    /* Premium Upload Card */
+    .upload-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 24px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        max-width: 800px;
+        margin: 2rem auto;
+        transition: all 0.3s ease;
+    }
+    
+    .upload-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    }
+    
+    .welcome-title {
         font-family: 'Inter', sans-serif;
-        font-size: 2rem;
+        font-size: 2.5rem;
         font-weight: 700;
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent1) 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        text-align: center;
         margin-bottom: 1rem;
     }
     
-    .premium-card {
-        background: var(--card-bg-color);
-        border-radius: 16px;
-        padding: 1.5rem;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        border: 1px solid var(--border-color);
-        transition: all 0.3s ease;
-    }
-    
-    .premium-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-    }
-    
-    .premium-button {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent1) 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-    
-    .premium-button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    }
-    
-    /* File Upload Animation */
-    @keyframes float {
-        0% { transform: translateY(0px); }
-        50% { transform: translateY(-20px); }
-        100% { transform: translateY(0px); }
-    }
-    
-    .upload-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 300px;
-        margin: 2rem 0;
-    }
-    
-    .upload-content {
+    .welcome-subtitle {
+        font-size: 1.2rem;
+        color: var(--text-color);
         text-align: center;
-        animation: float 3s ease-in-out infinite;
+        margin-bottom: 2rem;
+        opacity: 0.8;
     }
     
     .upload-icon {
         font-size: 4rem;
-        margin-bottom: 1rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .file-uploader {
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px dashed rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-bottom: 2rem;
+    }
+    
+    .file-uploader:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: var(--primary-color);
+    }
+    
+    .ai-feature {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .ai-input {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 1rem;
+        width: 100%;
+        color: var(--text-color);
+        font-size: 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .ai-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
+    }
+    
+    .view-dashboard-btn {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent1) 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-    }
-    
-    /* Summary Card */
-    .summary-card {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-top: 2rem;
-    }
-    
-    .summary-item {
-        background: var(--card-bg-color);
-        padding: 1rem;
+        color: white;
+        border: none;
         border-radius: 12px;
-        border: 1px solid var(--border-color);
-    }
-    
-    .summary-label {
-        font-size: 0.875rem;
-        color: var(--secondary);
-        margin-bottom: 0.5rem;
-    }
-    
-    .summary-value {
-        font-size: 1.25rem;
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
         font-weight: 600;
-        color: var(--text-color);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+        text-align: center;
+        display: block;
     }
     
-    /* Column Mapper */
-    .mapper-container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1rem;
-        margin-top: 2rem;
+    .view-dashboard-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     
-    .mapper-item {
-        background: var(--card-bg-color);
-        padding: 1rem;
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
+    /* Theme Toggle */
+    .theme-toggle {
+        position: fixed;
+        top: 1rem;
+        right: 1rem;
+        z-index: 1000;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        padding: 0.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
     }
     
-    .mapper-label {
-        font-size: 0.875rem;
-        color: var(--secondary);
-        margin-bottom: 0.5rem;
-    }
-    
-    /* Data Preview */
-    .preview-container {
-        margin-top: 2rem;
-    }
-    
-    .preview-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-    
-    .preview-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: var(--text-color);
+    .theme-toggle:hover {
+        background: rgba(255, 255, 255, 0.2);
     }
     </style>
 """, unsafe_allow_html=True)
 
 # Render the correct page based on selection
 if st.session_state.current_view == "data_input":
-    st.markdown('<div class="premium-container">', unsafe_allow_html=True)
-    
-    # Title with gradient
-    st.markdown('<h1 class="premium-title">📊 Sales Dashboard</h1>', unsafe_allow_html=True)
-    
-    # Show summary card if data is loaded
-    if st.session_state.df is not None:
-        st.markdown("""
-            <div class="premium-card">
-                <h3>📁 Data Summary</h3>
-                <div class="summary-card">
-                    <div class="summary-item">
-                        <div class="summary-label">File Name</div>
-                        <div class="summary-value">{}</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Sheet Name</div>
-                        <div class="summary-value">{}</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Upload Time</div>
-                        <div class="summary-value">{}</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-label">Rows</div>
-                        <div class="summary-value">{:,}</div>
-                    </div>
-                </div>
-                <div style="margin-top: 1rem;">
-                    <button class="premium-button" onclick="document.getElementById('file-upload').click()">
-                        🔄 Re-upload Data
-                    </button>
-                </div>
-            </div>
-        """.format(
-            st.session_state.file_name,
-            st.session_state.sheet_name,
-            st.session_state.upload_time.strftime("%Y-%m-%d %H:%M:%S"),
-            len(st.session_state.df)
-        ), unsafe_allow_html=True)
-    
-    # File Upload Section
+    # Add animated background
     st.markdown("""
-        <div class="upload-container">
-            <div class="upload-content">
-                <div class="upload-icon">📊</div>
-                <h2>Welcome to Sales Dashboard</h2>
-                <p>Upload your Excel file to get started</p>
-            </div>
+        <div class="landing-container">
+            <div class="bubble" style="width: 100px; height: 100px; top: 20%; left: 10%;"></div>
+            <div class="bubble" style="width: 150px; height: 150px; top: 60%; right: 15%;"></div>
+            <div class="bubble" style="width: 80px; height: 80px; bottom: 20%; left: 20%;"></div>
         </div>
     """, unsafe_allow_html=True)
     
-    # File Uploader
+    # Premium Upload Card
+    st.markdown("""
+        <div class="upload-card">
+            <h1 class="welcome-title">Welcome to Sales Dashboard</h1>
+            <p class="welcome-subtitle">Upload your file to unlock powerful insights</p>
+            
+            <div class="upload-icon">📊</div>
+            
+            <div class="file-uploader">
+                <input type="file" id="file-upload" style="display: none;">
+                <label for="file-upload" style="cursor: pointer;">
+                    <div style="margin-bottom: 1rem;">📁 Drop your file here or click to browse</div>
+                    <div style="font-size: 0.9rem; opacity: 0.7;">Supports .xlsx, .csv, or Google Sheets URL</div>
+                </label>
+            </div>
+            
+            <div class="ai-feature">
+                <h3 style="margin-bottom: 1rem;">🤖 AI-Powered Insights</h3>
+                <input type="text" class="ai-input" placeholder="Ask your data anything...">
+            </div>
+            
+            <button class="view-dashboard-btn" onclick="document.getElementById('view-dashboard').click()">
+                📊 View Dashboard
+            </button>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Hidden file uploader
     uploaded_file = st.file_uploader(
-        "Upload Excel file",
-        type=['xlsx'],
+        "Upload file",
+        type=['xlsx', 'csv'],
         key="excel_uploader"
     )
     
-    if uploaded_file is not None:
-        try:
-            # Read all sheets
-            excel_file = pd.ExcelFile(uploaded_file)
-            sheet_names = excel_file.sheet_names
-            
-            # Let user select sheet
-            selected_sheet = st.selectbox(
-                "Select Sheet",
-                options=sheet_names,
-                key="sheet_selector"
-            )
-            
-            # Read selected sheet
-            df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
-            
-            # Show preview
-            st.markdown("""
-                <div class="preview-container">
-                    <div class="preview-header">
-                        <div class="preview-title">Data Preview</div>
-                        <div class="preview-rows">First 5 rows</div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            st.dataframe(df.head(), use_container_width=True)
-            
-            # Column Mapping
-            st.markdown("""
-                <div class="mapper-container">
-                    <h3>🔍 Column Mapping</h3>
-                    <p>Map your Excel columns to dashboard fields</p>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            required_columns = {
-                'Amount': 'Numeric column containing deal values',
-                'Probability': 'Numeric column with probability values (0-100)',
-                'Sales Stage': 'Column containing sales stages',
-                'Expected Close Date': 'Date column for deal closure',
-                'Sales Owner': 'Column with sales owner names',
-                'Practice': 'Column with practice/vertical names',
-                'Region': 'Column with region/geography information'
-            }
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                for col in list(required_columns.keys())[:4]:
-                    st.selectbox(
-                        f"Map {col}",
-                        options=[''] + list(df.columns),
-                        key=f"map_{col.lower().replace(' ', '_')}",
-                        help=required_columns[col]
-                    )
-            
-            with col2:
-                for col in list(required_columns.keys())[4:]:
-                    st.selectbox(
-                        f"Map {col}",
-                        options=[''] + list(df.columns),
-                        key=f"map_{col.lower().replace(' ', '_')}",
-                        help=required_columns[col]
-                    )
-            
-            # Save button
-            if st.button("Save and Continue", key="save_mapping"):
-                # Save mappings
-                st.session_state.column_map = {
-                    col: st.session_state[f"map_{col.lower().replace(' ', '_')}"]
-                    for col in required_columns.keys()
-                }
-                
-                # Save data and metadata
-                st.session_state.df = df
-                st.session_state.file_name = uploaded_file.name
-                st.session_state.sheet_name = selected_sheet
-                st.session_state.upload_time = datetime.now()
-                
-                st.success("Data loaded successfully! You can now explore the dashboard.")
-                st.rerun()
-        
-        except Exception as e:
-            st.error(f"Error reading Excel file: {str(e)}")
+    # Hidden Google Sheets URL input
+    sheet_url = st.text_input(
+        "Google Sheets URL",
+        key="sheet_url_input"
+    )
     
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Hidden view dashboard button
+    if st.button("View Dashboard", key="view-dashboard", style="display: none;"):
+        st.session_state.data_uploaded = True
+        st.session_state.current_view = "overview"
+        st.rerun()
+    
+    if uploaded_file is not None or sheet_url:
+        try:
+            if uploaded_file is not None:
+                # Handle Excel/CSV file
+                if uploaded_file.name.endswith('.xlsx'):
+                    excel_file = pd.ExcelFile(uploaded_file)
+                    sheet_names = excel_file.sheet_names
+                    selected_sheet = st.selectbox(
+                        "Select Sheet",
+                        options=sheet_names,
+                        key="sheet_selector"
+                    )
+                    df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
+                else:
+                    df = pd.read_csv(uploaded_file)
+                file_name = uploaded_file.name
+            else:
+                # Handle Google Sheets URL
+                csv_url = sheet_url.replace("/edit#gid=", "/export?format=csv&gid=")
+                df = pd.read_csv(csv_url)
+                file_name = "Google Sheet"
+            
+            # Store data in session state
+            st.session_state.df = df
+            st.session_state.file_name = file_name
+            st.session_state.upload_time = datetime.now()
+            
+            # Show success message
+            st.success("Data loaded successfully! Click 'View Dashboard' to explore.")
+            
+        except Exception as e:
+            st.error(f"Error reading file: {str(e)}")
 else:
     # Check if data is loaded
     if 'df' not in locals() or df is None:
