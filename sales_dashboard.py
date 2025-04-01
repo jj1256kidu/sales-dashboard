@@ -408,13 +408,11 @@ def show_overview():
     else:
         st.info("Geographical information not found in the dataset")
 
-    # Committed vs Upside
+    # Monthly Deal Classification
     st.markdown("### 📊 Monthly Deal Classification")
-    committed_upside_col = next((col for col in df.columns if "Committed" in col or "Upside" in col), None)
-    
-    if committed_upside_col:
+    if 'Status' in df.columns:
         # Create mapping for cleaner labels
-        df['Deal Category'] = df[committed_upside_col].fillna('Unknown')
+        df['Deal Category'] = df['Status'].fillna('Unknown')
         
         col1, col2 = st.columns(2)
         
@@ -427,9 +425,14 @@ def show_overview():
                 y='Amount',
                 title="Revenue by Deal Classification (in Lakhs)",
                 color='Deal Category',
+                color_discrete_sequence=['#4A90E2', '#45B7AF'],
                 text=deal_type_amount['Amount'].apply(lambda x: f'₹{x:,.2f}L')
             )
-            fig_deal_type.update_layout(yaxis_title="Amount (₹L)")
+            fig_deal_type.update_layout(
+                yaxis_title="Amount (₹L)",
+                xaxis_title="",
+                showlegend=True
+            )
             fig_deal_type.update_traces(textposition='outside')
             st.plotly_chart(fig_deal_type, use_container_width=True)
         
@@ -439,11 +442,21 @@ def show_overview():
             fig_deal_count = px.pie(
                 values=deal_type_count.values,
                 names=deal_type_count.index,
-                title="Deal Distribution by Classification"
+                title="Deal Distribution by Classification",
+                color_discrete_sequence=['#4A90E2', '#45B7AF']
             )
             st.plotly_chart(fig_deal_count, use_container_width=True)
+            
+        # Add summary metrics
+        col1, col2 = st.columns(2)
+        with col1:
+            committed_amount = df[df['Status'] == 'Committed for the Month']['Amount'].sum() / 100000
+            st.metric("Committed Amount", f"₹{committed_amount:,.2f}L")
+        with col2:
+            upside_amount = df[df['Status'] == 'Upside for the Month']['Amount'].sum() / 100000
+            st.metric("Upside Amount", f"₹{upside_amount:,.2f}L")
     else:
-        st.info("Monthly deal classification (Committed/Upside) not found in the dataset")
+        st.info("Status column not found in the dataset")
 
 def show_detailed():
     if st.session_state.df is None:
