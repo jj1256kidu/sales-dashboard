@@ -175,9 +175,6 @@ def show_overview():
     
     df = st.session_state.df.copy()
     
-    # Print available columns for debugging
-    st.write("Available columns:", df.columns.tolist())
-    
     # Initialize target if not in session state
     if 'sales_target' not in st.session_state:
         st.session_state.sales_target = 0
