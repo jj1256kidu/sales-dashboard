@@ -790,6 +790,11 @@ st.markdown("""
     .theme-toggle:hover {
         background: rgba(255, 255, 255, 0.2);
     }
+
+    /* Hide Streamlit Elements */
+    .hide-button {
+        display: none;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -844,11 +849,13 @@ if st.session_state.current_view == "data_input":
         key="sheet_url_input"
     )
     
-    # Hidden view dashboard button
-    if st.button("View Dashboard", key="view-dashboard", style="display: none;"):
+    # Hidden view dashboard button - Using CSS class instead of inline style
+    st.markdown('<div class="hide-button">', unsafe_allow_html=True)
+    if st.button("View Dashboard", key="view-dashboard"):
         st.session_state.data_uploaded = True
         st.session_state.current_view = "overview"
         st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
     
     if uploaded_file is not None or sheet_url:
         try:
