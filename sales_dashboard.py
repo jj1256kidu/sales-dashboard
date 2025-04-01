@@ -242,34 +242,54 @@ def show_overview():
 
     # Hunting vs Farming Split
     st.markdown("### 🎯 Hunting vs Farming Split")
-    if 'Hunting/Farming' in df.columns:
+    if 'Type' in df.columns:
+        # Create mapping for cleaner labels
+        df['Business Type'] = df['Type'].map({
+            'Existing Business (Farming)': 'Farming',
+            'New Business (Hunting)': 'Hunting'
+        })
+        
         col1, col2 = st.columns(2)
         
         with col1:
             # Pie chart for deal count
-            hunt_farm_count = df['Hunting/Farming'].value_counts()
+            hunt_farm_count = df['Business Type'].value_counts()
             fig_count = px.pie(
                 values=hunt_farm_count.values,
                 names=hunt_farm_count.index,
-                title="Deal Distribution",
-                color_discrete_sequence=px.colors.qualitative.Set3
+                title="Deal Distribution (Count)",
+                color_discrete_sequence=['#4A90E2', '#45B7AF'],
+                hole=0.4
             )
+            fig_count.update_traces(textposition='outside', textinfo='percent+label')
             st.plotly_chart(fig_count, use_container_width=True)
         
         with col2:
             # Bar chart for amount
-            hunt_farm_amount = df.groupby('Hunting/Farming')['Amount'].sum().reset_index()
+            hunt_farm_amount = df.groupby('Business Type')['Amount'].sum().reset_index()
             fig_amount = px.bar(
                 hunt_farm_amount,
-                x='Hunting/Farming',
+                x='Business Type',
                 y='Amount',
                 title="Revenue Distribution",
-                color='Hunting/Farming',
-                color_discrete_sequence=px.colors.qualitative.Set3
+                color='Business Type',
+                color_discrete_sequence=['#4A90E2', '#45B7AF'],
+                text=hunt_farm_amount['Amount'].apply(lambda x: f'₹{x:,.2f}L')
             )
+            fig_amount.update_traces(textposition='outside')
+            fig_amount.update_layout(showlegend=True)
             st.plotly_chart(fig_amount, use_container_width=True)
+            
+        # Add summary metrics
+        col1, col2 = st.columns(2)
+        with col1:
+            farming_amount = df[df['Type'] == 'Existing Business (Farming)']['Amount'].sum()
+            st.metric("Farming Revenue", f"₹{farming_amount:,.2f}L")
+        with col2:
+            hunting_amount = df[df['Type'] == 'New Business (Hunting)']['Amount'].sum()
+            st.metric("Hunting Revenue", f"₹{hunting_amount:,.2f}L")
     else:
-        st.info("Hunting/Farming classification not found in the dataset")
+        st.info("Business Type classification not found in the dataset")
 
     # Target vs Closed Won
     st.markdown("### 💰 Target vs Achievement")
