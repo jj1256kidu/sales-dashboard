@@ -238,7 +238,7 @@ def show_overview():
         
         if 'Practice' in df.columns:
             # Add practice filter
-            practices = ['All'] + sorted(df['Practice'].unique().tolist())
+            practices = ['All'] + sorted(df['Practice'].dropna().unique().tolist())
             selected_practice = st.selectbox(
                 "Select Practice",
                 options=practices,
@@ -261,6 +261,9 @@ def show_overview():
             # Calculate total pipeline amount by practice
             total_pipeline = df.groupby('Practice')['Amount'].sum() / 100000
             practice_metrics['Total Pipeline'] = practice_metrics['Practice'].map(total_pipeline)
+            
+            # Sort practice metrics by Total Pipeline in descending order
+            practice_metrics = practice_metrics.sort_values('Total Pipeline', ascending=False)
             
             # Create a comprehensive view
             col1, col2 = st.columns(2)
