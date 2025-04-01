@@ -6,9 +6,19 @@ from datetime import datetime
 import numpy as np
 import io
 
-# Initialize session state for theme
+# Initialize session state for theme and data
 if 'theme' not in st.session_state:
-    st.session_state.theme = 'dark'  # Set dark theme as default
+    st.session_state.theme = 'dark'
+if 'df' not in st.session_state:
+    st.session_state.df = None
+if 'column_map' not in st.session_state:
+    st.session_state.column_map = {}
+if 'upload_time' not in st.session_state:
+    st.session_state.upload_time = None
+if 'file_name' not in st.session_state:
+    st.session_state.file_name = None
+if 'sheet_name' not in st.session_state:
+    st.session_state.sheet_name = None
 
 # Borealis-inspired theme colors
 def get_theme_colors():
@@ -623,91 +633,304 @@ st.markdown(f"""
     </style>
 """, unsafe_allow_html=True)
 
+# Custom CSS for premium UI
+st.markdown("""
+    <style>
+    /* Premium UI Elements */
+    .premium-container {
+        background: linear-gradient(135deg, var(--card-bg-color) 0%, var(--background-color) 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        margin: 1rem 0;
+        border: 1px solid var(--border-color);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+    
+    .premium-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 2rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent1) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 1rem;
+    }
+    
+    .premium-card {
+        background: var(--card-bg-color);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+    
+    .premium-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .premium-button {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent1) 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .premium-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* File Upload Animation */
+    @keyframes float {
+        0% { transform: translateY(0px); }
+        50% { transform: translateY(-20px); }
+        100% { transform: translateY(0px); }
+    }
+    
+    .upload-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 300px;
+        margin: 2rem 0;
+    }
+    
+    .upload-content {
+        text-align: center;
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    .upload-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent1) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    
+    /* Summary Card */
+    .summary-card {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .summary-item {
+        background: var(--card-bg-color);
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .summary-label {
+        font-size: 0.875rem;
+        color: var(--secondary);
+        margin-bottom: 0.5rem;
+    }
+    
+    .summary-value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+    
+    /* Column Mapper */
+    .mapper-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .mapper-item {
+        background: var(--card-bg-color);
+        padding: 1rem;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+    
+    .mapper-label {
+        font-size: 0.875rem;
+        color: var(--secondary);
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Data Preview */
+    .preview-container {
+        margin-top: 2rem;
+    }
+    
+    .preview-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    
+    .preview-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Render the correct page based on selection
 if st.session_state.current_view == "data_input":
-    st.title("📁 Data Input")
+    st.markdown('<div class="premium-container">', unsafe_allow_html=True)
     
-    # Add floating animation container
+    # Title with gradient
+    st.markdown('<h1 class="premium-title">📊 Sales Dashboard</h1>', unsafe_allow_html=True)
+    
+    # Show summary card if data is loaded
+    if st.session_state.df is not None:
+        st.markdown("""
+            <div class="premium-card">
+                <h3>📁 Data Summary</h3>
+                <div class="summary-card">
+                    <div class="summary-item">
+                        <div class="summary-label">File Name</div>
+                        <div class="summary-value">{}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Sheet Name</div>
+                        <div class="summary-value">{}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Upload Time</div>
+                        <div class="summary-value">{}</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Rows</div>
+                        <div class="summary-value">{:,}</div>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <button class="premium-button" onclick="document.getElementById('file-upload').click()">
+                        🔄 Re-upload Data
+                    </button>
+                </div>
+            </div>
+        """.format(
+            st.session_state.file_name,
+            st.session_state.sheet_name,
+            st.session_state.upload_time.strftime("%Y-%m-%d %H:%M:%S"),
+            len(st.session_state.df)
+        ), unsafe_allow_html=True)
+    
+    # File Upload Section
     st.markdown("""
-        <div class="floating-container">
-            <div class="floating-content">
+        <div class="upload-container">
+            <div class="upload-content">
+                <div class="upload-icon">📊</div>
                 <h2>Welcome to Sales Dashboard</h2>
-                <p>Upload your sales data to get started</p>
+                <p>Upload your Excel file to get started</p>
             </div>
         </div>
     """, unsafe_allow_html=True)
     
-    # Add custom CSS for floating animation
-    st.markdown("""
-        <style>
-        .floating-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 200px;
-            margin: 2rem 0;
-        }
-        
-        .floating-content {
-            text-align: center;
-            animation: float 3s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-            100% { transform: translateY(0px); }
-        }
-        
-        .floating-content h2 {
-            color: var(--primary-color);
-            margin-bottom: 1rem;
-        }
-        
-        .floating-content p {
-            color: var(--text-color);
-            font-size: 1.1rem;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    input_method = st.radio(
-        "Choose data input method:",
-        ["Excel File", "Google Sheet URL"],
-        key="data_input_method"
+    # File Uploader
+    uploaded_file = st.file_uploader(
+        "Upload Excel file",
+        type=['xlsx'],
+        key="excel_uploader"
     )
     
-    df = None
-    if input_method == "Excel File":
-        uploaded_file = st.file_uploader(
-            "Upload Excel file",
-            type=['xlsx'],
-            key="excel_uploader"  # Added unique key
-        )
-        if uploaded_file is not None:
-            try:
-                df = pd.read_excel(uploaded_file, sheet_name='Raw_Data')
-                if 'Amount' in df.columns:
-                    df['Amount'] = df['Amount'].apply(safe_float)
-            except Exception as e:
-                st.error(f"Error reading Excel file: {str(e)}")
-    else:
-        sheet_url = st.text_input(
-            "Paste Google Sheet URL",
-            key="sheet_url_input"  # Added unique key
-        )
-        if sheet_url:
-            try:
-                csv_url = sheet_url.replace("/edit#gid=", "/export?format=csv&gid=")
-                df = pd.read_csv(csv_url)
-                if 'Amount' in df.columns:
-                    df['Amount'] = df['Amount'].apply(safe_float)
-            except Exception as e:
-                st.error(f"Error reading Google Sheet: {str(e)}")
+    if uploaded_file is not None:
+        try:
+            # Read all sheets
+            excel_file = pd.ExcelFile(uploaded_file)
+            sheet_names = excel_file.sheet_names
+            
+            # Let user select sheet
+            selected_sheet = st.selectbox(
+                "Select Sheet",
+                options=sheet_names,
+                key="sheet_selector"
+            )
+            
+            # Read selected sheet
+            df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
+            
+            # Show preview
+            st.markdown("""
+                <div class="preview-container">
+                    <div class="preview-header">
+                        <div class="preview-title">Data Preview</div>
+                        <div class="preview-rows">First 5 rows</div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            st.dataframe(df.head(), use_container_width=True)
+            
+            # Column Mapping
+            st.markdown("""
+                <div class="mapper-container">
+                    <h3>🔍 Column Mapping</h3>
+                    <p>Map your Excel columns to dashboard fields</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            required_columns = {
+                'Amount': 'Numeric column containing deal values',
+                'Probability': 'Numeric column with probability values (0-100)',
+                'Sales Stage': 'Column containing sales stages',
+                'Expected Close Date': 'Date column for deal closure',
+                'Sales Owner': 'Column with sales owner names',
+                'Practice': 'Column with practice/vertical names',
+                'Region': 'Column with region/geography information'
+            }
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                for col in list(required_columns.keys())[:4]:
+                    st.selectbox(
+                        f"Map {col}",
+                        options=[''] + list(df.columns),
+                        key=f"map_{col.lower().replace(' ', '_')}",
+                        help=required_columns[col]
+                    )
+            
+            with col2:
+                for col in list(required_columns.keys())[4:]:
+                    st.selectbox(
+                        f"Map {col}",
+                        options=[''] + list(df.columns),
+                        key=f"map_{col.lower().replace(' ', '_')}",
+                        help=required_columns[col]
+                    )
+            
+            # Save button
+            if st.button("Save and Continue", key="save_mapping"):
+                # Save mappings
+                st.session_state.column_map = {
+                    col: st.session_state[f"map_{col.lower().replace(' ', '_')}"]
+                    for col in required_columns.keys()
+                }
+                
+                # Save data and metadata
+                st.session_state.df = df
+                st.session_state.file_name = uploaded_file.name
+                st.session_state.sheet_name = selected_sheet
+                st.session_state.upload_time = datetime.now()
+                
+                st.success("Data loaded successfully! You can now explore the dashboard.")
+                st.rerun()
+        
+        except Exception as e:
+            st.error(f"Error reading Excel file: {str(e)}")
     
-    if df is not None:
-        st.success("Data loaded successfully!")
-        st.dataframe(df.head(), use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 else:
     # Check if data is loaded
     if 'df' not in locals() or df is None:
