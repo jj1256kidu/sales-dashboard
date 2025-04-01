@@ -187,8 +187,8 @@ def show_overview():
         with col1:
             if 'Expected Close Date' in df.columns:
                 df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'])
-                min_date = df['Expected Close Date'].min()
-                max_date = df['Expected Close Date'].max()
+                min_date = df['Expected Close Date'].min().date()
+                max_date = df['Expected Close Date'].max().date()
                 
                 # Reset date filter if triggered
                 if st.session_state.reset_triggered:
