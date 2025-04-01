@@ -555,15 +555,15 @@ def show_overview():
     else:
         st.error("Required data fields (Sales Stage, Amount) not found in the dataset")
 
-    # V. Hunting vs Farming Analysis
+    # V. KritiKal Focus Areas
     st.markdown("""
         <div style='background: linear-gradient(90deg, #9b59b6 0%, #8e44ad 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
-            <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Hunting vs Farming Analysis</h3>
+            <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>KritiKal Focus Areas</h3>
         </div>
     """, unsafe_allow_html=True)
     
     if 'Type' in df.columns:
-        # Calculate Hunting vs Farming metrics
+        # Calculate Focus Areas metrics
         type_metrics = df.groupby('Type').agg({
             'Amount': 'sum',
             'Type': 'size'
@@ -592,12 +592,12 @@ def show_overview():
             textinfo='label+percent+value',
             texttemplate='%{label}<br>%{percent}<br>₹%{value:,.1f}L',
             textfont=dict(size=14, family='Segoe UI', weight='bold'),
-            marker=dict(colors=['#4A90E2', '#2ecc71'])
+            marker=dict(colors=['#4A90E2', '#2ecc71', '#e74c3c', '#f1c40f'])
         )])
         
         fig_type.update_layout(
             title=dict(
-                text="Hunting vs Farming Distribution",
+                text="KritiKal Focus Areas Distribution",
                 font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
                 x=0.5,
                 y=0.95,
@@ -628,37 +628,29 @@ def show_overview():
         st.plotly_chart(fig_type, use_container_width=True)
         
         # Add summary metrics
-        col1, col2 = st.columns(2)
+        col1, col2, col3, col4 = st.columns(4)
         
-        with col1:
-            hunting_data = type_metrics[type_metrics['Type'] == 'New Business (Hunting)']
-            hunting_amount = hunting_data['Total Amount'].sum() if not hunting_data.empty else 0
-            hunting_closed = hunting_data['Closed Amount'].sum() if not hunting_data.empty else 0
-            hunting_deals = hunting_data['Deal Count'].sum() if not hunting_data.empty else 0
-            st.markdown(f"""
-                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
-                    <div class='metric-label'>New Business (Hunting)</div>
-                    <div class='metric-value'>₹{hunting_amount:,.1f}L</div>
-                    <div style='color: #666; font-size: 0.9em;'>{hunting_deals:,} deals</div>
-                    <div style='color: #2ecc71; font-size: 0.9em;'>{hunting_closed:,.1f}L closed</div>
-                </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            farming_data = type_metrics[type_metrics['Type'] == 'Existing Business (Farming)']
-            farming_amount = farming_data['Total Amount'].sum() if not farming_data.empty else 0
-            farming_closed = farming_data['Closed Amount'].sum() if not farming_data.empty else 0
-            farming_deals = farming_data['Deal Count'].sum() if not farming_data.empty else 0
-            st.markdown(f"""
-                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
-                    <div class='metric-label'>Existing Business (Farming)</div>
-                    <div class='metric-value'>₹{farming_amount:,.1f}L</div>
-                    <div style='color: #666; font-size: 0.9em;'>{farming_deals:,} deals</div>
-                    <div style='color: #2ecc71; font-size: 0.9em;'>{farming_closed:,.1f}L closed</div>
-                </div>
-            """, unsafe_allow_html=True)
+        for i, (type_name, color) in enumerate([
+            ('New Business (Hunting)', '#4A90E2'),
+            ('Existing Business (Farming)', '#2ecc71'),
+            ('Strategic Initiatives', '#e74c3c'),
+            ('Growth Opportunities', '#f1c40f')
+        ]):
+            with [col1, col2, col3, col4][i]:
+                type_data = type_metrics[type_metrics['Type'] == type_name]
+                type_amount = type_data['Total Amount'].sum() if not type_data.empty else 0
+                type_closed = type_data['Closed Amount'].sum() if not type_data.empty else 0
+                type_deals = type_data['Deal Count'].sum() if not type_data.empty else 0
+                st.markdown(f"""
+                    <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                        <div class='metric-label'>{type_name}</div>
+                        <div class='metric-value' style='color: {color};'>₹{type_amount:,.1f}L</div>
+                        <div style='color: #666; font-size: 0.9em;'>{type_deals:,} deals</div>
+                        <div style='color: #2ecc71; font-size: 0.9em;'>{type_closed:,.1f}L closed</div>
+                    </div>
+                """, unsafe_allow_html=True)
     else:
-        st.info("Hunting vs Farming data is not available in the dataset")
+        st.info("Focus Areas data is not available in the dataset")
 
 def show_detailed():
     if st.session_state.df is None:
