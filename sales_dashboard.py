@@ -485,7 +485,11 @@ def show_overview():
         # Monthly trend (show only if viewing all months)
         if selected_month == "All Months":
             st.markdown("#### Monthly Trend")
-            # Calculate monthly metrics
+            
+            # Toggle for value type
+            show_percentage = st.toggle('Show as percentage split', value=False)
+            
+            # Calculate monthly metrics with proper date sorting
             monthly_data = df.pivot_table(
                 index='Month-Year',
                 columns='Deal Category',
@@ -496,33 +500,121 @@ def show_overview():
             # Sort by date
             monthly_data.index = pd.to_datetime(monthly_data.index, format='%b %Y')
             monthly_data = monthly_data.sort_index()
-            monthly_data.index = monthly_data.index.strftime('%b %Y')
             
-            # Create monthly trend chart
+            # Calculate percentages
+            monthly_data_pct = monthly_data.div(monthly_data.sum(axis=1), axis=0) * 100
+            
+            # Format index back to month-year
+            monthly_data.index = monthly_data.index.strftime('%b %Y')
+            monthly_data_pct.index = monthly_data.index
+            
+            # Create modern stacked column chart
             fig_monthly = go.Figure()
             
+            # Define categories and colors
+            categories = ['Committed for the Month', 'Upside for the Month']
+            colors = {'Committed for the Month': '#0052CC', 'Upside for the Month': '#00C7B1'}
+            
+            data_to_plot = monthly_data_pct if show_percentage else monthly_data
+            
             # Add bars for each category
-            for category in ['Committed for the Month', 'Upside for the Month']:
-                if category in monthly_data.columns:
+            for category in categories:
+                if category in data_to_plot.columns:
+                    values = data_to_plot[category]
+                    text = [f"{x:.1f}%" if show_percentage else f"₹{x:,.2f}L" for x in values]
+                    
                     fig_monthly.add_trace(go.Bar(
-                        name=category,
-                        x=monthly_data.index,
-                        y=monthly_data[category],
-                        text=[f'₹{x:,.2f}L' for x in monthly_data[category]],
-                        textposition='outside'
+                        name=category.replace(' for the Month', ''),
+                        x=data_to_plot.index,
+                        y=values,
+                        text=text,
+                        textposition='auto',
+                        marker=dict(
+                            color=colors[category],
+                            line=dict(width=0),
+                        ),
+                        hovertemplate=(
+                            "<b>%{x}</b><br>" +
+                            f"{category.replace(' for the Month', '')}: " +
+                            ("%{y:.1f}%" if show_percentage else "₹%{y:.2f}L") +
+                            "<extra></extra>"
+                        )
                     ))
             
+            # Update layout for modern styling
             fig_monthly.update_layout(
-                title="Monthly Deal Classification Trend (in Lakhs)",
-                barmode='group',
-                xaxis_title="Month",
-                yaxis_title="Amount (₹L)",
-                height=400,
+                title=dict(
+                    text="Committed vs Upside – Monthly Trend",
+                    x=0.5,
+                    xanchor='center',
+                    font=dict(size=20)
+                ),
+                barmode='stack',
                 showlegend=True,
-                xaxis={'tickangle': -45}
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="right",
+                    x=1,
+                    bgcolor='rgba(255, 255, 255, 0.8)',
+                    bordercolor='rgba(0,0,0,0.1)',
+                    borderwidth=1
+                ),
+                plot_bgcolor='rgba(255, 255, 255, 0.8)',
+                paper_bgcolor='rgba(255, 255, 255, 0)',
+                height=500,
+                xaxis=dict(
+                    title="",
+                    tickangle=-45,
+                    showgrid=False,
+                    showline=True,
+                    linecolor='rgba(0,0,0,0.2)',
+                ),
+                yaxis=dict(
+                    title="Percentage Split" if show_percentage else "Amount (₹L)",
+                    showgrid=True,
+                    gridcolor='rgba(0,0,0,0.1)',
+                    zeroline=False,
+                ),
+                bargap=0.15,
+                bargroupgap=0.1,
+                hovermode='x unified',
             )
             
-            st.plotly_chart(fig_monthly, use_container_width=True)
+            # Add drop shadow effect
+            fig_monthly.add_layout_image(
+                dict(
+                    source="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+                    xref="paper",
+                    yref="paper",
+                    x=0,
+                    y=1,
+                    sizex=1,
+                    sizey=1,
+                    opacity=0.1,
+                    layer="below"
+                )
+            )
+            
+            # Add animation
+            fig_monthly.update_layout(
+                updatemenus=[dict(
+                    type='buttons',
+                    showactive=False,
+                    buttons=[dict(
+                        label='Play',
+                        method='animate',
+                        args=[None, dict(
+                            frame=dict(duration=500, redraw=True),
+                            fromcurrent=True,
+                            mode='immediate',
+                        )]
+                    )]
+                )]
+            )
+            
+            st.plotly_chart(fig_monthly, use_container_width=True, config={'displayModeBar': False})
             
             # Monthly details table
             st.markdown("#### Monthly Details")
