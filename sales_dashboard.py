@@ -230,53 +230,94 @@ def show_overview():
             </div>
         """, unsafe_allow_html=True)
         
-        # II. Monthly Performance
-        st.markdown("### Monthly Performance")
+        # II. Overall Pipeline Analysis
+        st.markdown("### Overall Pipeline Analysis")
         
-        if 'Expected Close Date' in df.columns:
-            # Monthly performance trend
-            monthly_performance = df.groupby(df['Expected Close Date'].dt.strftime('%b %Y', na='Unknown')).agg({
-                'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000
-            }).reset_index()
-            monthly_performance.columns = ['Month', 'Closed Won']
+        # Calculate pipeline metrics
+        total_pipeline = df['Amount'].sum() / 100000
+        total_deals = len(df)
+        won_deals_count = len(won_deals)
+        pipeline_deals = total_deals - won_deals_count
+        pipeline_amount = total_pipeline - won_amount
+        
+        # Create a comprehensive view
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Pipeline Amount Distribution
+            fig_pipeline = go.Figure()
             
-            # Sort months chronologically
-            month_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-            monthly_performance['Month'] = pd.Categorical(monthly_performance['Month'], categories=month_order, ordered=True)
-            monthly_performance = monthly_performance.sort_values('Month')
-            
-            # Add target line
-            monthly_target = new_target / 12
-            
-            fig_achievement = go.Figure()
-            
-            # Add target line
-            fig_achievement.add_trace(go.Scatter(
-                x=monthly_performance['Month'],
-                y=[monthly_target] * len(monthly_performance),
-                name='Monthly Target',
-                line=dict(color='red', dash='dash')
+            fig_pipeline.add_trace(go.Pie(
+                labels=['Closed Won', 'Pipeline'],
+                values=[won_amount, pipeline_amount],
+                hole=0.4,
+                textinfo='label+value+percent',
+                texttemplate='%{label}<br>₹%{value:,.1f}L<br>%{percent:.1%}',
+                marker=dict(colors=['#2ecc71', '#4A90E2'])
             ))
             
-            # Add achievement bars
-            fig_achievement.add_trace(go.Bar(
-                x=monthly_performance['Month'],
-                y=monthly_performance['Closed Won'],
-                name='Closed Won',
-                text=monthly_performance['Closed Won'].apply(lambda x: f'₹{x:,.1f}L<br>{(x/monthly_target*100 if monthly_target > 0 else 0):.1f}%'),
-                textposition='outside'
-            ))
-            
-            fig_achievement.update_layout(
-                title="Monthly Target vs Closed Won",
+            fig_pipeline.update_layout(
+                title="Pipeline Amount Distribution",
                 height=400,
-                barmode='group',
-                xaxis_title="Month",
-                yaxis_title="Amount (Lakhs)",
                 showlegend=True
             )
             
-            st.plotly_chart(fig_achievement, use_container_width=True)
+            st.plotly_chart(fig_pipeline, use_container_width=True)
+        
+        with col2:
+            # Deal Count Distribution
+            fig_deals = go.Figure()
+            
+            fig_deals.add_trace(go.Pie(
+                labels=['Closed Won', 'Pipeline'],
+                values=[won_deals_count, pipeline_deals],
+                hole=0.4,
+                textinfo='label+value+percent',
+                texttemplate='%{label}<br>%{value:,} deals<br>%{percent:.1%}',
+                marker=dict(colors=['#2ecc71', '#4A90E2'])
+            ))
+            
+            fig_deals.update_layout(
+                title="Deal Count Distribution",
+                height=400,
+                showlegend=True
+            )
+            
+            st.plotly_chart(fig_deals, use_container_width=True)
+        
+        # Add summary metrics
+        st.markdown("### Pipeline Summary")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric(
+                "Total Pipeline",
+                f"₹{total_pipeline:,.1f}L",
+                f"{pipeline_amount:,.1f}L remaining"
+            )
+        
+        with col2:
+            st.metric(
+                "Total Deals",
+                f"{total_deals:,}",
+                f"{pipeline_deals:,} in pipeline"
+            )
+        
+        with col3:
+            win_rate = (won_deals_count / total_deals * 100) if total_deals > 0 else 0
+            st.metric(
+                "Win Rate",
+                f"{win_rate:.1f}%",
+                f"{won_deals_count:,} won"
+            )
+        
+        with col4:
+            avg_deal_size = won_amount / won_deals_count if won_deals_count > 0 else 0
+            st.metric(
+                "Avg Deal Size",
+                f"₹{avg_deal_size:,.1f}L",
+                "Per won deal"
+            )
         
         # III. Business Type Distribution
         st.markdown("### Business Type Distribution")
@@ -381,6 +422,7 @@ def show_overview():
             monthly_status.columns = ['Month', 'Status', 'Amount']
             
             # Sort months chronologically
+            month_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
             monthly_status['Month'] = pd.Categorical(monthly_status['Month'], categories=month_order, ordered=True)
             monthly_status = monthly_status.sort_values('Month')
             
