@@ -562,88 +562,101 @@ def show_overview():
         </div>
     """, unsafe_allow_html=True)
     
-    # Create four columns for focus areas
-    col1, col2, col3, col4 = st.columns(4)
-    
-    # Calculate metrics for each focus area
-    focus_areas = [
-        ('New Business (Hunting)', '#4A90E2'),
-        ('Existing Business (Farming)', '#2ecc71'),
-        ('Strategic Initiatives', '#e74c3c'),
-        ('Growth Opportunities', '#f1c40f')
-    ]
-    
-    for i, (area_name, color) in enumerate(focus_areas):
-        with [col1, col2, col3, col4][i]:
-            # Calculate total amount and deals for this focus area
-            total_amount = df['Amount'].sum() / 100000  # Convert to Lakhs
-            total_deals = len(df)
-            
-            # Calculate closed won amounts
-            closed_won = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000
-            
-            st.markdown(f"""
-                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
-                    <div class='metric-label'>{area_name}</div>
-                    <div class='metric-value' style='color: {color};'>₹{total_amount:,.1f}L</div>
-                    <div style='color: #666; font-size: 0.9em;'>{total_deals:,} deals</div>
-                    <div style='color: #2ecc71; font-size: 0.9em;'>{closed_won:,.1f}L closed</div>
-                </div>
-            """, unsafe_allow_html=True)
-    
-    # Add a bar chart showing the distribution
-    fig_focus = go.Figure()
-    
-    # Add bars for each focus area
-    for area_name, color in focus_areas:
-        fig_focus.add_trace(go.Bar(
-            name=area_name,
-            x=[area_name],
-            y=[total_amount],
-            text=[f"₹{total_amount:,.1f}L"],
-            textposition='outside',
-            textfont=dict(size=14, family='Segoe UI', weight='bold'),
-            marker_color=color,
-            marker_line=dict(color='#2c3e50', width=2),
-            opacity=0.9
-        ))
-    
-    fig_focus.update_layout(
-        title=dict(
-            text="KritiKal Focus Areas Distribution",
-            font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
-            x=0.5,
-            y=0.95,
-            xanchor='center',
-            yanchor='top'
-        ),
-        height=500,
-        showlegend=False,
-        xaxis_title=dict(
-            text="Focus Area",
-            font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
-            standoff=15
-        ),
-        yaxis_title=dict(
-            text="Amount (Lakhs)",
-            font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
-            standoff=15
-        ),
-        font=dict(size=14, family='Segoe UI'),
-        xaxis=dict(
-            tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
-            gridcolor='rgba(0, 0, 0, 0.1)'
-        ),
-        yaxis=dict(
-            tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
-            gridcolor='rgba(0, 0, 0, 0.1)'
-        ),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        margin=dict(t=80, b=40, l=40, r=40)
-    )
-    
-    st.plotly_chart(fig_focus, use_container_width=True)
+    if 'Type' in df.columns:
+        # Calculate metrics by Type
+        type_metrics = df.groupby('Type').agg({
+            'Amount': 'sum',
+            'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
+        }).reset_index()
+        
+        type_metrics.columns = ['Type', 'Total Amount', 'Closed Deals']
+        type_metrics['Total Amount'] = type_metrics['Total Amount'] / 100000  # Convert to Lakhs
+        
+        # Calculate total deals
+        total_deals = df.groupby('Type').size().reset_index()
+        total_deals.columns = ['Type', 'Total Deals']
+        type_metrics = type_metrics.merge(total_deals, on='Type', how='left')
+        
+        # Create four columns for focus areas
+        col1, col2, col3, col4 = st.columns(4)
+        
+        # Define colors for each type
+        type_colors = {
+            'New Business (Hunting)': '#4A90E2',
+            'Existing Business (Farming)': '#2ecc71',
+            'Strategic Initiatives': '#e74c3c',
+            'Growth Opportunities': '#f1c40f'
+        }
+        
+        # Display metrics for each type
+        for i, (type_name, row) in enumerate(type_metrics.iterrows()):
+            with [col1, col2, col3, col4][i]:
+                color = type_colors.get(type_name, '#9b59b6')  # Default color if type not in dictionary
+                st.markdown(f"""
+                    <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                        <div class='metric-label'>{type_name}</div>
+                        <div class='metric-value' style='color: {color};'>₹{row['Total Amount']:,.1f}L</div>
+                        <div style='color: #666; font-size: 0.9em;'>{row['Total Deals']:,} deals</div>
+                        <div style='color: #2ecc71; font-size: 0.9em;'>{row['Closed Deals']:,} closed</div>
+                    </div>
+                """, unsafe_allow_html=True)
+        
+        # Add a bar chart showing the distribution
+        fig_focus = go.Figure()
+        
+        for _, row in type_metrics.iterrows():
+            type_name = row['Type']
+            color = type_colors.get(type_name, '#9b59b6')
+            fig_focus.add_trace(go.Bar(
+                name=type_name,
+                x=[type_name],
+                y=[row['Total Amount']],
+                text=[f"₹{row['Total Amount']:,.1f}L"],
+                textposition='outside',
+                textfont=dict(size=14, family='Segoe UI', weight='bold'),
+                marker_color=color,
+                marker_line=dict(color='#2c3e50', width=2),
+                opacity=0.9
+            ))
+        
+        fig_focus.update_layout(
+            title=dict(
+                text="KritiKal Focus Areas Distribution",
+                font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
+                x=0.5,
+                y=0.95,
+                xanchor='center',
+                yanchor='top'
+            ),
+            height=500,
+            showlegend=False,
+            xaxis_title=dict(
+                text="Focus Area",
+                font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                standoff=15
+            ),
+            yaxis_title=dict(
+                text="Amount (Lakhs)",
+                font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                standoff=15
+            ),
+            font=dict(size=14, family='Segoe UI'),
+            xaxis=dict(
+                tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
+                gridcolor='rgba(0, 0, 0, 0.1)'
+            ),
+            yaxis=dict(
+                tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
+                gridcolor='rgba(0, 0, 0, 0.1)'
+            ),
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            margin=dict(t=80, b=40, l=40, r=40)
+        )
+        
+        st.plotly_chart(fig_focus, use_container_width=True)
+    else:
+        st.info("Type column not found in the dataset")
 
 def show_detailed():
     if st.session_state.df is None:
