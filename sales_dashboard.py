@@ -337,6 +337,108 @@ def show_overview():
         ))
         st.plotly_chart(fig_gauge, use_container_width=True)
 
+    # Sales Stages Analysis
+    st.markdown("### 🎯 Sales Stages Analysis")
+    if 'Sales Stage' in df.columns:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Funnel chart for sales stages
+            stage_metrics = df.groupby('Sales Stage').agg({
+                'Amount': 'sum',
+                'Type': 'count'
+            }).reset_index()
+            stage_metrics = stage_metrics.sort_values('Amount', ascending=False)
+            
+            fig_funnel = go.Figure(go.Funnel(
+                y=stage_metrics['Sales Stage'],
+                x=stage_metrics['Amount'],
+                textposition="inside",
+                textinfo="value+percent initial",
+                opacity=0.65,
+                marker={
+                    "color": ["#4A90E2", "#45B7AF", "#66BB6A", "#FFA726", "#EF5350"],
+                    "line": {"width": [2, 2, 2, 2, 2]}
+                },
+                connector={"line": {"color": "royalblue", "dash": "dot", "width": 3}}
+            ))
+            
+            fig_funnel.update_layout(
+                title="Pipeline Funnel",
+                showlegend=False,
+                height=400
+            )
+            st.plotly_chart(fig_funnel, use_container_width=True)
+        
+        with col2:
+            # Detailed metrics table
+            stage_metrics['Deal Count'] = stage_metrics['Type']
+            stage_metrics['Amount'] = stage_metrics['Amount'].apply(lambda x: f"₹{x:,.2f}L")
+            stage_metrics['Percentage'] = (stage_metrics['Deal Count'] / stage_metrics['Deal Count'].sum() * 100).apply(lambda x: f"{x:.1f}%")
+            
+            st.markdown("#### Stage-wise Breakdown")
+            st.dataframe(
+                stage_metrics[['Sales Stage', 'Deal Count', 'Amount', 'Percentage']],
+                use_container_width=True
+            )
+            
+            # Win Rate Calculation
+            if any(df['Sales Stage'].str.contains('Won', case=False, na=False)):
+                total_closed = df[df['Sales Stage'].str.contains('Closed|Won|Lost', case=False, na=False)].shape[0]
+                total_won = df[df['Sales Stage'].str.contains('Won', case=False, na=False)].shape[0]
+                if total_closed > 0:
+                    win_rate = (total_won / total_closed) * 100
+                    st.metric("Win Rate (Closed Deals)", f"{win_rate:.1f}%")
+        
+        # Add stage transition timeline
+        st.markdown("#### Pipeline Movement")
+        if 'Expected Close Date' in df.columns:
+            # Create timeline of stage changes
+            timeline_data = df.groupby([
+                pd.Grouper(key='Expected Close Date', freq='M'),
+                'Sales Stage'
+            ])['Amount'].sum().reset_index()
+            
+            fig_timeline = px.area(
+                timeline_data,
+                x='Expected Close Date',
+                y='Amount',
+                color='Sales Stage',
+                title="Pipeline Stage Movement Over Time",
+                color_discrete_sequence=px.colors.qualitative.Set3
+            )
+            
+            fig_timeline.update_layout(
+                xaxis_title="Date",
+                yaxis_title="Amount (₹L)",
+                hovermode='x unified'
+            )
+            st.plotly_chart(fig_timeline, use_container_width=True)
+            
+            # Stage conversion metrics
+            st.markdown("#### Stage Conversion Rates")
+            stage_order = df['Sales Stage'].unique().tolist()
+            conversion_metrics = []
+            
+            for i in range(len(stage_order)-1):
+                current_stage = stage_order[i]
+                next_stage = stage_order[i+1]
+                current_count = df[df['Sales Stage'] == current_stage].shape[0]
+                next_count = df[df['Sales Stage'] == next_stage].shape[0]
+                
+                if current_count > 0:
+                    conversion_rate = (next_count / current_count) * 100
+                    conversion_metrics.append({
+                        'From Stage': current_stage,
+                        'To Stage': next_stage,
+                        'Conversion Rate': f"{conversion_rate:.1f}%"
+                    })
+            
+            if conversion_metrics:
+                st.dataframe(pd.DataFrame(conversion_metrics), use_container_width=True)
+    else:
+        st.info("Sales Stage information not found in the dataset")
+
     # Geographical Split
     st.markdown("### 🌍 Geographical Distribution")
     if 'Region' in df.columns or 'Geography' in df.columns:
