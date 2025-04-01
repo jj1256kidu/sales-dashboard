@@ -393,65 +393,13 @@ def show_overview():
         else:
             st.error("Practice column not found in the dataset")
         
-        # III. Business Type Distribution
-        st.markdown("### Business Type Distribution")
-        
-        if 'Type' in df.columns and not df['Type'].isna().all():
-            type_data = df.groupby('Type').agg({
-                'Amount': 'sum',
-                'id': 'count'
-            }).reset_index()
-            
-            type_data['Amount'] = type_data['Amount'] / 100000
-            total_amount = type_data['Amount'].sum()
-            total_count = type_data['id'].sum()
-            
-            # Create a bar chart for better comparison
-            fig_type = go.Figure()
-            
-            # Add amount bars
-            fig_type.add_trace(go.Bar(
-                x=type_data['Type'],
-                y=type_data['Amount'],
-                name='Amount (Lakhs)',
-                text=type_data.apply(lambda x: f"₹{x['Amount']:,.1f}L<br>{(x['Amount']/total_amount*100):.1f}%", axis=1),
-                textposition='outside'
-            ))
-            
-            # Add deal count as secondary axis
-            fig_type.add_trace(go.Scatter(
-                x=type_data['Type'],
-                y=type_data['id'],
-                name='Deal Count',
-                yaxis='y2',
-                text=type_data['id'],
-                textposition='top center'
-            ))
-            
-            fig_type.update_layout(
-                title="Business Type Distribution",
-                height=400,
-                barmode='group',
-                yaxis=dict(title='Amount (Lakhs)'),
-                yaxis2=dict(
-                    title='Deal Count',
-                    overlaying='y',
-                    side='right'
-                ),
-                showlegend=True
-            )
-            
-            st.plotly_chart(fig_type, use_container_width=True)
-        else:
-            st.info("Business type data is not available in the dataset")
-        
         # IV. Regional Performance
         st.markdown("### Regional Performance")
         
         if 'Region' in df.columns and not df['Region'].isna().all():
             region_data = df.groupby('Region').agg({
                 'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
-                'id': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
+                'Region': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
             }).reset_index()
             
             region_data.columns = ['Region', 'Closed Amount', 'Closed Deals']
