@@ -58,40 +58,40 @@ st.markdown("""
 
     /* Number formatting */
     .big-number {
-        font-size: 3.5em;
-        font-weight: 800;
+        font-size: 2.8em;
+        font-weight: 700;
         color: #2ecc71;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         letter-spacing: -1px;
     }
 
     .metric-value {
-        font-size: 2.5em;
-        font-weight: 700;
+        font-size: 2em;
+        font-weight: 600;
         color: #4A90E2;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
 
     .metric-label {
-        font-size: 1.4em;
+        font-size: 1.2em;
         color: #333;
-        margin-bottom: 8px;
-        font-weight: 600;
+        margin-bottom: 5px;
+        font-weight: 500;
     }
 
     /* Section headers */
     .section-header {
-        font-size: 2.2em;
-        font-weight: 800;
+        font-size: 1.8em;
+        font-weight: 700;
         color: #2c3e50;
-        margin: 30px 0 20px;
+        margin: 20px 0 15px;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
 
     /* Chart text styling */
     .js-plotly-plot .plotly .main-svg {
-        font-size: 16px;
-        font-weight: 600;
+        font-size: 14px;
+        font-weight: 500;
     }
 
     /* Table styling */
@@ -266,24 +266,24 @@ def show_overview():
         
         # Enhanced horizontal progress bar with metrics
         st.markdown(f"""
-            <div style='background: #f0f2f6; padding: 30px; border-radius: 15px; margin-top: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
-                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;'>
+            <div style='background: #f0f2f6; padding: 25px; border-radius: 12px; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;'>
                     <div>
-                        <h3 style='margin: 0; color: #2ecc71; font-size: 1.5em; font-weight: 600;'>Closed Won</h3>
-                        <h2 style='margin: 10px 0; color: #2ecc71; font-size: 3.5em; font-weight: 800; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);'>₹{won_amount:,.2f}L</h2>
+                        <h3 style='margin: 0; color: #2ecc71; font-size: 1.2em; font-weight: 500;'>Closed Won</h3>
+                        <h2 style='margin: 8px 0; color: #2ecc71; font-size: 2.8em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{won_amount:,.2f}L</h2>
                     </div>
                     <div style='text-align: right;'>
-                        <h3 style='margin: 0; color: #e74c3c; font-size: 1.5em; font-weight: 600;'>Target</h3>
-                        <h2 style='margin: 10px 0; color: #e74c3c; font-size: 3.5em; font-weight: 800; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);'>₹{new_target:,.2f}L</h2>
+                        <h3 style='margin: 0; color: #e74c3c; font-size: 1.2em; font-weight: 500;'>Target</h3>
+                        <h2 style='margin: 8px 0; color: #e74c3c; font-size: 2.8em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{new_target:,.2f}L</h2>
                     </div>
                 </div>
-                <div style='background: #e74c3c; height: 50px; border-radius: 25px; overflow: hidden; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);'>
+                <div style='background: #e74c3c; height: 40px; border-radius: 20px; overflow: hidden; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);'>
                     <div style='background: #2ecc71; height: 100%; width: {min(100, achievement_pct)}%; transition: width 0.5s ease-in-out;'></div>
-                    <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 700; font-size: 1.5em; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);'>
+                    <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 600; font-size: 1.2em; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);'>
                         {achievement_pct:.1f}% Complete
                     </div>
                 </div>
-                <div style='display: flex; justify-content: space-between; margin-top: 15px; color: #666; font-size: 1.3em; font-weight: 500;'>
+                <div style='display: flex; justify-content: space-between; margin-top: 10px; color: #666; font-size: 1.1em; font-weight: 400;'>
                     <span>₹0L</span>
                     <span>₹{new_target:,.1f}L</span>
                 </div>
@@ -338,8 +338,10 @@ def show_overview():
                     name='Total Pipeline',
                     text=practice_metrics['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L"),
                     textposition='outside',
-                    textfont=dict(size=16, color='#4A90E2', family='Segoe UI'),
-                    marker_color='#4A90E2'
+                    textfont=dict(size=16, color='#4A90E2', family='Segoe UI', weight='bold'),
+                    marker_color='#4A90E2',
+                    marker_line=dict(color='#357ABD', width=2),
+                    opacity=0.9
                 ))
                 
                 fig_pipeline.add_trace(go.Bar(
@@ -348,24 +350,58 @@ def show_overview():
                     name='Closed Won',
                     text=practice_metrics['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L"),
                     textposition='outside',
-                    textfont=dict(size=16, color='#2ecc71', family='Segoe UI'),
-                    marker_color='#2ecc71'
+                    textfont=dict(size=16, color='#2ecc71', family='Segoe UI', weight='bold'),
+                    marker_color='#2ecc71',
+                    marker_line=dict(color='#27ae60', width=2),
+                    opacity=0.9
                 ))
                 
                 fig_pipeline.update_layout(
                     title=dict(
                         text="Practice-wise Pipeline Amount",
-                        font=dict(size=24, family='Segoe UI', color='#2c3e50')
+                        font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='600'),
+                        x=0.5,
+                        y=0.95,
+                        xanchor='center',
+                        yanchor='top'
                     ),
                     height=500,
                     barmode='group',
-                    xaxis_title=dict(text="Practice", font=dict(size=18, family='Segoe UI')),
-                    yaxis_title=dict(text="Amount (Lakhs)", font=dict(size=18, family='Segoe UI')),
+                    bargap=0.15,
+                    bargroupgap=0.1,
+                    xaxis_title=dict(
+                        text="Practice",
+                        font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='500'),
+                        standoff=15
+                    ),
+                    yaxis_title=dict(
+                        text="Amount (Lakhs)",
+                        font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='500'),
+                        standoff=15
+                    ),
                     showlegend=True,
-                    font=dict(size=16, family='Segoe UI'),
-                    xaxis=dict(tickfont=dict(size=14, family='Segoe UI')),
-                    yaxis=dict(tickfont=dict(size=14, family='Segoe UI')),
-                    legend=dict(font=dict(size=16, family='Segoe UI'))
+                    legend=dict(
+                        font=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                        yanchor="top",
+                        y=0.99,
+                        xanchor="right",
+                        x=0.99,
+                        bgcolor='rgba(255, 255, 255, 0.8)',
+                        bordercolor='rgba(0, 0, 0, 0.2)',
+                        borderwidth=1
+                    ),
+                    font=dict(size=14, family='Segoe UI'),
+                    xaxis=dict(
+                        tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
+                        gridcolor='rgba(0, 0, 0, 0.1)'
+                    ),
+                    yaxis=dict(
+                        tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
+                        gridcolor='rgba(0, 0, 0, 0.1)'
+                    ),
+                    plot_bgcolor='white',
+                    paper_bgcolor='white',
+                    margin=dict(t=80, b=40, l=40, r=40)
                 )
                 
                 st.plotly_chart(fig_pipeline, use_container_width=True)
@@ -380,8 +416,10 @@ def show_overview():
                     name='Pipeline Deals',
                     text=practice_metrics['Pipeline Deals'],
                     textposition='outside',
-                    textfont=dict(size=14, color='#4A90E2'),
-                    marker_color='#4A90E2'
+                    textfont=dict(size=16, color='#4A90E2', family='Segoe UI', weight='bold'),
+                    marker_color='#4A90E2',
+                    marker_line=dict(color='#357ABD', width=2),
+                    opacity=0.9
                 ))
                 
                 fig_deals.add_trace(go.Bar(
@@ -390,21 +428,58 @@ def show_overview():
                     name='Closed Deals',
                     text=practice_metrics['Closed Deals'],
                     textposition='outside',
-                    textfont=dict(size=14, color='#2ecc71'),
-                    marker_color='#2ecc71'
+                    textfont=dict(size=16, color='#2ecc71', family='Segoe UI', weight='bold'),
+                    marker_color='#2ecc71',
+                    marker_line=dict(color='#27ae60', width=2),
+                    opacity=0.9
                 ))
                 
                 fig_deals.update_layout(
-                    title="Practice-wise Deal Count",
-                    height=400,
+                    title=dict(
+                        text="Practice-wise Deal Count",
+                        font=dict(size=28, family='Segoe UI', color='#2c3e50', weight='bold'),
+                        x=0.5,
+                        y=0.95,
+                        xanchor='center',
+                        yanchor='top'
+                    ),
+                    height=600,
                     barmode='group',
-                    xaxis_title="Practice",
-                    yaxis_title="Number of Deals",
+                    bargap=0.15,
+                    bargroupgap=0.1,
+                    xaxis_title=dict(
+                        text="Practice",
+                        font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
+                        standoff=20
+                    ),
+                    yaxis_title=dict(
+                        text="Number of Deals",
+                        font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
+                        standoff=20
+                    ),
                     showlegend=True,
-                    font=dict(size=14),
-                    title_font=dict(size=20),
-                    xaxis=dict(tickfont=dict(size=12)),
-                    yaxis=dict(tickfont=dict(size=12))
+                    legend=dict(
+                        font=dict(size=16, family='Segoe UI', color='#2c3e50'),
+                        yanchor="top",
+                        y=0.99,
+                        xanchor="right",
+                        x=0.99,
+                        bgcolor='rgba(255, 255, 255, 0.8)',
+                        bordercolor='rgba(0, 0, 0, 0.2)',
+                        borderwidth=1
+                    ),
+                    font=dict(size=16, family='Segoe UI'),
+                    xaxis=dict(
+                        tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                        gridcolor='rgba(0, 0, 0, 0.1)'
+                    ),
+                    yaxis=dict(
+                        tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                        gridcolor='rgba(0, 0, 0, 0.1)'
+                    ),
+                    plot_bgcolor='white',
+                    paper_bgcolor='white',
+                    margin=dict(t=100, b=50, l=50, r=50)
                 )
                 
                 st.plotly_chart(fig_deals, use_container_width=True)
@@ -493,20 +568,55 @@ def show_overview():
                 name='Closed Amount',
                 text=region_data.apply(lambda x: f"₹{x['Closed Amount']:,.1f}L<br>{x['Closed Deals']} deals", axis=1),
                 textposition='outside',
-                textfont=dict(size=14, color='#4A90E2'),
-                marker_color='#4A90E2'
+                textfont=dict(size=16, color='#4A90E2', family='Segoe UI', weight='bold'),
+                marker_color='#4A90E2',
+                marker_line=dict(color='#357ABD', width=2),
+                opacity=0.9
             ))
             
             fig_geo.update_layout(
-                title="Regional Performance",
-                height=400,
-                xaxis_title="Region",
-                yaxis_title="Amount (Lakhs)",
+                title=dict(
+                    text="Regional Performance",
+                    font=dict(size=28, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    x=0.5,
+                    y=0.95,
+                    xanchor='center',
+                    yanchor='top'
+                ),
+                height=600,
+                xaxis_title=dict(
+                    text="Region",
+                    font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=20
+                ),
+                yaxis_title=dict(
+                    text="Amount (Lakhs)",
+                    font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=20
+                ),
                 showlegend=True,
-                font=dict(size=14),
-                title_font=dict(size=20),
-                xaxis=dict(tickfont=dict(size=12)),
-                yaxis=dict(tickfont=dict(size=12))
+                legend=dict(
+                    font=dict(size=16, family='Segoe UI', color='#2c3e50'),
+                    yanchor="top",
+                    y=0.99,
+                    xanchor="right",
+                    x=0.99,
+                    bgcolor='rgba(255, 255, 255, 0.8)',
+                    bordercolor='rgba(0, 0, 0, 0.2)',
+                    borderwidth=1
+                ),
+                font=dict(size=16, family='Segoe UI'),
+                xaxis=dict(
+                    tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                    gridcolor='rgba(0, 0, 0, 0.1)'
+                ),
+                yaxis=dict(
+                    tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                    gridcolor='rgba(0, 0, 0, 0.1)'
+                ),
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                margin=dict(t=100, b=50, l=50, r=50)
             )
             
             st.plotly_chart(fig_geo, use_container_width=True)
@@ -544,20 +654,55 @@ def show_overview():
                     name=status,
                     text=status_data['Amount'].apply(lambda x: f"₹{x:,.1f}L"),
                     textposition='inside',
-                    textfont=dict(size=12, color='white')
+                    textfont=dict(size=14, color='white', family='Segoe UI', weight='bold'),
+                    marker_line=dict(width=1)
                 ))
             
             fig_status.update_layout(
-                title="Monthly Deal Status Distribution",
-                height=400,
+                title=dict(
+                    text="Monthly Deal Status Distribution",
+                    font=dict(size=28, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    x=0.5,
+                    y=0.95,
+                    xanchor='center',
+                    yanchor='top'
+                ),
+                height=600,
                 barmode='stack',
-                xaxis_title="Month",
-                yaxis_title="Amount (Lakhs)",
+                bargap=0.1,
+                xaxis_title=dict(
+                    text="Month",
+                    font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=20
+                ),
+                yaxis_title=dict(
+                    text="Amount (Lakhs)",
+                    font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=20
+                ),
                 showlegend=True,
-                font=dict(size=14),
-                title_font=dict(size=20),
-                xaxis=dict(tickfont=dict(size=12)),
-                yaxis=dict(tickfont=dict(size=12))
+                legend=dict(
+                    font=dict(size=16, family='Segoe UI', color='#2c3e50'),
+                    yanchor="top",
+                    y=0.99,
+                    xanchor="right",
+                    x=0.99,
+                    bgcolor='rgba(255, 255, 255, 0.8)',
+                    bordercolor='rgba(0, 0, 0, 0.2)',
+                    borderwidth=1
+                ),
+                font=dict(size=16, family='Segoe UI'),
+                xaxis=dict(
+                    tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                    gridcolor='rgba(0, 0, 0, 0.1)'
+                ),
+                yaxis=dict(
+                    tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                    gridcolor='rgba(0, 0, 0, 0.1)'
+                ),
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                margin=dict(t=100, b=50, l=50, r=50)
             )
             
             st.plotly_chart(fig_status, use_container_width=True)
