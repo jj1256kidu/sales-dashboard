@@ -212,14 +212,15 @@ def show_overview():
         # Practice filter
         with col2:
             if 'Practice' in df.columns:
-                practices = ['All'] + sorted(df['Practice'].unique().tolist())
+                # Convert all values to string and handle NaN values
+                practices = ['All'] + sorted(df['Practice'].fillna('Unknown').astype(str).unique().tolist())
                 selected_practice = st.selectbox(
                     "Practice", 
                     practices,
                     key="selected_practice"
                 )
                 if selected_practice != 'All':
-                    df = df[df['Practice'] == selected_practice]
+                    df = df[df['Practice'].fillna('Unknown').astype(str) == selected_practice]
         
         # Sales Stage filter
         with col3:
