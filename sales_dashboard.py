@@ -631,48 +631,37 @@ def show_overview():
         else:
             st.info("Regional data is not available in the dataset")
         
-        # V. Deal Status Analysis
+        # V. Hunting vs Farming Analysis
         st.markdown("""
             <div style='background: linear-gradient(90deg, #9b59b6 0%, #8e44ad 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
-                <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Deal Status Analysis</h3>
+                <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Hunting vs Farming Analysis</h3>
             </div>
         """, unsafe_allow_html=True)
         
-        if 'Status' in df.columns and 'Expected Close Date' in df.columns:
-            # Monthly committed vs upside
-            monthly_status = df.groupby([
-                df['Expected Close Date'].dt.strftime('%b %Y', na='Unknown'),
-                'Status'
-            ]).agg({
-                'Amount': 'sum'
+        if 'Type' in df.columns:
+            # Calculate Hunting vs Farming metrics
+            type_metrics = df.groupby('Type').agg({
+                'Amount': 'sum',
+                'Type': 'count'
             }).reset_index()
             
-            monthly_status['Amount'] = monthly_status['Amount'] / 100000
-            monthly_status.columns = ['Month', 'Status', 'Amount']
+            type_metrics.columns = ['Type', 'Amount', 'Deal Count']
+            type_metrics['Amount'] = type_metrics['Amount'] / 100000  # Convert to Lakhs
             
-            # Sort months chronologically
-            month_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-            monthly_status['Month'] = pd.Categorical(monthly_status['Month'], categories=month_order, ordered=True)
-            monthly_status = monthly_status.sort_values('Month')
+            # Create donut chart
+            fig_type = go.Figure(data=[go.Pie(
+                labels=type_metrics['Type'],
+                values=type_metrics['Amount'],
+                hole=.4,
+                textinfo='label+percent+value',
+                texttemplate='%{label}<br>%{percent}<br>₹%{value:,.1f}L',
+                textfont=dict(size=14, family='Segoe UI', weight='bold'),
+                marker=dict(colors=['#4A90E2', '#2ecc71'])
+            )])
             
-            # Create stacked column chart
-            fig_status = go.Figure()
-            
-            for status in monthly_status['Status'].unique():
-                status_data = monthly_status[monthly_status['Status'] == status]
-                fig_status.add_trace(go.Bar(
-                    x=status_data['Month'],
-                    y=status_data['Amount'],
-                    name=status,
-                    text=status_data['Amount'].apply(lambda x: f"₹{x:,.1f}L"),
-                    textposition='inside',
-                    textfont=dict(size=14, color='white', family='Segoe UI', weight='bold'),
-                    marker_line=dict(width=1)
-                ))
-            
-            fig_status.update_layout(
+            fig_type.update_layout(
                 title=dict(
-                    text="Monthly Deal Status Distribution",
+                    text="Hunting vs Farming Distribution",
                     font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
                     x=0.5,
                     y=0.95,
@@ -680,18 +669,6 @@ def show_overview():
                     yanchor='top'
                 ),
                 height=500,
-                barmode='stack',
-                bargap=0.1,
-                xaxis_title=dict(
-                    text="Month",
-                    font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
-                    standoff=15
-                ),
-                yaxis_title=dict(
-                    text="Amount (Lakhs)",
-                    font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
-                    standoff=15
-                ),
                 showlegend=True,
                 legend=dict(
                     font=dict(size=14, family='Segoe UI', color='#2c3e50'),
@@ -703,23 +680,43 @@ def show_overview():
                     bordercolor='rgba(0, 0, 0, 0.2)',
                     borderwidth=1
                 ),
-                font=dict(size=14, family='Segoe UI'),
-                xaxis=dict(
-                    tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
-                    gridcolor='rgba(0, 0, 0, 0.1)'
-                ),
-                yaxis=dict(
-                    tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
-                    gridcolor='rgba(0, 0, 0, 0.1)'
-                ),
-                plot_bgcolor='white',
-                paper_bgcolor='white',
-                margin=dict(t=80, b=40, l=40, r=40)
+                annotations=[dict(
+                    text=f"Total: ₹{type_metrics['Amount'].sum():,.1f}L",
+                    font=dict(size=16, family='Segoe UI', weight='bold'),
+                    showarrow=False,
+                    x=0.5,
+                    y=0.5
+                )]
             )
             
-            st.plotly_chart(fig_status, use_container_width=True)
+            st.plotly_chart(fig_type, use_container_width=True)
+            
+            # Add summary metrics
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                hunting_amount = type_metrics[type_metrics['Type'] == 'Hunting']['Amount'].sum()
+                hunting_deals = type_metrics[type_metrics['Type'] == 'Hunting']['Deal Count'].sum()
+                st.markdown(f"""
+                    <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                        <div class='metric-label'>Hunting</div>
+                        <div class='metric-value'>₹{hunting_amount:,.1f}L</div>
+                        <div style='color: #666; font-size: 0.9em;'>{hunting_deals:,} deals</div>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                farming_amount = type_metrics[type_metrics['Type'] == 'Farming']['Amount'].sum()
+                farming_deals = type_metrics[type_metrics['Type'] == 'Farming']['Deal Count'].sum()
+                st.markdown(f"""
+                    <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                        <div class='metric-label'>Farming</div>
+                        <div class='metric-value'>₹{farming_amount:,.1f}L</div>
+                        <div style='color: #666; font-size: 0.9em;'>{farming_deals:,} deals</div>
+                    </div>
+                """, unsafe_allow_html=True)
         else:
-            st.info("Deal status data is not available in the dataset")
+            st.info("Hunting vs Farming data is not available in the dataset")
     
     else:
         st.error("Required data fields (Sales Stage, Amount) not found in the dataset")
