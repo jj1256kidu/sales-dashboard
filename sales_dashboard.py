@@ -587,79 +587,60 @@ def show_overview():
         # Sort by Total Amount in descending order
         focus_metrics = focus_metrics.sort_values('Total Amount', ascending=False)
         
-        # Create two columns for the visualization
-        col1, col2 = st.columns(2)
+        # Create a single column layout
+        # Create donut chart
+        fig_focus = go.Figure(data=[go.Pie(
+            labels=focus_metrics['Focus Area'],
+            values=focus_metrics['Total Amount'],
+            hole=.4,
+            textinfo='label+percent+value',
+            texttemplate='%{label}<br>%{percent}<br>₹%{value:,.1f}L',
+            textfont=dict(size=14, family='Segoe UI', weight='bold'),
+            marker=dict(colors=['#4A90E2', '#2ecc71', '#e74c3c', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'])
+        )])
         
-        with col1:
-            # Create donut chart
-            fig_focus = go.Figure(data=[go.Pie(
-                labels=focus_metrics['Focus Area'],
-                values=focus_metrics['Total Amount'],
-                hole=.4,
-                textinfo='label+percent+value',
-                texttemplate='%{label}<br>%{percent}<br>₹%{value:,.1f}L',
-                textfont=dict(size=14, family='Segoe UI', weight='bold'),
-                marker=dict(colors=['#4A90E2', '#2ecc71', '#e74c3c', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'])
-            )])
-            
-            fig_focus.update_layout(
-                title=dict(
-                    text="Focus Areas Distribution",
-                    font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
-                    x=0.5,
-                    y=0.95,
-                    xanchor='center',
-                    yanchor='top'
-                ),
-                height=500,
-                showlegend=True,
-                legend=dict(
-                    font=dict(size=14, family='Segoe UI', color='#2c3e50'),
-                    yanchor="top",
-                    y=0.99,
-                    xanchor="right",
-                    x=0.99,
-                    bgcolor='rgba(255, 255, 255, 0.8)',
-                    bordercolor='rgba(0, 0, 0, 0.2)',
-                    borderwidth=1
-                ),
-                annotations=[dict(
-                    text=f"Total: ₹{total_amount:,.1f}L",
-                    font=dict(size=16, family='Segoe UI', weight='bold'),
-                    showarrow=False,
-                    x=0.5,
-                    y=0.5
-                )]
-            )
-            
-            st.plotly_chart(fig_focus, use_container_width=True)
+        fig_focus.update_layout(
+            title=dict(
+                text="Focus Areas Distribution",
+                font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
+                x=0.5,
+                y=0.95,
+                xanchor='center',
+                yanchor='top'
+            ),
+            height=500,
+            showlegend=True,
+            legend=dict(
+                font=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                yanchor="top",
+                y=0.99,
+                xanchor="right",
+                x=0.99,
+                bgcolor='rgba(255, 255, 255, 0.8)',
+                bordercolor='rgba(0, 0, 0, 0.2)',
+                borderwidth=1
+            ),
+            annotations=[dict(
+                text=f"Total: ₹{total_amount:,.1f}L",
+                font=dict(size=16, family='Segoe UI', weight='bold'),
+                showarrow=False,
+                x=0.5,
+                y=0.5
+            )]
+        )
         
-        with col2:
-            # Add summary metrics
-            st.markdown("### Focus Areas Summary")
-            
-            # Display metrics for each focus area
-            for _, row in focus_metrics.iterrows():
-                st.markdown(f"""
-                    <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; margin-bottom: 10px;'>
-                        <div class='metric-label'>{row['Focus Area']}</div>
-                        <div class='metric-value'>₹{row['Total Amount']:,.1f}L</div>
-                        <div style='color: #666; font-size: 0.9em;'>{row['Total Deals']:,} deals</div>
-                        <div style='color: #2ecc71; font-size: 0.9em;'>{row['Closed Deals']:,} closed</div>
-                        <div style='color: #9b59b6; font-size: 0.9em;'>{row['Share %']:.1f}% share</div>
-                    </div>
-                """, unsafe_allow_html=True)
+        st.plotly_chart(fig_focus, use_container_width=True)
         
-            # Add a detailed table view
-            st.markdown("### Focus Areas Details")
-            summary_data = focus_metrics.copy()
-            summary_data['Total Amount'] = summary_data['Total Amount'].apply(lambda x: f"₹{x:,.1f}L")
-            summary_data['Share %'] = summary_data['Share %'].apply(lambda x: f"{x:.1f}%")
-            
-            st.dataframe(
-                summary_data[['Focus Area', 'Total Amount', 'Share %', 'Total Deals', 'Closed Deals']],
-                use_container_width=True
-            )
+        # Add a simplified summary table
+        st.markdown("### Focus Areas Summary")
+        summary_data = focus_metrics.copy()
+        summary_data['Total Amount'] = summary_data['Total Amount'].apply(lambda x: f"₹{x:,.1f}L")
+        summary_data['Share %'] = summary_data['Share %'].apply(lambda x: f"{x:.1f}%")
+        
+        st.dataframe(
+            summary_data[['Focus Area', 'Total Amount', 'Share %', 'Total Deals', 'Closed Deals']],
+            use_container_width=True
+        )
     else:
         st.info("KritiKal Focus Areas column not found in the dataset")
 
