@@ -626,6 +626,51 @@ st.markdown(f"""
 # Render the correct page based on selection
 if st.session_state.current_view == "data_input":
     st.title("📁 Data Input")
+    
+    # Add floating animation container
+    st.markdown("""
+        <div class="floating-container">
+            <div class="floating-content">
+                <h2>Welcome to Sales Dashboard</h2>
+                <p>Upload your sales data to get started</p>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Add custom CSS for floating animation
+    st.markdown("""
+        <style>
+        .floating-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            margin: 2rem 0;
+        }
+        
+        .floating-content {
+            text-align: center;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+        
+        .floating-content h2 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .floating-content p {
+            color: var(--text-color);
+            font-size: 1.1rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     input_method = st.radio(
         "Choose data input method:",
         ["Excel File", "Google Sheet URL"],
@@ -634,7 +679,11 @@ if st.session_state.current_view == "data_input":
     
     df = None
     if input_method == "Excel File":
-        uploaded_file = st.file_uploader("Upload Excel file", type=['xlsx'])
+        uploaded_file = st.file_uploader(
+            "Upload Excel file",
+            type=['xlsx'],
+            key="excel_uploader"  # Added unique key
+        )
         if uploaded_file is not None:
             try:
                 df = pd.read_excel(uploaded_file, sheet_name='Raw_Data')
@@ -643,7 +692,10 @@ if st.session_state.current_view == "data_input":
             except Exception as e:
                 st.error(f"Error reading Excel file: {str(e)}")
     else:
-        sheet_url = st.text_input("Paste Google Sheet URL")
+        sheet_url = st.text_input(
+            "Paste Google Sheet URL",
+            key="sheet_url_input"  # Added unique key
+        )
         if sheet_url:
             try:
                 csv_url = sheet_url.replace("/edit#gid=", "/export?format=csv&gid=")
