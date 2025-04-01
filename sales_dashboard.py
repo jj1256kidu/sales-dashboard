@@ -217,8 +217,14 @@ def show_overview():
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        total_amount = df['Amount'].sum() if 'Amount' in df.columns else 0
-        st.metric("Total Pipeline", f"₹{total_amount:,.2f}L")
+        # Total Pipeline (excluding Closed Won)
+        if 'Sales Stage' in df.columns:
+            pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
+            total_pipeline = pipeline_df['Amount'].sum() if 'Amount' in pipeline_df.columns else 0
+            st.metric("Total Pipeline", f"₹{total_pipeline:,.2f}L")
+        else:
+            total_pipeline = df['Amount'].sum() if 'Amount' in df.columns else 0
+            st.metric("Total Pipeline", f"₹{total_pipeline:,.2f}L")
     
     with col2:
         if 'Sales Stage' in df.columns:
