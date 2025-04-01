@@ -252,15 +252,18 @@ def show_overview():
             # Calculate practice metrics
             practice_metrics = df.groupby('Practice').agg({
                 'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
-                'id': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count(),
                 'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
             }).reset_index()
             
-            practice_metrics.columns = ['Practice', 'Closed Amount', 'Closed Deals', 'Pipeline Deals']
+            practice_metrics.columns = ['Practice', 'Closed Amount', 'Closed Deals']
             
             # Calculate total pipeline amount by practice
             total_pipeline = df.groupby('Practice')['Amount'].sum() / 100000
             practice_metrics['Total Pipeline'] = practice_metrics['Practice'].map(total_pipeline)
+            
+            # Calculate total deals by practice
+            total_deals = df.groupby('Practice').size()
+            practice_metrics['Pipeline Deals'] = practice_metrics['Practice'].map(total_deals) - practice_metrics['Closed Deals']
             
             # Sort practice metrics by Total Pipeline in descending order
             practice_metrics = practice_metrics.sort_values('Total Pipeline', ascending=False)
