@@ -183,7 +183,7 @@ def show_overview():
         # I. Target Setting & Achievement
         st.markdown("""
             <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
-                <h2 style='color: white; margin: 0; text-align: center;'>🎯 Target Setting & Achievement</h2>
+                <h2 style='color: white; margin: 0; text-align: center;'>🎯 Target vs Achievement</h2>
             </div>
         """, unsafe_allow_html=True)
         
@@ -203,18 +203,47 @@ def show_overview():
                 st.rerun()
         
         with col2:
-            # Current achievement
+            # Calculate achievement
             won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
             won_amount = won_deals['Amount'].sum() / 100000
             achievement_pct = (won_amount / new_target * 100) if new_target > 0 else 0
             
-            st.markdown(f"""
-                <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; border-left: 4px solid #2ecc71;'>
-                    <h3 style='margin: 0; color: #2ecc71;'>Current Achievement</h3>
-                    <h2 style='margin: 10px 0; color: #2ecc71;'>₹{won_amount:,.2f}L</h2>
-                    <p style='margin: 0; color: #666;'>Achievement: {achievement_pct:.1f}% of Target</p>
+            # Create donut chart
+            fig_donut = go.Figure(go.Pie(
+                values=[won_amount, max(0, new_target - won_amount)],
+                labels=['Achieved', 'Remaining'],
+                hole=0.7,
+                marker=dict(colors=['#2ecc71', '#e74c3c']),
+                textinfo='label+percent+value',
+                text=[[f"₹{won_amount:,.1f}L", f"₹{max(0, new_target - won_amount):,.1f}L"]],
+                hovertemplate="<b>%{label}</b><br>" +
+                            "Amount: ₹%{value:,.1f}L<br>" +
+                            "Percentage: %{percent}<br>" +
+                            "<extra></extra>"
+            ))
+            
+            fig_donut.update_layout(
+                title="Target Achievement",
+                height=300,
+                showlegend=True,
+                annotations=[dict(text=f"{achievement_pct:.1f}%", x=0.5, y=0.5, font_size=20, showarrow=False)]
+            )
+            
+            st.plotly_chart(fig_donut, use_container_width=True)
+        
+        # Add horizontal progress bar
+        st.markdown(f"""
+            <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; margin-top: 20px;'>
+                <h3 style='margin: 0 0 10px 0; color: #2ecc71;'>Progress Towards Target</h3>
+                <div style='background: #e74c3c; height: 30px; border-radius: 15px; overflow: hidden;'>
+                    <div style='background: #2ecc71; height: 100%; width: {min(100, achievement_pct)}%; transition: width 0.5s ease-in-out;'></div>
                 </div>
-            """, unsafe_allow_html=True)
+                <div style='display: flex; justify-content: space-between; margin-top: 5px;'>
+                    <span>₹0L</span>
+                    <span>₹{new_target:,.1f}L</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
         
         # II. Target vs Achievement Trend
         st.markdown("### 📈 Target vs Achievement Trend")
