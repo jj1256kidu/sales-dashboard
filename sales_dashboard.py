@@ -1514,6 +1514,104 @@ if df is not None:
         if st.session_state.dashboard_config['show_detailed_view']:
             show_detailed()
 
+    def show_editor():
+        st.markdown("""
+            <div class="section-header">
+                <h3>✏️ Data Editor</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        try:
+            # Create a copy of the dataframe to avoid modifying the original
+            editor_df = filtered_df.copy()
+            
+            # Ensure all columns are properly formatted
+            for col in editor_df.columns:
+                if editor_df[col].dtype == 'float64':
+                    editor_df[col] = editor_df[col].fillna(0)
+                elif editor_df[col].dtype == 'object':
+                    editor_df[col] = editor_df[col].fillna('')
+            
+            # Define column types for the editor
+            column_types = {
+                'Amount': st.column_config.NumberColumn(
+                    'Amount',
+                    format="₹%.2f",
+                    min_value=0,
+                    step=1000
+                ),
+                'Probability': st.column_config.NumberColumn(
+                    'Probability',
+                    format="%.1f%%",
+                    min_value=0,
+                    max_value=100,
+                    step=5
+                ),
+                'Expected Close Date': st.column_config.DateColumn(
+                    'Expected Close Date',
+                    format="YYYY-MM-DD"
+                ),
+                'Quarter': st.column_config.SelectboxColumn(
+                    'Quarter',
+                    options=safe_sort_unique(editor_df['Quarter'])
+                ),
+                'Practice': st.column_config.SelectboxColumn(
+                    'Practice',
+                    options=safe_sort_unique(editor_df['Practice'])
+                ),
+                'Sales Stage': st.column_config.SelectboxColumn(
+                    'Sales Stage',
+                    options=safe_sort_unique(editor_df['Sales Stage'])
+                ),
+                'Hunting/Farming': st.column_config.SelectboxColumn(
+                    'Hunting/Farming',
+                    options=safe_sort_unique(editor_df['Hunting/Farming'])
+                )
+            }
+            
+            # Filter column types to only include columns that exist in the dataframe
+            available_column_types = {
+                col: config for col, config in column_types.items() 
+                if col in editor_df.columns
+            }
+            
+            # Display the data editor with proper configuration
+            edited_df = st.data_editor(
+                editor_df,
+                column_config=available_column_types,
+                num_rows="dynamic",
+                use_container_width=True,
+                key="data_editor"
+            )
+            
+            # Add export buttons
+            col1, col2 = st.columns(2)
+            with col1:
+                # Export to CSV
+                csv = edited_df.to_csv(index=False)
+                st.download_button(
+                    label="📥 Export to CSV",
+                    data=csv,
+                    file_name="edited_deals.csv",
+                    mime="text/csv"
+                )
+            with col2:
+                # Export to Excel
+                excel_buffer = io.BytesIO()
+                with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
+                    edited_df.to_excel(writer, index=False, sheet_name='Deals')
+                excel_buffer.seek(0)
+                st.download_button(
+                    label="📊 Export to Excel",
+                    data=excel_buffer,
+                    file_name="edited_deals.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            
+        except Exception as e:
+            st.error(f"Error in Data Editor: {str(e)}")
+            st.info("Please try refreshing the page or check if the data is properly formatted.")
+
     # Create the vertical sidebar
     with st.sidebar:
         st.markdown("""
