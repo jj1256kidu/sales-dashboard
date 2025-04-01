@@ -563,7 +563,7 @@ def show_overview():
             # Calculate Hunting vs Farming metrics
             type_metrics = df.groupby('Type').agg({
                 'Amount': 'sum',
-                'Type': 'count'
+                'Type': 'size'
             }).reset_index()
             
             type_metrics.columns = ['Type', 'Amount', 'Deal Count']
@@ -616,8 +616,9 @@ def show_overview():
             col1, col2 = st.columns(2)
             
             with col1:
-                hunting_amount = type_metrics[type_metrics['Type'] == 'New Business (Hunting)']['Amount'].sum()
-                hunting_deals = type_metrics[type_metrics['Type'] == 'New Business (Hunting)']['Deal Count'].sum()
+                hunting_data = type_metrics[type_metrics['Type'] == 'New Business (Hunting)']
+                hunting_amount = hunting_data['Amount'].sum() if not hunting_data.empty else 0
+                hunting_deals = hunting_data['Deal Count'].sum() if not hunting_data.empty else 0
                 st.markdown(f"""
                     <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                         <div class='metric-label'>New Business (Hunting)</div>
@@ -627,8 +628,9 @@ def show_overview():
                 """, unsafe_allow_html=True)
             
             with col2:
-                farming_amount = type_metrics[type_metrics['Type'] == 'Existing Business (Farming)']['Amount'].sum()
-                farming_deals = type_metrics[type_metrics['Type'] == 'Existing Business (Farming)']['Deal Count'].sum()
+                farming_data = type_metrics[type_metrics['Type'] == 'Existing Business (Farming)']
+                farming_amount = farming_data['Amount'].sum() if not farming_data.empty else 0
+                farming_deals = farming_data['Deal Count'].sum() if not farming_data.empty else 0
                 st.markdown(f"""
                     <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                         <div class='metric-label'>Existing Business (Farming)</div>
