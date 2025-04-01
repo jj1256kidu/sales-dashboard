@@ -195,11 +195,18 @@ def show_overview():
         
         with col1:
             if 'Expected Close Date' in df.columns:
+                # Get unique dates and sort them
+                unique_dates = sorted(df['Expected Close Date'].unique())
+                date_options = [date.strftime('%b %Y') for date in unique_dates]
+                
                 selected_month = st.selectbox(
                     "Select Month",
-                    options=sorted(df['Expected Close Date'].dt.strftime('%b %Y').unique()),
-                    index=len(df['Expected Close Date'].dt.strftime('%b %Y').unique()) - 1
+                    options=date_options,
+                    index=len(date_options) - 1
                 )
+                
+                # Convert selected month back to datetime for filtering
+                selected_date = pd.to_datetime(selected_month, format='%b %Y')
         
         with col2:
             if 'Practice' in df.columns:
@@ -218,7 +225,10 @@ def show_overview():
         # Apply filters
         filtered_df = df.copy()
         if 'Expected Close Date' in df.columns:
-            filtered_df = filtered_df[filtered_df['Expected Close Date'].dt.strftime('%b %Y') == selected_month]
+            filtered_df = filtered_df[
+                (filtered_df['Expected Close Date'].dt.year == selected_date.year) & 
+                (filtered_df['Expected Close Date'].dt.month == selected_date.month)
+            ]
         if selected_practice != 'All':
             filtered_df = filtered_df[filtered_df['Practice'] == selected_practice]
         if selected_stage != 'All':
