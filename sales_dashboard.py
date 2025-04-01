@@ -526,23 +526,39 @@ def show_overview():
             
             # Monthly details table
             st.markdown("#### Monthly Details")
-            monthly_metrics = df.pivot_table(
+            
+            # Create separate aggregations for amount and count
+            monthly_amount = df.pivot_table(
                 index='Month-Year',
                 columns='Deal Category',
-                values=['Amount', 'Deal Category'],
-                aggfunc={'Amount': 'sum', 'Deal Category': 'count'}
-            ).round(2)
+                values='Amount',
+                aggfunc='sum'
+            ).div(100000).fillna(0)
             
-            # Format the table
-            monthly_metrics.columns = [f"{col[1]} ({col[0]})" for col in monthly_metrics.columns]
-            monthly_metrics = monthly_metrics.reset_index()
+            monthly_count = df.pivot_table(
+                index='Month-Year',
+                columns='Deal Category',
+                values='Amount',
+                aggfunc='count'
+            ).fillna(0)
             
-            # Convert Amount columns to lakhs and format
-            amount_cols = [col for col in monthly_metrics.columns if 'Amount' in col]
-            for col in amount_cols:
-                monthly_metrics[col] = monthly_metrics[col].div(100000).apply(lambda x: f'₹{x:,.2f}L')
+            # Sort by date
+            monthly_amount.index = pd.to_datetime(monthly_amount.index, format='%b %Y')
+            monthly_amount = monthly_amount.sort_index()
+            monthly_amount.index = monthly_amount.index.strftime('%b %Y')
             
-            st.dataframe(monthly_metrics, use_container_width=True)
+            # Format the amounts
+            formatted_amount = monthly_amount.copy()
+            for col in formatted_amount.columns:
+                formatted_amount[f"{col} (Amount)"] = formatted_amount[col].apply(lambda x: f'₹{x:,.2f}L')
+                formatted_amount[f"{col} (Count)"] = monthly_count[col].astype(int)
+                formatted_amount.drop(col, axis=1, inplace=True)
+            
+            # Reset index and display
+            formatted_amount.reset_index(inplace=True)
+            formatted_amount.rename(columns={'Month-Year': 'Month'}, inplace=True)
+            
+            st.dataframe(formatted_amount, use_container_width=True)
     else:
         st.info("Status or Expected Close Date columns not found in the dataset")
 
