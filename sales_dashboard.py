@@ -258,35 +258,6 @@ def show_overview():
             if new_target != st.session_state.sales_target:
                 st.session_state.sales_target = new_target
                 st.rerun()
-
-        # Add a visual representation of the pipeline
-        st.markdown("#### Pipeline Breakdown")
-        
-        # Create waterfall chart with values in Lakhs
-        fig = go.Figure(go.Waterfall(
-            name="Pipeline", 
-            orientation="v",
-            measure=["total", "relative", "relative", "total"],
-            x=["Target", "Closed Won", "Active Pipeline", "Gap"],
-            y=[target, won_amount, active_pipeline, -(target)],
-            connector={"line": {"color": "rgb(63, 63, 63)"}},
-            decreasing={"marker": {"color": "#EF5350"}},
-            increasing={"marker": {"color": "#66BB6A"}},
-            totals={"marker": {"color": "#4A90E2"}},
-            text=[f"₹{target:,.1f}L", f"₹{won_amount:,.1f}L", f"₹{active_pipeline:,.1f}L", f"₹{(won_amount + active_pipeline - target):,.1f}L"],
-            textposition="outside"
-        ))
-        
-        fig.update_layout(
-            title="Pipeline Coverage Analysis (in Lakhs)",
-            showlegend=False,
-            height=400,
-            waterfallgap=0.2,
-            xaxis={"title": ""},
-            yaxis={"title": "Amount (₹L)"},
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
     else:
         st.error("Sales Stage column not found in the dataset. Please check your data format.")
         
@@ -399,52 +370,6 @@ def show_overview():
                 if total_closed > 0:
                     win_rate = (total_won / total_closed) * 100
                     st.metric("Win Rate (Closed Deals)", f"{win_rate:.1f}%")
-        
-        # Add stage transition timeline
-        st.markdown("#### Pipeline Movement")
-        if 'Expected Close Date' in df.columns:
-            timeline_data = df.groupby([
-                pd.Grouper(key='Expected Close Date', freq='M'),
-                'Sales Stage'
-            ])['Amount'].sum().div(100000).reset_index()
-            
-            fig_timeline = px.area(
-                timeline_data,
-                x='Expected Close Date',
-                y='Amount',
-                color='Sales Stage',
-                title="Pipeline Stage Movement Over Time (in Lakhs)",
-                color_discrete_sequence=px.colors.qualitative.Set3
-            )
-            
-            fig_timeline.update_layout(
-                xaxis_title="Date",
-                yaxis_title="Amount (₹L)",
-                hovermode='x unified'
-            )
-            st.plotly_chart(fig_timeline, use_container_width=True)
-            
-            # Stage conversion metrics
-            st.markdown("#### Stage Conversion Rates")
-            stage_order = df['Sales Stage'].unique().tolist()
-            conversion_metrics = []
-            
-            for i in range(len(stage_order)-1):
-                current_stage = stage_order[i]
-                next_stage = stage_order[i+1]
-                current_count = df[df['Sales Stage'] == current_stage].shape[0]
-                next_count = df[df['Sales Stage'] == next_stage].shape[0]
-                
-                if current_count > 0:
-                    conversion_rate = (next_count / current_count) * 100
-                    conversion_metrics.append({
-                        'From Stage': current_stage,
-                        'To Stage': next_stage,
-                        'Conversion Rate': f"{conversion_rate:.1f}%"
-                    })
-            
-            if conversion_metrics:
-                st.dataframe(pd.DataFrame(conversion_metrics), use_container_width=True)
     else:
         st.info("Sales Stage information not found in the dataset")
 
