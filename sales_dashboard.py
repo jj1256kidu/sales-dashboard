@@ -348,28 +348,31 @@ def show_overview():
             st.plotly_chart(fig_count, use_container_width=True)
         
         with col2:
-            # Bar chart for amount
-            hunt_farm_amount = df.groupby('Business Type')['Amount'].sum().reset_index()
+            # Bar chart for amount (in lakhs)
+            hunt_farm_amount = df.groupby('Business Type')['Amount'].sum().div(100000).reset_index()
             fig_amount = px.bar(
                 hunt_farm_amount,
                 x='Business Type',
                 y='Amount',
-                title="Revenue Distribution",
+                title="Revenue Distribution (in Lakhs)",
                 color='Business Type',
                 color_discrete_sequence=['#4A90E2', '#45B7AF'],
                 text=hunt_farm_amount['Amount'].apply(lambda x: f'₹{x:,.2f}L')
             )
             fig_amount.update_traces(textposition='outside')
-            fig_amount.update_layout(showlegend=True)
+            fig_amount.update_layout(
+                showlegend=True,
+                yaxis_title="Amount (₹L)"
+            )
             st.plotly_chart(fig_amount, use_container_width=True)
             
         # Add summary metrics
         col1, col2 = st.columns(2)
         with col1:
-            farming_amount = df[df['Type'] == 'Existing Business (Farming)']['Amount'].sum()
+            farming_amount = df[df['Type'] == 'Existing Business (Farming)']['Amount'].sum() / 100000
             st.metric("Farming Revenue", f"₹{farming_amount:,.2f}L")
         with col2:
-            hunting_amount = df[df['Type'] == 'New Business (Hunting)']['Amount'].sum()
+            hunting_amount = df[df['Type'] == 'New Business (Hunting)']['Amount'].sum() / 100000
             st.metric("Hunting Revenue", f"₹{hunting_amount:,.2f}L")
     else:
         st.info("Business Type classification not found in the dataset")
@@ -380,9 +383,9 @@ def show_overview():
         col1, col2 = st.columns(2)
         
         with col1:
-            # Funnel chart for sales stages
+            # Funnel chart for sales stages (in lakhs)
             stage_metrics = df.groupby('Sales Stage').agg({
-                'Amount': 'sum',
+                'Amount': lambda x: x.sum() / 100000,  # Convert to lakhs
                 'Type': 'count'
             }).reset_index()
             stage_metrics = stage_metrics.sort_values('Amount', ascending=False)
@@ -397,13 +400,16 @@ def show_overview():
                     "color": ["#4A90E2", "#45B7AF", "#66BB6A", "#FFA726", "#EF5350"],
                     "line": {"width": [2, 2, 2, 2, 2]}
                 },
-                connector={"line": {"color": "royalblue", "dash": "dot", "width": 3}}
+                connector={"line": {"color": "royalblue", "dash": "dot", "width": 3}},
+                text=[f"₹{x:,.2f}L" for x in stage_metrics['Amount']]
             ))
             
             fig_funnel.update_layout(
-                title="Pipeline Funnel",
+                title="Pipeline Funnel (in Lakhs)",
                 showlegend=False,
-                height=400
+                height=400,
+                yaxis_title="Sales Stage",
+                xaxis_title="Amount (₹L)"
             )
             st.plotly_chart(fig_funnel, use_container_width=True)
         
@@ -430,18 +436,17 @@ def show_overview():
         # Add stage transition timeline
         st.markdown("#### Pipeline Movement")
         if 'Expected Close Date' in df.columns:
-            # Create timeline of stage changes
             timeline_data = df.groupby([
                 pd.Grouper(key='Expected Close Date', freq='M'),
                 'Sales Stage'
-            ])['Amount'].sum().reset_index()
+            ])['Amount'].sum().div(100000).reset_index()
             
             fig_timeline = px.area(
                 timeline_data,
                 x='Expected Close Date',
                 y='Amount',
                 color='Sales Stage',
-                title="Pipeline Stage Movement Over Time",
+                title="Pipeline Stage Movement Over Time (in Lakhs)",
                 color_discrete_sequence=px.colors.qualitative.Set3
             )
             
@@ -484,15 +489,18 @@ def show_overview():
         col1, col2 = st.columns(2)
         
         with col1:
-            # Region-wise revenue
-            geo_data = df.groupby(geo_col)['Amount'].sum().reset_index()
+            # Region-wise revenue (in lakhs)
+            geo_data = df.groupby(geo_col)['Amount'].sum().div(100000).reset_index()
             fig_geo = px.bar(
                 geo_data,
                 x=geo_col,
                 y='Amount',
-                title=f"Revenue by {geo_col}",
-                color=geo_col
+                title=f"Revenue by {geo_col} (in Lakhs)",
+                color=geo_col,
+                text=geo_data['Amount'].apply(lambda x: f'₹{x:,.2f}L')
             )
+            fig_geo.update_layout(yaxis_title="Amount (₹L)")
+            fig_geo.update_traces(textposition='outside')
             st.plotly_chart(fig_geo, use_container_width=True)
         
         with col2:
@@ -510,19 +518,22 @@ def show_overview():
 
     # Committed vs Upside
     st.markdown("### 📊 Committed vs Upside")
-    if 'Deal Type' in df.columns:  # Assuming 'Deal Type' contains Committed/Upside classification
+    if 'Deal Type' in df.columns:
         col1, col2 = st.columns(2)
         
         with col1:
-            # Amount distribution
-            deal_type_amount = df.groupby('Deal Type')['Amount'].sum().reset_index()
+            # Amount distribution (in lakhs)
+            deal_type_amount = df.groupby('Deal Type')['Amount'].sum().div(100000).reset_index()
             fig_deal_type = px.bar(
                 deal_type_amount,
                 x='Deal Type',
                 y='Amount',
-                title="Revenue: Committed vs Upside",
-                color='Deal Type'
+                title="Revenue: Committed vs Upside (in Lakhs)",
+                color='Deal Type',
+                text=deal_type_amount['Amount'].apply(lambda x: f'₹{x:,.2f}L')
             )
+            fig_deal_type.update_layout(yaxis_title="Amount (₹L)")
+            fig_deal_type.update_traces(textposition='outside')
             st.plotly_chart(fig_deal_type, use_container_width=True)
         
         with col2:
