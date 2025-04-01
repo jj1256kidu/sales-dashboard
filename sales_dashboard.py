@@ -409,19 +409,24 @@ def show_overview():
         st.info("Geographical information not found in the dataset")
 
     # Committed vs Upside
-    st.markdown("### 📊 Committed vs Upside")
-    if 'Deal Type' in df.columns:
+    st.markdown("### 📊 Monthly Deal Classification")
+    committed_upside_col = next((col for col in df.columns if "Committed" in col or "Upside" in col), None)
+    
+    if committed_upside_col:
+        # Create mapping for cleaner labels
+        df['Deal Category'] = df[committed_upside_col].fillna('Unknown')
+        
         col1, col2 = st.columns(2)
         
         with col1:
             # Amount distribution (in lakhs)
-            deal_type_amount = df.groupby('Deal Type')['Amount'].sum().div(100000).reset_index()
+            deal_type_amount = df.groupby('Deal Category')['Amount'].sum().div(100000).reset_index()
             fig_deal_type = px.bar(
                 deal_type_amount,
-                x='Deal Type',
+                x='Deal Category',
                 y='Amount',
-                title="Revenue: Committed vs Upside (in Lakhs)",
-                color='Deal Type',
+                title="Revenue by Deal Classification (in Lakhs)",
+                color='Deal Category',
                 text=deal_type_amount['Amount'].apply(lambda x: f'₹{x:,.2f}L')
             )
             fig_deal_type.update_layout(yaxis_title="Amount (₹L)")
@@ -430,15 +435,15 @@ def show_overview():
         
         with col2:
             # Deal count distribution
-            deal_type_count = df['Deal Type'].value_counts()
+            deal_type_count = df['Deal Category'].value_counts()
             fig_deal_count = px.pie(
                 values=deal_type_count.values,
                 names=deal_type_count.index,
-                title="Distribution: Committed vs Upside"
+                title="Deal Distribution by Classification"
             )
             st.plotly_chart(fig_deal_count, use_container_width=True)
     else:
-        st.info("Committed/Upside classification not found in the dataset")
+        st.info("Monthly deal classification (Committed/Upside) not found in the dataset")
 
 def show_detailed():
     if st.session_state.df is None:
