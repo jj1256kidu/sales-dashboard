@@ -592,6 +592,10 @@ def show_overview():
         summary_data['Total Amount'] = summary_data['Total Amount'].apply(lambda x: f"₹{x:,.1f}L")
         summary_data['Share %'] = summary_data['Share %'].apply(lambda x: f"{x:.1f}%")
         
+        # Reset index to start from 1 and make it visible
+        summary_data = summary_data.reset_index(drop=True)
+        summary_data.index = summary_data.index + 1  # Start from 1 instead of 0
+        
         st.dataframe(
             summary_data[['Focus Area', 'Total Amount', 'Share %', 'Total Deals', 'Closed Deals']],
             use_container_width=True
