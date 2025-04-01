@@ -642,7 +642,7 @@ def show_overview():
             # Calculate Hunting vs Farming metrics
             type_metrics = df.groupby('Type').agg({
                 'Amount': 'sum',
-                'Type': 'count'
+                'Type': 'size'
             }).reset_index()
             
             type_metrics.columns = ['Type', 'Amount', 'Deal Count']
