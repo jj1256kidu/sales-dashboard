@@ -217,19 +217,19 @@ def show_overview():
     
     # First get all the metrics
     if 'Sales Stage' in df.columns:
-        # Total Won (Closed)
-        won_amount = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
+        # Total Won (Closed) - Convert to Lakhs
+        won_amount = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000
         
-        # Active Pipeline (excluding Won)
+        # Active Pipeline (excluding Won) - Convert to Lakhs
         pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
-        active_pipeline = pipeline_df['Amount'].sum() if 'Amount' in pipeline_df.columns else 0
+        active_pipeline = (pipeline_df['Amount'].sum() if 'Amount' in pipeline_df.columns else 0) / 100000
         
-        # Total (Pipeline + Won)
+        # Total (Pipeline + Won) - Already in Lakhs
         total_amount = active_pipeline + won_amount
         
         # Target vs Achievement
-        target = float(st.session_state.sales_target)
-        pending_target = max(0, target - won_amount)  # How much more needed to reach target
+        target = float(st.session_state.sales_target)  # Already in Lakhs from input
+        pending_target = max(0, target - won_amount)  # Already in Lakhs
         
         # Create two rows of metrics
         st.markdown("#### Target vs Achievement")
@@ -239,7 +239,7 @@ def show_overview():
             st.metric(
                 "Target", 
                 f"₹{target:,.2f}L",
-                help="Annual target set for the team"
+                help="Annual target set for the team (in Lakhs)"
             )
         
         with col2:
@@ -248,14 +248,14 @@ def show_overview():
                 "Closed Won", 
                 f"₹{won_amount:,.2f}L",
                 f"{achievement_pct:.1f}% of target",
-                help="Total amount of closed/won deals"
+                help="Total amount of closed/won deals (in Lakhs)"
             )
         
         with col3:
             st.metric(
                 "Pending Target", 
                 f"₹{pending_target:,.2f}L",
-                help="Amount still needed to reach target"
+                help="Amount still needed to reach target (in Lakhs)"
             )
         
         # Pipeline metrics
@@ -268,7 +268,7 @@ def show_overview():
                 "Active Pipeline", 
                 f"₹{active_pipeline:,.2f}L",
                 f"{pipeline_coverage:.1f}% coverage",
-                help="Current pipeline excluding closed won deals"
+                help="Current pipeline excluding closed won deals (in Lakhs)"
             )
         
         with col2:
@@ -285,19 +285,17 @@ def show_overview():
                 "Update Target (in Lakhs)",
                 value=float(st.session_state.sales_target),
                 step=1.0,
-                key="target_input"
+                key="target_input",
+                help="Enter target amount in Lakhs (1L = ₹100,000)"
             )
             if new_target != st.session_state.sales_target:
                 st.session_state.sales_target = new_target
                 st.rerun()
-    else:
-        st.error("Sales Stage column not found in the dataset. Please check your data format.")
-        
-    # Add a visual representation of the pipeline
-    if 'Sales Stage' in df.columns:
+
+        # Add a visual representation of the pipeline
         st.markdown("#### Pipeline Breakdown")
         
-        # Create waterfall chart
+        # Create waterfall chart with values in Lakhs
         fig = go.Figure(go.Waterfall(
             name="Pipeline", 
             orientation="v",
@@ -313,7 +311,7 @@ def show_overview():
         ))
         
         fig.update_layout(
-            title="Pipeline Coverage Analysis",
+            title="Pipeline Coverage Analysis (in Lakhs)",
             showlegend=False,
             height=400,
             waterfallgap=0.2,
@@ -322,7 +320,9 @@ def show_overview():
         )
         
         st.plotly_chart(fig, use_container_width=True)
-
+    else:
+        st.error("Sales Stage column not found in the dataset. Please check your data format.")
+        
     # Hunting vs Farming Split
     st.markdown("### 🎯 Hunting vs Farming Split")
     if 'Type' in df.columns:
