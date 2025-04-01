@@ -19,8 +19,6 @@ if 'df' not in st.session_state:
     st.session_state.df = None
 if 'current_view' not in st.session_state:
     st.session_state.current_view = 'data_input'
-if 'filters_reset' not in st.session_state:
-    st.session_state.filters_reset = False
 if 'date_filter' not in st.session_state:
     st.session_state.date_filter = None
 if 'selected_practice' not in st.session_state:
@@ -239,10 +237,13 @@ def show_overview():
         with col4:
             st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
             if st.button("🔄 Reset", help="Reset all filters to default values"):
-                st.session_state.reset_triggered = True
+                # Reset all filters
+                st.session_state.date_filter = None
                 st.session_state.selected_practice = 'All'
                 st.session_state.selected_stage = 'All'
-                st.rerun()
+                st.session_state.reset_triggered = True
+                # Clear the filters from the dataframe
+                df = st.session_state.df.copy()
 
     # KPI Row
     st.markdown("### 📌 Key Metrics")
