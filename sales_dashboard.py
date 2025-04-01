@@ -642,7 +642,7 @@ def show_overview():
             # Calculate Hunting vs Farming metrics
             type_metrics = df.groupby('Type').agg({
                 'Amount': 'sum',
-                'Type': 'count'
+                'Type': 'size'
             }).reset_index()
             
             type_metrics.columns = ['Type', 'Amount', 'Deal Count']
@@ -695,22 +695,22 @@ def show_overview():
             col1, col2 = st.columns(2)
             
             with col1:
-                hunting_amount = type_metrics[type_metrics['Type'] == 'Hunting']['Amount'].sum()
-                hunting_deals = type_metrics[type_metrics['Type'] == 'Hunting']['Deal Count'].sum()
+                hunting_amount = type_metrics[type_metrics['Type'] == 'New Business (Hunting)']['Amount'].sum()
+                hunting_deals = type_metrics[type_metrics['Type'] == 'New Business (Hunting)']['Deal Count'].sum()
                 st.markdown(f"""
                     <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
-                        <div class='metric-label'>Hunting</div>
+                        <div class='metric-label'>New Business (Hunting)</div>
                         <div class='metric-value'>₹{hunting_amount:,.1f}L</div>
                         <div style='color: #666; font-size: 0.9em;'>{hunting_deals:,} deals</div>
                     </div>
                 """, unsafe_allow_html=True)
             
             with col2:
-                farming_amount = type_metrics[type_metrics['Type'] == 'Farming']['Amount'].sum()
-                farming_deals = type_metrics[type_metrics['Type'] == 'Farming']['Deal Count'].sum()
+                farming_amount = type_metrics[type_metrics['Type'] == 'Existing Business (Farming)']['Amount'].sum()
+                farming_deals = type_metrics[type_metrics['Type'] == 'Existing Business (Farming)']['Deal Count'].sum()
                 st.markdown(f"""
                     <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
-                        <div class='metric-label'>Farming</div>
+                        <div class='metric-label'>Existing Business (Farming)</div>
                         <div class='metric-value'>₹{farming_amount:,.1f}L</div>
                         <div style='color: #666; font-size: 0.9em;'>{farming_deals:,} deals</div>
                     </div>
