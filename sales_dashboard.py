@@ -8,7 +8,7 @@ import io
 
 # Initialize session state for theme
 if 'theme' not in st.session_state:
-    st.session_state.theme = 'light'
+    st.session_state.theme = 'dark'  # Set dark theme as default
 
 # Borealis-inspired theme colors
 def get_theme_colors():
