@@ -183,62 +183,47 @@ def show_overview():
         # I. Target Setting & Achievement
         st.markdown("""
             <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
-                <h2 style='color: white; margin: 0; text-align: center;'>🎯 Target vs Achievement</h2>
+                <h2 style='color: white; margin: 0; text-align: center;'>🎯 Target vs Closed Won</h2>
             </div>
         """, unsafe_allow_html=True)
         
-        col1, col2 = st.columns(2)
+        # Calculate achievement
+        won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
+        won_amount = won_deals['Amount'].sum() / 100000
+        achievement_pct = (won_amount / st.session_state.sales_target * 100) if st.session_state.sales_target > 0 else 0
         
-        with col1:
-            # Manual target input
-            new_target = st.number_input(
-                "Annual Target (Lakhs)",
-                value=float(st.session_state.sales_target),
-                step=1.0,
-                format="%.2f",
-                help="Enter annual target in Lakhs (1L = ₹100,000)"
-            )
-            if new_target != st.session_state.sales_target:
-                st.session_state.sales_target = new_target
-                st.rerun()
+        # Manual target input
+        new_target = st.number_input(
+            "Annual Target (Lakhs)",
+            value=float(st.session_state.sales_target),
+            step=1.0,
+            format="%.2f",
+            help="Enter annual target in Lakhs (1L = ₹100,000)"
+        )
+        if new_target != st.session_state.sales_target:
+            st.session_state.sales_target = new_target
+            st.rerun()
         
-        with col2:
-            # Calculate achievement
-            won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
-            won_amount = won_deals['Amount'].sum() / 100000
-            achievement_pct = (won_amount / new_target * 100) if new_target > 0 else 0
-            
-            # Create donut chart
-            fig_donut = go.Figure(go.Pie(
-                values=[won_amount, max(0, new_target - won_amount)],
-                labels=['Achieved', 'Remaining'],
-                hole=0.7,
-                marker=dict(colors=['#2ecc71', '#e74c3c']),
-                textinfo='label+percent+value',
-                text=[[f"₹{won_amount:,.1f}L", f"₹{max(0, new_target - won_amount):,.1f}L"]],
-                hovertemplate="<b>%{label}</b><br>" +
-                            "Amount: ₹%{value:,.1f}L<br>" +
-                            "Percentage: %{percent}<br>" +
-                            "<extra></extra>"
-            ))
-            
-            fig_donut.update_layout(
-                title="Target Achievement",
-                height=300,
-                showlegend=True,
-                annotations=[dict(text=f"{achievement_pct:.1f}%", x=0.5, y=0.5, font_size=20, showarrow=False)]
-            )
-            
-            st.plotly_chart(fig_donut, use_container_width=True)
-        
-        # Add horizontal progress bar
+        # Enhanced horizontal progress bar with metrics
         st.markdown(f"""
-            <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; margin-top: 20px;'>
-                <h3 style='margin: 0 0 10px 0; color: #2ecc71;'>Progress Towards Target</h3>
-                <div style='background: #e74c3c; height: 30px; border-radius: 15px; overflow: hidden;'>
-                    <div style='background: #2ecc71; height: 100%; width: {min(100, achievement_pct)}%; transition: width 0.5s ease-in-out;'></div>
+            <div style='background: #f0f2f6; padding: 25px; border-radius: 10px; margin-top: 20px;'>
+                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;'>
+                    <div>
+                        <h3 style='margin: 0; color: #2ecc71;'>Closed Won</h3>
+                        <h2 style='margin: 5px 0; color: #2ecc71;'>₹{won_amount:,.2f}L</h2>
+                    </div>
+                    <div style='text-align: right;'>
+                        <h3 style='margin: 0; color: #e74c3c;'>Target</h3>
+                        <h2 style='margin: 5px 0; color: #e74c3c;'>₹{new_target:,.2f}L</h2>
+                    </div>
                 </div>
-                <div style='display: flex; justify-content: space-between; margin-top: 5px;'>
+                <div style='background: #e74c3c; height: 40px; border-radius: 20px; overflow: hidden; position: relative;'>
+                    <div style='background: #2ecc71; height: 100%; width: {min(100, achievement_pct)}%; transition: width 0.5s ease-in-out;'></div>
+                    <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);'>
+                        {achievement_pct:.1f}% Complete
+                    </div>
+                </div>
+                <div style='display: flex; justify-content: space-between; margin-top: 10px; color: #666;'>
                     <span>₹0L</span>
                     <span>₹{new_target:,.1f}L</span>
                 </div>
