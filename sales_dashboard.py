@@ -236,18 +236,21 @@ def show_overview():
         # II. Practice
         st.markdown("### Practice")
         
-        # Check for Practice column or alternative column names
-        practice_column = None
-        possible_names = ['Practice', 'practice', 'PRACTICE', 'Business Unit', 'business_unit', 'BUSINESS_UNIT', 'Division', 'division', 'DIVISION']
-        
-        for name in possible_names:
-            if name in df.columns:
-                practice_column = name
-                break
-        
-        if practice_column:
+        if 'Practice' in df.columns:
+            # Add practice filter
+            practices = ['All'] + sorted(df['Practice'].unique().tolist())
+            selected_practice = st.selectbox(
+                "Select Practice",
+                options=practices,
+                key="practice_filter"
+            )
+            
+            # Filter data based on selected practice
+            if selected_practice != 'All':
+                df = df[df['Practice'] == selected_practice]
+            
             # Calculate practice metrics
-            practice_metrics = df.groupby(practice_column).agg({
+            practice_metrics = df.groupby('Practice').agg({
                 'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
                 'id': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count(),
                 'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
@@ -256,7 +259,7 @@ def show_overview():
             practice_metrics.columns = ['Practice', 'Closed Amount', 'Closed Deals', 'Pipeline Deals']
             
             # Calculate total pipeline amount by practice
-            total_pipeline = df.groupby(practice_column)['Amount'].sum() / 100000
+            total_pipeline = df.groupby('Practice')['Amount'].sum() / 100000
             practice_metrics['Total Pipeline'] = practice_metrics['Practice'].map(total_pipeline)
             
             # Create a comprehensive view
@@ -382,8 +385,7 @@ def show_overview():
                 use_container_width=True
             )
         else:
-            st.info("Practice/Business Unit data is not available in the dataset. Please check if the column exists with a different name.")
-            st.write("Available columns in your dataset:", df.columns.tolist())
+            st.error("Practice column not found in the dataset")
         
         # III. Business Type Distribution
         st.markdown("### Business Type Distribution")
