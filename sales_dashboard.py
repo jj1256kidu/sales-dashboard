@@ -214,37 +214,114 @@ def show_overview():
 
     # KPI Row
     st.markdown("### 📌 Key Metrics")
-    col1, col2, col3, col4 = st.columns(4)
     
-    with col1:
-        # Total Pipeline (excluding Closed Won)
-        if 'Sales Stage' in df.columns:
-            pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
-            total_pipeline = pipeline_df['Amount'].sum() if 'Amount' in pipeline_df.columns else 0
-            st.metric("Total Pipeline", f"₹{total_pipeline:,.2f}L")
-        else:
-            total_pipeline = df['Amount'].sum() if 'Amount' in df.columns else 0
-            st.metric("Total Pipeline", f"₹{total_pipeline:,.2f}L")
-    
-    with col2:
-        if 'Sales Stage' in df.columns:
-            won_amount = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
-            st.metric("Won Amount", f"₹{won_amount:,.2f}L")
-    
-    with col3:
-        if 'Sales Stage' in df.columns:
+    # First get all the metrics
+    if 'Sales Stage' in df.columns:
+        # Total Won (Closed)
+        won_amount = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
+        
+        # Active Pipeline (excluding Won)
+        pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
+        active_pipeline = pipeline_df['Amount'].sum() if 'Amount' in pipeline_df.columns else 0
+        
+        # Total (Pipeline + Won)
+        total_amount = active_pipeline + won_amount
+        
+        # Target vs Achievement
+        target = float(st.session_state.sales_target)
+        pending_target = max(0, target - won_amount)  # How much more needed to reach target
+        
+        # Create two rows of metrics
+        st.markdown("#### Target vs Achievement")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric(
+                "Target", 
+                f"₹{target:,.2f}L",
+                help="Annual target set for the team"
+            )
+        
+        with col2:
+            achievement_pct = (won_amount / target * 100) if target > 0 else 0
+            st.metric(
+                "Closed Won", 
+                f"₹{won_amount:,.2f}L",
+                f"{achievement_pct:.1f}% of target",
+                help="Total amount of closed/won deals"
+            )
+        
+        with col3:
+            st.metric(
+                "Pending Target", 
+                f"₹{pending_target:,.2f}L",
+                help="Amount still needed to reach target"
+            )
+        
+        # Pipeline metrics
+        st.markdown("#### Pipeline Status")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            pipeline_coverage = (active_pipeline / pending_target * 100) if pending_target > 0 else 0
+            st.metric(
+                "Active Pipeline", 
+                f"₹{active_pipeline:,.2f}L",
+                f"{pipeline_coverage:.1f}% coverage",
+                help="Current pipeline excluding closed won deals"
+            )
+        
+        with col2:
             win_rate = (df['Sales Stage'].str.contains('Won', case=False, na=False).sum() / len(df)) * 100
-            st.metric("Win Rate", f"{win_rate:.1f}%")
-    
-    with col4:
-        # Manual target input
-        target = st.number_input(
-            "Set Target (in Lakhs)",
-            value=float(st.session_state.sales_target),
-            step=1.0,
-            key="target_input"
+            st.metric(
+                "Win Rate", 
+                f"{win_rate:.1f}%",
+                help="Percentage of deals won out of total deals"
+            )
+        
+        with col3:
+            # Target input
+            new_target = st.number_input(
+                "Update Target (in Lakhs)",
+                value=float(st.session_state.sales_target),
+                step=1.0,
+                key="target_input"
+            )
+            if new_target != st.session_state.sales_target:
+                st.session_state.sales_target = new_target
+                st.rerun()
+    else:
+        st.error("Sales Stage column not found in the dataset. Please check your data format.")
+        
+    # Add a visual representation of the pipeline
+    if 'Sales Stage' in df.columns:
+        st.markdown("#### Pipeline Breakdown")
+        
+        # Create waterfall chart
+        fig = go.Figure(go.Waterfall(
+            name="Pipeline", 
+            orientation="v",
+            measure=["total", "relative", "relative", "total"],
+            x=["Target", "Closed Won", "Active Pipeline", "Gap"],
+            y=[target, won_amount, active_pipeline, -(target)],
+            connector={"line": {"color": "rgb(63, 63, 63)"}},
+            decreasing={"marker": {"color": "#EF5350"}},
+            increasing={"marker": {"color": "#66BB6A"}},
+            totals={"marker": {"color": "#4A90E2"}},
+            text=[f"₹{target:,.1f}L", f"₹{won_amount:,.1f}L", f"₹{active_pipeline:,.1f}L", f"₹{(won_amount + active_pipeline - target):,.1f}L"],
+            textposition="outside"
+        ))
+        
+        fig.update_layout(
+            title="Pipeline Coverage Analysis",
+            showlegend=False,
+            height=400,
+            waterfallgap=0.2,
+            xaxis={"title": ""},
+            yaxis={"title": "Amount (₹L)"},
         )
-        st.session_state.sales_target = target
+        
+        st.plotly_chart(fig, use_container_width=True)
 
     # Hunting vs Farming Split
     st.markdown("### 🎯 Hunting vs Farming Split")
@@ -296,52 +373,6 @@ def show_overview():
             st.metric("Hunting Revenue", f"₹{hunting_amount:,.2f}L")
     else:
         st.info("Business Type classification not found in the dataset")
-
-    # Target vs Closed Won
-    st.markdown("### 💰 Target vs Achievement")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Monthly trend
-        if 'Expected Close Date' in df.columns:
-            monthly_data = df[df['Sales Stage'].str.contains('Won', case=False, na=False)].groupby(
-                df['Expected Close Date'].dt.strftime('%Y-%m')
-            )['Amount'].sum().reset_index()
-            monthly_data['Target'] = st.session_state.sales_target / 12  # Monthly target
-            
-            fig_target = go.Figure()
-            fig_target.add_trace(go.Bar(
-                x=monthly_data['Expected Close Date'],
-                y=monthly_data['Amount'],
-                name='Achieved'
-            ))
-            fig_target.add_trace(go.Scatter(
-                x=monthly_data['Expected Close Date'],
-                y=monthly_data['Target'],
-                name='Target',
-                line=dict(color='red', dash='dash')
-            ))
-            fig_target.update_layout(title='Monthly Achievement vs Target')
-            st.plotly_chart(fig_target, use_container_width=True)
-    
-    with col2:
-        # Progress gauge
-        total_won = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
-        achievement_percentage = (total_won / st.session_state.sales_target * 100) if st.session_state.sales_target > 0 else 0
-        
-        fig_gauge = go.Figure(go.Indicator(
-            mode="gauge+number",
-            value=achievement_percentage,
-            title={'text': "Target Achievement"},
-            gauge={'axis': {'range': [None, 100]},
-                  'bar': {'color': "darkblue"},
-                  'steps': [
-                      {'range': [0, 50], 'color': "lightgray"},
-                      {'range': [50, 75], 'color': "gray"},
-                      {'range': [75, 100], 'color': "darkgray"}
-                  ]}
-        ))
-        st.plotly_chart(fig_gauge, use_container_width=True)
 
     # Sales Stages Analysis
     st.markdown("### 🎯 Sales Stages Analysis")
