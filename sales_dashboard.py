@@ -230,94 +230,147 @@ def show_overview():
             </div>
         """, unsafe_allow_html=True)
         
-        # II. Overall Pipeline Analysis
-        st.markdown("### Overall Pipeline Analysis")
+        # II. Practice Analysis
+        st.markdown("### Practice Analysis")
         
-        # Calculate pipeline metrics
-        total_pipeline = df['Amount'].sum() / 100000
-        total_deals = len(df)
-        won_deals_count = len(won_deals)
-        pipeline_deals = total_deals - won_deals_count
-        pipeline_amount = total_pipeline - won_amount
-        
-        # Create a comprehensive view
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Pipeline Amount Distribution
-            fig_pipeline = go.Figure()
+        if 'Practice' in df.columns and not df['Practice'].isna().all():
+            # Calculate practice metrics
+            practice_metrics = df.groupby('Practice').agg({
+                'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
+                'id': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count(),
+                'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
+            }).reset_index()
             
-            fig_pipeline.add_trace(go.Pie(
-                labels=['Closed Won', 'Pipeline'],
-                values=[won_amount, pipeline_amount],
-                hole=0.4,
-                textinfo='label+value+percent',
-                texttemplate='%{label}<br>₹%{value:,.1f}L<br>%{percent:.1%}',
-                marker=dict(colors=['#2ecc71', '#4A90E2'])
-            ))
+            practice_metrics.columns = ['Practice', 'Closed Amount', 'Closed Deals', 'Pipeline Deals']
             
-            fig_pipeline.update_layout(
-                title="Pipeline Amount Distribution",
-                height=400,
-                showlegend=True
-            )
+            # Calculate total pipeline amount by practice
+            total_pipeline = df.groupby('Practice')['Amount'].sum() / 100000
+            practice_metrics['Total Pipeline'] = practice_metrics['Practice'].map(total_pipeline)
             
-            st.plotly_chart(fig_pipeline, use_container_width=True)
-        
-        with col2:
-            # Deal Count Distribution
-            fig_deals = go.Figure()
+            # Create a comprehensive view
+            col1, col2 = st.columns(2)
             
-            fig_deals.add_trace(go.Pie(
-                labels=['Closed Won', 'Pipeline'],
-                values=[won_deals_count, pipeline_deals],
-                hole=0.4,
-                textinfo='label+value+percent',
-                texttemplate='%{label}<br>%{value:,} deals<br>%{percent:.1%}',
-                marker=dict(colors=['#2ecc71', '#4A90E2'])
-            ))
+            with col1:
+                # Practice-wise Pipeline Amount
+                fig_pipeline = go.Figure()
+                
+                fig_pipeline.add_trace(go.Bar(
+                    x=practice_metrics['Practice'],
+                    y=practice_metrics['Total Pipeline'],
+                    name='Total Pipeline',
+                    text=practice_metrics['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L"),
+                    textposition='outside',
+                    marker_color='#4A90E2'
+                ))
+                
+                fig_pipeline.add_trace(go.Bar(
+                    x=practice_metrics['Practice'],
+                    y=practice_metrics['Closed Amount'],
+                    name='Closed Won',
+                    text=practice_metrics['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L"),
+                    textposition='outside',
+                    marker_color='#2ecc71'
+                ))
+                
+                fig_pipeline.update_layout(
+                    title="Practice-wise Pipeline Amount",
+                    height=400,
+                    barmode='group',
+                    xaxis_title="Practice",
+                    yaxis_title="Amount (Lakhs)",
+                    showlegend=True
+                )
+                
+                st.plotly_chart(fig_pipeline, use_container_width=True)
             
-            fig_deals.update_layout(
-                title="Deal Count Distribution",
-                height=400,
-                showlegend=True
-            )
+            with col2:
+                # Practice-wise Deal Count
+                fig_deals = go.Figure()
+                
+                fig_deals.add_trace(go.Bar(
+                    x=practice_metrics['Practice'],
+                    y=practice_metrics['Pipeline Deals'],
+                    name='Pipeline Deals',
+                    text=practice_metrics['Pipeline Deals'],
+                    textposition='outside',
+                    marker_color='#4A90E2'
+                ))
+                
+                fig_deals.add_trace(go.Bar(
+                    x=practice_metrics['Practice'],
+                    y=practice_metrics['Closed Deals'],
+                    name='Closed Deals',
+                    text=practice_metrics['Closed Deals'],
+                    textposition='outside',
+                    marker_color='#2ecc71'
+                ))
+                
+                fig_deals.update_layout(
+                    title="Practice-wise Deal Count",
+                    height=400,
+                    barmode='group',
+                    xaxis_title="Practice",
+                    yaxis_title="Number of Deals",
+                    showlegend=True
+                )
+                
+                st.plotly_chart(fig_deals, use_container_width=True)
             
-            st.plotly_chart(fig_deals, use_container_width=True)
-        
-        # Add summary metrics
-        st.markdown("### Pipeline Summary")
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.metric(
-                "Total Pipeline",
-                f"₹{total_pipeline:,.1f}L",
-                f"{pipeline_amount:,.1f}L remaining"
+            # Add practice summary metrics
+            st.markdown("### Practice Summary")
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                total_pipeline = practice_metrics['Total Pipeline'].sum()
+                st.metric(
+                    "Total Pipeline",
+                    f"₹{total_pipeline:,.1f}L",
+                    f"{practice_metrics['Total Pipeline'].sum() - practice_metrics['Closed Amount'].sum():,.1f}L remaining"
+                )
+            
+            with col2:
+                total_deals = practice_metrics['Pipeline Deals'].sum() + practice_metrics['Closed Deals'].sum()
+                st.metric(
+                    "Total Deals",
+                    f"{total_deals:,}",
+                    f"{practice_metrics['Pipeline Deals'].sum():,} in pipeline"
+                )
+            
+            with col3:
+                total_won = practice_metrics['Closed Deals'].sum()
+                win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0
+                st.metric(
+                    "Win Rate",
+                    f"{win_rate:.1f}%",
+                    f"{total_won:,} won"
+                )
+            
+            with col4:
+                avg_deal_size = practice_metrics['Closed Amount'].sum() / total_won if total_won > 0 else 0
+                st.metric(
+                    "Avg Deal Size",
+                    f"₹{avg_deal_size:,.1f}L",
+                    "Per won deal"
+                )
+            
+            # Add practice-wise summary table
+            st.markdown("### Practice-wise Details")
+            summary_data = practice_metrics.copy()
+            summary_data['Win Rate'] = (summary_data['Closed Deals'] / (summary_data['Closed Deals'] + summary_data['Pipeline Deals']) * 100).round(1)
+            summary_data['Pipeline Value'] = summary_data['Total Pipeline'] - summary_data['Closed Amount']
+            
+            # Format the summary table
+            summary_data['Closed Amount'] = summary_data['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L")
+            summary_data['Total Pipeline'] = summary_data['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L")
+            summary_data['Pipeline Value'] = summary_data['Pipeline Value'].apply(lambda x: f"₹{x:,.1f}L")
+            summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x:.1f}%")
+            
+            st.dataframe(
+                summary_data[['Practice', 'Closed Amount', 'Pipeline Value', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals', 'Win Rate']],
+                use_container_width=True
             )
-        
-        with col2:
-            st.metric(
-                "Total Deals",
-                f"{total_deals:,}",
-                f"{pipeline_deals:,} in pipeline"
-            )
-        
-        with col3:
-            win_rate = (won_deals_count / total_deals * 100) if total_deals > 0 else 0
-            st.metric(
-                "Win Rate",
-                f"{win_rate:.1f}%",
-                f"{won_deals_count:,} won"
-            )
-        
-        with col4:
-            avg_deal_size = won_amount / won_deals_count if won_deals_count > 0 else 0
-            st.metric(
-                "Avg Deal Size",
-                f"₹{avg_deal_size:,.1f}L",
-                "Per won deal"
-            )
+        else:
+            st.info("Practice data is not available in the dataset")
         
         # III. Business Type Distribution
         st.markdown("### Business Type Distribution")
@@ -451,111 +504,6 @@ def show_overview():
             st.plotly_chart(fig_status, use_container_width=True)
         else:
             st.info("Deal status data is not available in the dataset")
-        
-        # VI. Practice-wise Pipeline Analysis
-        st.markdown("### Practice-wise Pipeline Analysis")
-        
-        if 'Practice' in df.columns and not df['Practice'].isna().all():
-            # Calculate pipeline metrics by practice
-            practice_pipeline = df.groupby('Practice').agg({
-                'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
-                'id': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count(),
-                'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
-            }).reset_index()
-            
-            practice_pipeline.columns = ['Practice', 'Closed Amount', 'Closed Deals', 'Pipeline Deals']
-            
-            # Calculate total pipeline amount by practice
-            total_pipeline = df.groupby('Practice')['Amount'].sum() / 100000
-            practice_pipeline['Total Pipeline'] = practice_pipeline['Practice'].map(total_pipeline)
-            
-            # Create a comprehensive view
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                # Pipeline Amount by Practice
-                fig_pipeline = go.Figure()
-                
-                fig_pipeline.add_trace(go.Bar(
-                    x=practice_pipeline['Practice'],
-                    y=practice_pipeline['Total Pipeline'],
-                    name='Total Pipeline',
-                    text=practice_pipeline['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L"),
-                    textposition='outside',
-                    marker_color='#4A90E2'
-                ))
-                
-                fig_pipeline.add_trace(go.Bar(
-                    x=practice_pipeline['Practice'],
-                    y=practice_pipeline['Closed Amount'],
-                    name='Closed Won',
-                    text=practice_pipeline['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L"),
-                    textposition='outside',
-                    marker_color='#2ecc71'
-                ))
-                
-                fig_pipeline.update_layout(
-                    title="Practice-wise Pipeline Amount",
-                    height=400,
-                    barmode='group',
-                    xaxis_title="Practice",
-                    yaxis_title="Amount (Lakhs)",
-                    showlegend=True
-                )
-                
-                st.plotly_chart(fig_pipeline, use_container_width=True)
-            
-            with col2:
-                # Deal Count by Practice
-                fig_deals = go.Figure()
-                
-                fig_deals.add_trace(go.Bar(
-                    x=practice_pipeline['Practice'],
-                    y=practice_pipeline['Pipeline Deals'],
-                    name='Pipeline Deals',
-                    text=practice_pipeline['Pipeline Deals'],
-                    textposition='outside',
-                    marker_color='#4A90E2'
-                ))
-                
-                fig_deals.add_trace(go.Bar(
-                    x=practice_pipeline['Practice'],
-                    y=practice_pipeline['Closed Deals'],
-                    name='Closed Deals',
-                    text=practice_pipeline['Closed Deals'],
-                    textposition='outside',
-                    marker_color='#2ecc71'
-                ))
-                
-                fig_deals.update_layout(
-                    title="Practice-wise Deal Count",
-                    height=400,
-                    barmode='group',
-                    xaxis_title="Practice",
-                    yaxis_title="Number of Deals",
-                    showlegend=True
-                )
-                
-                st.plotly_chart(fig_deals, use_container_width=True)
-            
-            # Add a summary table
-            st.markdown("### Practice-wise Summary")
-            summary_data = practice_pipeline.copy()
-            summary_data['Win Rate'] = (summary_data['Closed Deals'] / summary_data['Pipeline Deals'] * 100).round(1)
-            summary_data['Pipeline Value'] = summary_data['Total Pipeline'] - summary_data['Closed Amount']
-            
-            # Format the summary table
-            summary_data['Closed Amount'] = summary_data['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L")
-            summary_data['Total Pipeline'] = summary_data['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L")
-            summary_data['Pipeline Value'] = summary_data['Pipeline Value'].apply(lambda x: f"₹{x:,.1f}L")
-            summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x:.1f}%")
-            
-            st.dataframe(
-                summary_data[['Practice', 'Closed Amount', 'Pipeline Value', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals', 'Win Rate']],
-                use_container_width=True
-            )
-        else:
-            st.info("Practice data is not available in the dataset")
     
     else:
         st.error("Required data fields (Sales Stage, Amount) not found in the dataset")
