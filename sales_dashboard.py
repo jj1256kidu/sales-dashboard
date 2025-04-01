@@ -106,7 +106,11 @@ with st.sidebar:
     }
     
     st.markdown("## 📊 Navigation")
-    selected_page = st.radio("Go to", list(pages.keys()))
+    selected_page = st.radio(
+        "Go to",
+        list(pages.keys()),
+        key="nav_radio"
+    )
     
     # Save selected page
     st.session_state.current_view = pages[selected_page]
@@ -622,7 +626,11 @@ st.markdown(f"""
 # Render the correct page based on selection
 if st.session_state.current_view == "data_input":
     st.title("📁 Data Input")
-    input_method = st.radio("Choose data input method:", ["Excel File", "Google Sheet URL"])
+    input_method = st.radio(
+        "Choose data input method:",
+        ["Excel File", "Google Sheet URL"],
+        key="data_input_method"
+    )
     
     df = None
     if input_method == "Excel File":
@@ -1389,19 +1397,22 @@ if df is not None:
             practice_filter = st.multiselect(
                 "Practice",
                 options=safe_sort_unique(filtered_df['Practice']),
-                default=[]
+                default=[],
+                key="practice_filter"
             )
         with col2:
             stage_filter = st.multiselect(
                 "Sales Stage",
                 options=safe_sort_unique(filtered_df['Sales Stage']),
-                default=[]
+                default=[],
+                key="stage_filter"
             )
         with col3:
             quarter_filter = st.multiselect(
                 "Quarter",
                 options=safe_sort_unique(filtered_df['Quarter']),
-                default=[]
+                default=[],
+                key="quarter_filter"
             )
         
         # Add probability range filter in a new row
