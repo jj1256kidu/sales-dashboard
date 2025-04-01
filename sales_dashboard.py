@@ -27,6 +27,8 @@ if 'selected_practice' not in st.session_state:
     st.session_state.selected_practice = 'All'
 if 'selected_stage' not in st.session_state:
     st.session_state.selected_stage = 'All'
+if 'reset_triggered' not in st.session_state:
+    st.session_state.reset_triggered = False
 
 # Custom CSS for modern styling
 st.markdown("""
@@ -190,9 +192,14 @@ def show_overview():
                 min_date = df['Expected Close Date'].min()
                 max_date = df['Expected Close Date'].max()
                 
+                # Reset date filter if triggered
+                if st.session_state.reset_triggered:
+                    st.session_state.date_filter = (min_date, max_date)
+                    st.session_state.reset_triggered = False
+                
                 date_filter = st.date_input(
                     "Date Range",
-                    value=(min_date, max_date),
+                    value=st.session_state.date_filter if st.session_state.date_filter else (min_date, max_date),
                     min_value=min_date,
                     max_value=max_date,
                     key="date_filter"
@@ -232,8 +239,7 @@ def show_overview():
         with col4:
             st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
             if st.button("🔄 Reset", help="Reset all filters to default values"):
-                st.session_state.filters_reset = True
-                st.session_state.date_filter = None
+                st.session_state.reset_triggered = True
                 st.session_state.selected_practice = 'All'
                 st.session_state.selected_stage = 'All'
                 st.rerun()
