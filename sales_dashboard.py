@@ -198,9 +198,12 @@ def show_overview():
         pipeline_df = df[~df['Sales Stage'].str.contains('Won|Lost', case=False, na=False)]
         total_pipeline = pipeline_df['Amount'].sum() / 100000
         
-        # Calculate Committed vs Upside
-        committed_deals = df[df['Status'] == 'Committed for the Month']['Amount'].sum() / 100000
-        upside_deals = df[df['Status'] == 'Upside for the Month']['Amount'].sum() / 100000
+        # Calculate Committed vs Upside if Status column exists
+        committed_deals = 0
+        upside_deals = 0
+        if 'Status' in df.columns:
+            committed_deals = df[df['Status'] == 'Committed for the Month']['Amount'].sum() / 100000
+            upside_deals = df[df['Status'] == 'Upside for the Month']['Amount'].sum() / 100000
         
         target = float(st.session_state.sales_target)
         variance = ((won_amount_ytd - target) / target * 100) if target > 0 else 0
@@ -241,148 +244,55 @@ def show_overview():
             )
         
         with col3:
-            st.metric(
-                "💼 Committed Deals",
-                f"₹{committed_deals:,.2f}L",
-                f"{(committed_deals/total_pipeline*100 if total_pipeline > 0 else 0):.1f}% of Pipeline"
-            )
-            
-            st.metric(
-                "📊 Upside Deals",
-                f"₹{upside_deals:,.2f}L",
-                f"{(upside_deals/total_pipeline*100 if total_pipeline > 0 else 0):.1f}% of Pipeline"
-            )
+            if 'Status' in df.columns:
+                st.metric(
+                    "💼 Committed Deals",
+                    f"₹{committed_deals:,.2f}L",
+                    f"{(committed_deals/total_pipeline*100 if total_pipeline > 0 else 0):.1f}% of Pipeline"
+                )
+                
+                st.metric(
+                    "📊 Upside Deals",
+                    f"₹{upside_deals:,.2f}L",
+                    f"{(upside_deals/total_pipeline*100 if total_pipeline > 0 else 0):.1f}% of Pipeline"
+                )
+            else:
+                st.metric(
+                    "🎯 Win Rate",
+                    f"{(len(won_deals) / len(df) * 100):.1f}%",
+                    f"{len(won_deals)}/{len(df)} deals"
+                )
         
         # II. Performance Graphs
         st.markdown("### 📊 Performance Trends")
         
-        tab1, tab2 = st.tabs(["Target vs Achievement", "Committed vs Upside"])
-        
-        with tab1:
+        if 'Expected Close Date' in df.columns:
             # Monthly performance trend
             monthly_performance = df.groupby(df['Expected Close Date'].dt.strftime('%b %Y')).agg({
                 'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000
             }).reset_index()
             monthly_performance.columns = ['Month', 'Achievement']
             
-            # Add target line
-            monthly_target = target / 12
-            
             fig_achievement = go.Figure()
-            
-            # Add target line
-            fig_achievement.add_trace(go.Scatter(
-                x=monthly_performance['Month'],
-                y=[monthly_target] * len(monthly_performance),
-                name='Monthly Target',
-                line=dict(color='red', dash='dash')
-            ))
             
             # Add achievement bars
             fig_achievement.add_trace(go.Bar(
                 x=monthly_performance['Month'],
                 y=monthly_performance['Achievement'],
                 name='Achievement',
-                text=monthly_performance['Achievement'].apply(lambda x: f'₹{x:,.1f}L<br>{(x/monthly_target*100 if monthly_target > 0 else 0):.1f}%'),
+                text=monthly_performance['Achievement'].apply(lambda x: f'₹{x:,.1f}L'),
                 textposition='outside'
             ))
             
             fig_achievement.update_layout(
-                title="Monthly Target vs Achievement",
+                title="Monthly Achievement",
                 height=400,
                 barmode='group'
             )
             
             st.plotly_chart(fig_achievement, use_container_width=True)
         
-        with tab2:
-            # Monthly Committed vs Upside trend
-            monthly_split = df.pivot_table(
-                index=df['Expected Close Date'].dt.strftime('%b %Y'),
-                columns='Status',
-                values='Amount',
-                aggfunc='sum'
-            ).div(100000).fillna(0)
-            
-            # Sort months chronologically
-            monthly_split.index = pd.to_datetime(monthly_split.index, format='%b %Y')
-            monthly_split = monthly_split.sort_index()
-            monthly_split.index = monthly_split.index.strftime('%b %Y')
-            
-            fig_split = go.Figure()
-            
-            # Add bars for Committed and Upside
-            fig_split.add_trace(go.Bar(
-                x=monthly_split.index,
-                y=monthly_split['Committed for the Month'],
-                name='Committed',
-                text=monthly_split['Committed for the Month'].apply(lambda x: f'₹{x:,.1f}L'),
-                textposition='inside'
-            ))
-            
-            fig_split.add_trace(go.Bar(
-                x=monthly_split.index,
-                y=monthly_split['Upside for the Month'],
-                name='Upside',
-                text=monthly_split['Upside for the Month'].apply(lambda x: f'₹{x:,.1f}L'),
-                textposition='inside'
-            ))
-            
-            fig_split.update_layout(
-                title="Monthly Committed vs Upside Split",
-                height=400,
-                barmode='stack'
-            )
-            
-            st.plotly_chart(fig_split, use_container_width=True)
-        
-        # III. Breakdowns & Splits
-        st.markdown("### 🌍 Business Breakdowns")
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Geographical Split
-            if 'Region' in df.columns:
-                region_data = df.groupby('Region').agg({
-                    'Amount': lambda x: x.sum() / 100000,
-                    'Sales Stage': 'count'
-                }).reset_index()
-                
-                fig_geo = go.Figure(go.Bar(
-                    x=region_data['Region'],
-                    y=region_data['Amount'],
-                    text=region_data['Amount'].apply(lambda x: f'₹{x:,.1f}L'),
-                    textposition='outside'
-                ))
-                
-                fig_geo.update_layout(
-                    title="Revenue by Region",
-                    height=400
-                )
-                
-                st.plotly_chart(fig_geo, use_container_width=True)
-        
-        with col2:
-            # Hunting vs Farming Split
-            if 'Type' in df.columns:
-                type_data = df.groupby('Type')['Amount'].sum().div(100000)
-                
-                fig_type = go.Figure(go.Pie(
-                    values=type_data.values,
-                    labels=type_data.index,
-                    hole=0.6,
-                    text=type_data.values.apply(lambda x: f'₹{x:,.1f}L')
-                ))
-                
-                fig_type.update_layout(
-                    title="Hunting vs Farming Split",
-                    height=400
-                )
-                
-                st.plotly_chart(fig_type, use_container_width=True)
-        
-        # IV. Pipeline Health & Flow
+        # III. Pipeline Analysis
         st.markdown("### 🕳️ Pipeline Analysis")
         
         col1, col2 = st.columns([2, 1])
