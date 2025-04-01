@@ -230,8 +230,8 @@ def show_overview():
             </div>
         """, unsafe_allow_html=True)
         
-        # II. Practice Analysis
-        st.markdown("### Practice Analysis")
+        # II. Practice
+        st.markdown("### Practice")
         
         if 'Practice' in df.columns and not df['Practice'].isna().all():
             # Calculate practice metrics
