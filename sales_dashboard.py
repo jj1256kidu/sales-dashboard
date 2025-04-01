@@ -56,6 +56,26 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
+    /* Number formatting */
+    .big-number {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: #2ecc71;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .metric-value {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #4A90E2;
+    }
+
+    .metric-label {
+        font-size: 1.1em;
+        color: #666;
+        margin-bottom: 5px;
+    }
+
     /* Upload container styling */
     .upload-container {
         background-color: rgba(74, 144, 226, 0.1);
@@ -102,6 +122,31 @@ st.markdown("""
         padding: 15px;
         border-radius: 4px;
         margin: 10px 0;
+    }
+
+    /* Table styling */
+    .dataframe {
+        font-size: 1.1em;
+        background-color: white;
+        border-radius: 8px;
+        padding: 10px;
+    }
+
+    .dataframe th {
+        background-color: #4A90E2;
+        color: white;
+        font-weight: bold;
+        padding: 12px;
+    }
+
+    .dataframe td {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    /* Chart text styling */
+    .js-plotly-plot .plotly .main-svg {
+        font-size: 14px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -209,21 +254,21 @@ def show_overview():
             <div style='background: #f0f2f6; padding: 25px; border-radius: 10px; margin-top: 20px;'>
                 <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;'>
                     <div>
-                        <h3 style='margin: 0; color: #2ecc71;'>Closed Won</h3>
-                        <h2 style='margin: 5px 0; color: #2ecc71;'>₹{won_amount:,.2f}L</h2>
+                        <h3 style='margin: 0; color: #2ecc71; font-size: 1.2em;'>Closed Won</h3>
+                        <h2 style='margin: 5px 0; color: #2ecc71; font-size: 2.5em; font-weight: bold;'>₹{won_amount:,.2f}L</h2>
                     </div>
                     <div style='text-align: right;'>
-                        <h3 style='margin: 0; color: #e74c3c;'>Target</h3>
-                        <h2 style='margin: 5px 0; color: #e74c3c;'>₹{new_target:,.2f}L</h2>
+                        <h3 style='margin: 0; color: #e74c3c; font-size: 1.2em;'>Target</h3>
+                        <h2 style='margin: 5px 0; color: #e74c3c; font-size: 2.5em; font-weight: bold;'>₹{new_target:,.2f}L</h2>
                     </div>
                 </div>
                 <div style='background: #e74c3c; height: 40px; border-radius: 20px; overflow: hidden; position: relative;'>
                     <div style='background: #2ecc71; height: 100%; width: {min(100, achievement_pct)}%; transition: width 0.5s ease-in-out;'></div>
-                    <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);'>
+                    <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: bold; font-size: 1.2em; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);'>
                         {achievement_pct:.1f}% Complete
                     </div>
                 </div>
-                <div style='display: flex; justify-content: space-between; margin-top: 10px; color: #666;'>
+                <div style='display: flex; justify-content: space-between; margin-top: 10px; color: #666; font-size: 1.1em;'>
                     <span>₹0L</span>
                     <span>₹{new_target:,.1f}L</span>
                 </div>
@@ -340,36 +385,44 @@ def show_overview():
             
             with col1:
                 total_pipeline = practice_metrics['Total Pipeline'].sum()
-                st.metric(
-                    "Total Pipeline",
-                    f"₹{total_pipeline:,.1f}L",
-                    f"{practice_metrics['Total Pipeline'].sum() - practice_metrics['Closed Amount'].sum():,.1f}L remaining"
-                )
+                st.markdown(f"""
+                    <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                        <div class='metric-label'>Total Pipeline</div>
+                        <div class='metric-value'>₹{total_pipeline:,.1f}L</div>
+                        <div style='color: #666; font-size: 0.9em;'>{practice_metrics['Total Pipeline'].sum() - practice_metrics['Closed Amount'].sum():,.1f}L remaining</div>
+                    </div>
+                """, unsafe_allow_html=True)
             
             with col2:
                 total_deals = practice_metrics['Pipeline Deals'].sum() + practice_metrics['Closed Deals'].sum()
-                st.metric(
-                    "Total Deals",
-                    f"{total_deals:,}",
-                    f"{practice_metrics['Pipeline Deals'].sum():,} in pipeline"
-                )
+                st.markdown(f"""
+                    <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                        <div class='metric-label'>Total Deals</div>
+                        <div class='metric-value'>{total_deals:,}</div>
+                        <div style='color: #666; font-size: 0.9em;'>{practice_metrics['Pipeline Deals'].sum():,} in pipeline</div>
+                    </div>
+                """, unsafe_allow_html=True)
             
             with col3:
                 total_won = practice_metrics['Closed Deals'].sum()
                 win_rate = (total_won / total_deals * 100) if total_deals > 0 else 0
-                st.metric(
-                    "Win Rate",
-                    f"{win_rate:.1f}%",
-                    f"{total_won:,} won"
-                )
+                st.markdown(f"""
+                    <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                        <div class='metric-label'>Win Rate</div>
+                        <div class='metric-value'>{win_rate:.1f}%</div>
+                        <div style='color: #666; font-size: 0.9em;'>{total_won:,} won</div>
+                    </div>
+                """, unsafe_allow_html=True)
             
             with col4:
                 avg_deal_size = practice_metrics['Closed Amount'].sum() / total_won if total_won > 0 else 0
-                st.metric(
-                    "Avg Deal Size",
-                    f"₹{avg_deal_size:,.1f}L",
-                    "Per won deal"
-                )
+                st.markdown(f"""
+                    <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                        <div class='metric-label'>Avg Deal Size</div>
+                        <div class='metric-value'>₹{avg_deal_size:,.1f}L</div>
+                        <div style='color: #666; font-size: 0.9em;'>Per won deal</div>
+                    </div>
+                """, unsafe_allow_html=True)
             
             # Add practice-wise summary table
             st.markdown("### Practice-wise Details")
