@@ -183,6 +183,8 @@ def show_overview():
     if 'Expected Close Date' in df.columns:
         df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'])
         current_date = pd.Timestamp.now()
+        
+        # Calculate MTD and YTD flags
         df['MTD'] = (df['Expected Close Date'].dt.year == current_date.year) & (df['Expected Close Date'].dt.month == current_date.month)
         df['YTD'] = (df['Expected Close Date'].dt.year == current_date.year) & (df['Expected Close Date'].dt.month <= current_date.month)
     
@@ -192,6 +194,8 @@ def show_overview():
         
         # Calculate core metrics
         won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
+        
+        # Calculate MTD and YTD amounts separately
         won_amount_mtd = won_deals[won_deals['MTD']]['Amount'].sum() / 100000
         won_amount_ytd = won_deals[won_deals['YTD']]['Amount'].sum() / 100000
         
@@ -224,10 +228,12 @@ def show_overview():
                 st.session_state.sales_target = new_target
                 st.rerun()
             
+            # Show YTD and MTD with proper formatting
             st.metric(
                 "✅ Closed Won YTD",
                 f"₹{won_amount_ytd:,.2f}L",
-                f"MTD: ₹{won_amount_mtd:,.2f}L"
+                f"MTD: ₹{won_amount_mtd:,.2f}L",
+                help="YTD: Year to Date, MTD: Month to Date"
             )
         
         with col2:
