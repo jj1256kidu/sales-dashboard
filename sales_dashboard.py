@@ -242,8 +242,8 @@ def show_overview():
     if 'Sales Stage' in df.columns and 'Amount' in df.columns:
         # I. Target vs Closed Won
         st.markdown("""
-            <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
-                <h2 style='color: white; margin: 0; text-align: center;'>Target vs Closed Won</h2>
+            <div style='background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
+                <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Target vs Closed Won</h3>
             </div>
         """, unsafe_allow_html=True)
         
@@ -291,7 +291,11 @@ def show_overview():
         """, unsafe_allow_html=True)
         
         # II. Practice
-        st.markdown("### Practice")
+        st.markdown("""
+            <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
+                <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Practice</h3>
+            </div>
+        """, unsafe_allow_html=True)
         
         if 'Practice' in df.columns:
             # Add practice filter
@@ -549,7 +553,11 @@ def show_overview():
             st.error("Practice column not found in the dataset")
         
         # IV. Regional Performance
-        st.markdown("### Regional Performance")
+        st.markdown("""
+            <div style='background: linear-gradient(90deg, #e74c3c 0%, #c0392b 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
+                <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Regional Performance</h3>
+            </div>
+        """, unsafe_allow_html=True)
         
         if 'Region' in df.columns and not df['Region'].isna().all():
             region_data = df.groupby('Region').agg({
@@ -624,7 +632,11 @@ def show_overview():
             st.info("Regional data is not available in the dataset")
         
         # V. Deal Status Analysis
-        st.markdown("### Deal Status Analysis")
+        st.markdown("""
+            <div style='background: linear-gradient(90deg, #9b59b6 0%, #8e44ad 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
+                <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Deal Status Analysis</h3>
+            </div>
+        """, unsafe_allow_html=True)
         
         if 'Status' in df.columns and 'Expected Close Date' in df.columns:
             # Monthly committed vs upside
