@@ -417,11 +417,23 @@ def show_overview():
         # Extract month and year
         df['Month-Year'] = df['Expected Close Date'].dt.strftime('%b %Y')
         
+        # Month filter
+        all_months = sorted(df['Month-Year'].unique(), key=lambda x: pd.to_datetime(x, format='%b %Y'))
+        selected_month = st.selectbox(
+            "Select Month",
+            ["All Months"] + list(all_months),
+            key="month_filter"
+        )
+        
+        # Filter data based on selected month
+        if selected_month != "All Months":
+            df = df[df['Month-Year'] == selected_month]
+        
         # Create mapping for cleaner labels
         df['Deal Category'] = df['Status'].fillna('Unknown')
         
         # Overall view
-        st.markdown("#### Overall Distribution")
+        st.markdown("#### Distribution for {}".format("All Months" if selected_month == "All Months" else selected_month))
         col1, col2 = st.columns(2)
         
         with col1:
@@ -431,7 +443,7 @@ def show_overview():
                 deal_type_amount,
                 x='Deal Category',
                 y='Amount',
-                title="Total Revenue by Deal Classification (in Lakhs)",
+                title=f"Revenue by Deal Classification ({selected_month if selected_month != 'All Months' else 'Total'}) (in Lakhs)",
                 color='Deal Category',
                 color_discrete_sequence=['#4A90E2', '#45B7AF'],
                 text=deal_type_amount['Amount'].apply(lambda x: f'₹{x:,.2f}L')
@@ -450,81 +462,87 @@ def show_overview():
             fig_deal_count = px.pie(
                 values=deal_type_count.values,
                 names=deal_type_count.index,
-                title="Overall Deal Distribution",
+                title=f"Deal Distribution ({selected_month if selected_month != 'All Months' else 'Overall'})",
                 color_discrete_sequence=['#4A90E2', '#45B7AF']
             )
             st.plotly_chart(fig_deal_count, use_container_width=True)
         
-        # Monthly breakdown
-        st.markdown("#### Monthly Breakdown")
-        
-        # Calculate monthly metrics
-        monthly_data = df.pivot_table(
-            index='Month-Year',
-            columns='Deal Category',
-            values='Amount',
-            aggfunc='sum'
-        ).div(100000).fillna(0)
-        
-        # Sort by date
-        monthly_data.index = pd.to_datetime(monthly_data.index, format='%b %Y')
-        monthly_data = monthly_data.sort_index()
-        monthly_data.index = monthly_data.index.strftime('%b %Y')
-        
-        # Create monthly trend chart
-        fig_monthly = go.Figure()
-        
-        # Add bars for each category
-        for category in ['Committed for the Month', 'Upside for the Month']:
-            if category in monthly_data.columns:
-                fig_monthly.add_trace(go.Bar(
-                    name=category,
-                    x=monthly_data.index,
-                    y=monthly_data[category],
-                    text=[f'₹{x:,.2f}L' for x in monthly_data[category]],
-                    textposition='outside'
-                ))
-        
-        fig_monthly.update_layout(
-            title="Monthly Deal Classification Breakdown (in Lakhs)",
-            barmode='group',
-            xaxis_title="Month",
-            yaxis_title="Amount (₹L)",
-            height=400,
-            showlegend=True,
-            xaxis={'tickangle': -45}
-        )
-        
-        st.plotly_chart(fig_monthly, use_container_width=True)
-        
-        # Monthly metrics table
-        st.markdown("#### Monthly Details")
-        monthly_metrics = df.pivot_table(
-            index='Month-Year',
-            columns='Deal Category',
-            values=['Amount', 'Deal Category'],
-            aggfunc={'Amount': 'sum', 'Deal Category': 'count'}
-        ).round(2)
-        
-        # Format the table
-        monthly_metrics.columns = [f"{col[1]} ({col[0]})" for col in monthly_metrics.columns]
-        monthly_metrics = monthly_metrics.reset_index()
-        
-        # Convert Amount columns to lakhs and format
-        amount_cols = [col for col in monthly_metrics.columns if 'Amount' in col]
-        for col in amount_cols:
-            monthly_metrics[col] = monthly_metrics[col].div(100000).apply(lambda x: f'₹{x:,.2f}L')
-        
-        st.dataframe(monthly_metrics, use_container_width=True)
-        
-        # Summary metrics
+        # Summary metrics for selected month/overall
         col1, col2 = st.columns(2)
         with col1:
             committed_amount = df[df['Status'] == 'Committed for the Month']['Amount'].sum() / 100000
-            st.metric("Total Committed Amount", f"₹{committed_amount:,.2f}L")
+            st.metric(
+                f"{'Monthly' if selected_month != 'All Months' else 'Total'} Committed Amount", 
+                f"₹{committed_amount:,.2f}L"
+            )
         with col2:
             upside_amount = df[df['Status'] == 'Upside for the Month']['Amount'].sum() / 100000
-            st.metric("Total Upside Amount", f"₹{upside_amount:,.2f}L")
+            st.metric(
+                f"{'Monthly' if selected_month != 'All Months' else 'Total'} Upside Amount", 
+                f"₹{upside_amount:,.2f}L"
+            )
+        
+        # Monthly trend (show only if viewing all months)
+        if selected_month == "All Months":
+            st.markdown("#### Monthly Trend")
+            # Calculate monthly metrics
+            monthly_data = df.pivot_table(
+                index='Month-Year',
+                columns='Deal Category',
+                values='Amount',
+                aggfunc='sum'
+            ).div(100000).fillna(0)
+            
+            # Sort by date
+            monthly_data.index = pd.to_datetime(monthly_data.index, format='%b %Y')
+            monthly_data = monthly_data.sort_index()
+            monthly_data.index = monthly_data.index.strftime('%b %Y')
+            
+            # Create monthly trend chart
+            fig_monthly = go.Figure()
+            
+            # Add bars for each category
+            for category in ['Committed for the Month', 'Upside for the Month']:
+                if category in monthly_data.columns:
+                    fig_monthly.add_trace(go.Bar(
+                        name=category,
+                        x=monthly_data.index,
+                        y=monthly_data[category],
+                        text=[f'₹{x:,.2f}L' for x in monthly_data[category]],
+                        textposition='outside'
+                    ))
+            
+            fig_monthly.update_layout(
+                title="Monthly Deal Classification Trend (in Lakhs)",
+                barmode='group',
+                xaxis_title="Month",
+                yaxis_title="Amount (₹L)",
+                height=400,
+                showlegend=True,
+                xaxis={'tickangle': -45}
+            )
+            
+            st.plotly_chart(fig_monthly, use_container_width=True)
+            
+            # Monthly details table
+            st.markdown("#### Monthly Details")
+            monthly_metrics = df.pivot_table(
+                index='Month-Year',
+                columns='Deal Category',
+                values=['Amount', 'Deal Category'],
+                aggfunc={'Amount': 'sum', 'Deal Category': 'count'}
+            ).round(2)
+            
+            # Format the table
+            monthly_metrics.columns = [f"{col[1]} ({col[0]})" for col in monthly_metrics.columns]
+            monthly_metrics = monthly_metrics.reset_index()
+            
+            # Convert Amount columns to lakhs and format
+            amount_cols = [col for col in monthly_metrics.columns if 'Amount' in col]
+            for col in amount_cols:
+                monthly_metrics[col] = monthly_metrics[col].div(100000).apply(lambda x: f'₹{x:,.2f}L')
+            
+            st.dataframe(monthly_metrics, use_container_width=True)
     else:
         st.info("Status or Expected Close Date columns not found in the dataset")
 
