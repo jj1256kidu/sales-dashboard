@@ -359,7 +359,7 @@ def show_overview():
                 fig_pipeline.update_layout(
                     title=dict(
                         text="Practice-wise Pipeline Amount",
-                        font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='600'),
+                        font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
                         x=0.5,
                         y=0.95,
                         xanchor='center',
@@ -371,12 +371,12 @@ def show_overview():
                     bargroupgap=0.1,
                     xaxis_title=dict(
                         text="Practice",
-                        font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='500'),
+                        font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
                         standoff=15
                     ),
                     yaxis_title=dict(
                         text="Amount (Lakhs)",
-                        font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='500'),
+                        font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
                         standoff=15
                     ),
                     showlegend=True,
@@ -437,29 +437,29 @@ def show_overview():
                 fig_deals.update_layout(
                     title=dict(
                         text="Practice-wise Deal Count",
-                        font=dict(size=28, family='Segoe UI', color='#2c3e50', weight='bold'),
+                        font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
                         x=0.5,
                         y=0.95,
                         xanchor='center',
                         yanchor='top'
                     ),
-                    height=600,
+                    height=500,
                     barmode='group',
                     bargap=0.15,
                     bargroupgap=0.1,
                     xaxis_title=dict(
                         text="Practice",
-                        font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
-                        standoff=20
+                        font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                        standoff=15
                     ),
                     yaxis_title=dict(
                         text="Number of Deals",
-                        font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
-                        standoff=20
+                        font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                        standoff=15
                     ),
                     showlegend=True,
                     legend=dict(
-                        font=dict(size=16, family='Segoe UI', color='#2c3e50'),
+                        font=dict(size=14, family='Segoe UI', color='#2c3e50'),
                         yanchor="top",
                         y=0.99,
                         xanchor="right",
@@ -468,18 +468,18 @@ def show_overview():
                         bordercolor='rgba(0, 0, 0, 0.2)',
                         borderwidth=1
                     ),
-                    font=dict(size=16, family='Segoe UI'),
+                    font=dict(size=14, family='Segoe UI'),
                     xaxis=dict(
-                        tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                        tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
                         gridcolor='rgba(0, 0, 0, 0.1)'
                     ),
                     yaxis=dict(
-                        tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                        tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
                         gridcolor='rgba(0, 0, 0, 0.1)'
                     ),
                     plot_bgcolor='white',
                     paper_bgcolor='white',
-                    margin=dict(t=100, b=50, l=50, r=50)
+                    margin=dict(t=80, b=40, l=40, r=40)
                 )
                 
                 st.plotly_chart(fig_deals, use_container_width=True)
@@ -577,26 +577,26 @@ def show_overview():
             fig_geo.update_layout(
                 title=dict(
                     text="Regional Performance",
-                    font=dict(size=28, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
                     x=0.5,
                     y=0.95,
                     xanchor='center',
                     yanchor='top'
                 ),
-                height=600,
+                height=500,
                 xaxis_title=dict(
                     text="Region",
-                    font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
-                    standoff=20
+                    font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=15
                 ),
                 yaxis_title=dict(
                     text="Amount (Lakhs)",
-                    font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
-                    standoff=20
+                    font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=15
                 ),
                 showlegend=True,
                 legend=dict(
-                    font=dict(size=16, family='Segoe UI', color='#2c3e50'),
+                    font=dict(size=14, family='Segoe UI', color='#2c3e50'),
                     yanchor="top",
                     y=0.99,
                     xanchor="right",
@@ -605,18 +605,18 @@ def show_overview():
                     bordercolor='rgba(0, 0, 0, 0.2)',
                     borderwidth=1
                 ),
-                font=dict(size=16, family='Segoe UI'),
+                font=dict(size=14, family='Segoe UI'),
                 xaxis=dict(
-                    tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                    tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
                     gridcolor='rgba(0, 0, 0, 0.1)'
                 ),
                 yaxis=dict(
-                    tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                    tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
                     gridcolor='rgba(0, 0, 0, 0.1)'
                 ),
                 plot_bgcolor='white',
                 paper_bgcolor='white',
-                margin=dict(t=100, b=50, l=50, r=50)
+                margin=dict(t=80, b=40, l=40, r=40)
             )
             
             st.plotly_chart(fig_geo, use_container_width=True)
@@ -661,28 +661,28 @@ def show_overview():
             fig_status.update_layout(
                 title=dict(
                     text="Monthly Deal Status Distribution",
-                    font=dict(size=28, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
                     x=0.5,
                     y=0.95,
                     xanchor='center',
                     yanchor='top'
                 ),
-                height=600,
+                height=500,
                 barmode='stack',
                 bargap=0.1,
                 xaxis_title=dict(
                     text="Month",
-                    font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
-                    standoff=20
+                    font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=15
                 ),
                 yaxis_title=dict(
                     text="Amount (Lakhs)",
-                    font=dict(size=20, family='Segoe UI', color='#2c3e50', weight='bold'),
-                    standoff=20
+                    font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=15
                 ),
                 showlegend=True,
                 legend=dict(
-                    font=dict(size=16, family='Segoe UI', color='#2c3e50'),
+                    font=dict(size=14, family='Segoe UI', color='#2c3e50'),
                     yanchor="top",
                     y=0.99,
                     xanchor="right",
@@ -691,18 +691,18 @@ def show_overview():
                     bordercolor='rgba(0, 0, 0, 0.2)',
                     borderwidth=1
                 ),
-                font=dict(size=16, family='Segoe UI'),
+                font=dict(size=14, family='Segoe UI'),
                 xaxis=dict(
-                    tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                    tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
                     gridcolor='rgba(0, 0, 0, 0.1)'
                 ),
                 yaxis=dict(
-                    tickfont=dict(size=14, family='Segoe UI', color='#2c3e50'),
+                    tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
                     gridcolor='rgba(0, 0, 0, 0.1)'
                 ),
                 plot_bgcolor='white',
                 paper_bgcolor='white',
-                margin=dict(t=100, b=50, l=50, r=50)
+                margin=dict(t=80, b=40, l=40, r=40)
             )
             
             st.plotly_chart(fig_status, use_container_width=True)
