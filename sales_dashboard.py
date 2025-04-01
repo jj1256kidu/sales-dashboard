@@ -19,6 +19,14 @@ if 'df' not in st.session_state:
     st.session_state.df = None
 if 'current_view' not in st.session_state:
     st.session_state.current_view = 'data_input'
+if 'filters_reset' not in st.session_state:
+    st.session_state.filters_reset = False
+if 'date_filter' not in st.session_state:
+    st.session_state.date_filter = None
+if 'selected_practice' not in st.session_state:
+    st.session_state.selected_practice = 'All'
+if 'selected_stage' not in st.session_state:
+    st.session_state.selected_stage = 'All'
 
 # Custom CSS for modern styling
 st.markdown("""
@@ -173,7 +181,7 @@ def show_overview():
 
     # Filters section in an expander
     with st.expander("📊 Filters", expanded=False):
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns([1, 1, 1, 0.5])
         
         # Time filter
         with col1:
@@ -200,7 +208,11 @@ def show_overview():
         with col2:
             if 'Practice' in df.columns:
                 practices = ['All'] + sorted(df['Practice'].unique().tolist())
-                selected_practice = st.selectbox("Practice", practices)
+                selected_practice = st.selectbox(
+                    "Practice", 
+                    practices,
+                    key="selected_practice"
+                )
                 if selected_practice != 'All':
                     df = df[df['Practice'] == selected_practice]
         
@@ -208,9 +220,23 @@ def show_overview():
         with col3:
             if 'Sales Stage' in df.columns:
                 stages = ['All'] + sorted(df['Sales Stage'].unique().tolist())
-                selected_stage = st.selectbox("Sales Stage", stages)
+                selected_stage = st.selectbox(
+                    "Sales Stage", 
+                    stages,
+                    key="selected_stage"
+                )
                 if selected_stage != 'All':
                     df = df[df['Sales Stage'] == selected_stage]
+        
+        # Reset filters button
+        with col4:
+            st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+            if st.button("🔄 Reset", help="Reset all filters to default values"):
+                st.session_state.filters_reset = True
+                st.session_state.date_filter = None
+                st.session_state.selected_practice = 'All'
+                st.session_state.selected_stage = 'All'
+                st.rerun()
 
     # KPI Row
     st.markdown("### 📌 Key Metrics")
