@@ -318,13 +318,14 @@ def show_overview():
             
             practice_metrics.columns = ['Practice', 'Closed Amount', 'Closed Deals']
             
-            # Calculate total pipeline amount by practice
-            total_pipeline = df.groupby('Practice')['Amount'].sum() / 100000
+            # Calculate total pipeline amount by practice (excluding closed won)
+            pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
+            total_pipeline = pipeline_df.groupby('Practice')['Amount'].sum() / 100000
             practice_metrics['Total Pipeline'] = practice_metrics['Practice'].map(total_pipeline)
             
-            # Calculate total deals by practice
-            total_deals = df.groupby('Practice').size()
-            practice_metrics['Pipeline Deals'] = practice_metrics['Practice'].map(total_deals) - practice_metrics['Closed Deals']
+            # Calculate total deals by practice (excluding closed won)
+            total_deals = pipeline_df.groupby('Practice').size()
+            practice_metrics['Pipeline Deals'] = practice_metrics['Practice'].map(total_deals)
             
             # Sort practice metrics by Total Pipeline in descending order
             practice_metrics = practice_metrics.sort_values('Total Pipeline', ascending=False)
@@ -339,7 +340,7 @@ def show_overview():
                 fig_pipeline.add_trace(go.Bar(
                     x=practice_metrics['Practice'],
                     y=practice_metrics['Total Pipeline'],
-                    name='Total Pipeline',
+                    name='Pipeline',
                     text=practice_metrics['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L"),
                     textposition='outside',
                     textfont=dict(size=16, color='#4A90E2', family='Segoe UI', weight='bold'),
@@ -362,7 +363,7 @@ def show_overview():
                 
                 fig_pipeline.update_layout(
                     title=dict(
-                        text="Practice-wise Pipeline Amount",
+                        text="Practice-wise Pipeline vs Closed Won",
                         font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
                         x=0.5,
                         y=0.95,
