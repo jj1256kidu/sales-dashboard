@@ -965,185 +965,90 @@ def show_sales_team():
             </div>
         """, unsafe_allow_html=True)
 
-    # Filters section with consistent styling
-    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)  # Consistent spacing
+    # Filters section
+    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
     
-    # First row: Sales Owner and Search
+    # Sales Owner and Search
     col1, col2 = st.columns(2)
-    
     with col1:
         selected_member = st.selectbox(
             "👤 Select Sales Owner",
             options=["All Team Members"] + team_members,
             key="team_member_filter"
         )
-    
     with col2:
         search = st.text_input("🔍 Search Deals", placeholder="Search in any field...")
 
-    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-    
-    # Timeline Filters
+    # Time Period Filters
     st.markdown("""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-        '>
-            <h4 style='
-                color: #2a5298;
-                margin: 0;
-                font-size: 1.1em;
-                font-weight: 600;
-                font-family: "Segoe UI", sans-serif;
-            '>📅 Timeline Filters</h4>
+        <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
+            <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>⏰ Time Period</h4>
         </div>
     """, unsafe_allow_html=True)
-    
-    # Convert Expected Close Date to datetime if not already
-    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'])
-    
-    # Extract timeline components and ensure they are integers
-    df['Year'] = df['Expected Close Date'].dt.year.astype(int)
-    df['Month'] = df['Expected Close Date'].dt.month.astype(int)
-    df['Quarter'] = df['Expected Close Date'].dt.quarter.astype(int)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        years = sorted(df['Year'].dropna().unique().tolist())
-        year_filter = st.selectbox(
-            "Year",
-            options=["All Years"] + [str(int(year)) for year in years if pd.notnull(year)]
-        )
-    
-    with col2:
-        months = sorted(df['Month'].dropna().unique().tolist())
-        month_names = ["All Months"] + [datetime.strptime(str(int(month)), "%m").strftime("%B") for month in months if pd.notnull(month)]
-        month_filter = st.selectbox("Month", options=month_names)
-    
-    with col3:
-        quarters = sorted(df['Quarter'].dropna().unique().tolist())
-        quarter_filter = st.selectbox(
-            "Quarter",
-            options=["All Quarters"] + [f"Q{int(quarter)}" for quarter in quarters if pd.notnull(quarter)]
-        )
-    
-    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-    
-    # Business Filters
-    st.markdown("""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 15px;
-            border-radius: 10px;
-            margin: 10px 0;
-        '>
-            <h4 style='
-                color: #2a5298;
-                margin: 0;
-                font-size: 1.1em;
-                font-weight: 600;
-                font-family: "Segoe UI", sans-serif;
-            '>💼 Business Filters</h4>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        stages = sorted(df['Sales Stage'].dropna().unique().tolist())
-        stage_filter = st.selectbox(
-            "📊 Sales Stage",
-            options=["All Stages"] + stages
-        )
-    
-    with col2:
-        practices = sorted(df['Practice'].dropna().unique().tolist())
-        practice_filter = st.selectbox(
-            "🎯 Practice",
-            options=["All Practices"] + practices
-        )
-    
-    with col3:
-        focus_areas = sorted(df['KritiKal Focus Areas'].dropna().unique().tolist())
-        focus_filter = st.selectbox(
-            "🎯 KritiKal Focus Areas",
-            options=["All Focus Areas"] + focus_areas
-        )
     
     col1, col2 = st.columns(2)
-    
     with col1:
-        # Convert probability to numeric and get unique values
-        df['Probability_Num'] = pd.to_numeric(df['Probability'].str.rstrip('%'), errors='coerce')
-        probability_ranges = [
-            "All Probability",
-            "0-25%",
-            "26-50%",
-            "51-75%",
-            "76-100%"
-        ]
-        probability_filter = st.selectbox("📊 Probability Range", options=probability_ranges)
+        month_options = ["All Months", "January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"]
+        month_filter = st.selectbox("📅 Month", options=month_options)
+    with col2:
+        quarter_filter = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
+
+    # Deal Status Filters
+    st.markdown("""
+        <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
+            <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>💼 Deal Status</h4>
+        </div>
+    """, unsafe_allow_html=True)
     
+    col1, col2 = st.columns(2)
+    with col1:
+        probability_ranges = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%"]
+        probability_filter = st.selectbox("📈 Probability", options=probability_ranges)
     with col2:
         status_values = sorted(df['Sales Stage'].dropna().unique().tolist())
-        status_filter = st.selectbox(
-            "📌 Status",
-            options=["All Status"] + status_values
-        )
-    
+        status_filter = st.selectbox("🎯 Status", options=["All Status"] + status_values)
+
     # Filter data based on selection
-    if st.session_state.selected_team_member:
-        filtered_df = df[df['Sales Owner'] == st.session_state.selected_team_member].copy()
-        display_title = f"{st.session_state.selected_team_member}'s Opportunities"
-    else:
-        filtered_df = df.copy()
-        display_title = "All Team Opportunities"
+    filtered_df = df.copy()
     
+    # Apply team member filter
+    if selected_member != "All Team Members":
+        filtered_df = filtered_df[filtered_df['Sales Owner'] == selected_member]
+        display_title = f"{selected_member}'s Opportunities"
+    else:
+        display_title = "All Team Opportunities"
+
     # Apply search filter
     if search:
         mask = np.column_stack([filtered_df[col].astype(str).str.contains(search, case=False, na=False) 
                               for col in filtered_df.columns])
         filtered_df = filtered_df[mask.any(axis=1)]
-    
-    # Apply timeline filters
-    if year_filter != "All Years":
-        filtered_df = filtered_df[filtered_df['Year'] == int(year_filter)]
-    
+
+    # Apply time period filters
     if month_filter != "All Months":
-        month_num = datetime.strptime(month_filter, "%B").month
-        filtered_df = filtered_df[filtered_df['Month'] == month_num]
+        filtered_df = filtered_df[pd.to_datetime(filtered_df['Expected Close Date']).dt.strftime('%B') == month_filter]
     
     if quarter_filter != "All Quarters":
-        quarter_num = int(quarter_filter[1])
-        filtered_df = filtered_df[filtered_df['Quarter'] == quarter_num]
-    
-    # Apply business filters
-    if stage_filter != "All Stages":
-        filtered_df = filtered_df[filtered_df['Sales Stage'] == stage_filter]
-    
-    if practice_filter != "All Practices":
-        filtered_df = filtered_df[filtered_df['Practice'] == practice_filter]
-    
-    if focus_filter != "All Focus Areas":
-        filtered_df = filtered_df[filtered_df['KritiKal Focus Areas'] == focus_filter]
-    
+        quarter_map = {'Q1': [1,2,3], 'Q2': [4,5,6], 'Q3': [7,8,9], 'Q4': [10,11,12]}
+        if quarter_filter in quarter_map:
+            filtered_df = filtered_df[pd.to_datetime(filtered_df['Expected Close Date']).dt.month.isin(quarter_map[quarter_filter])]
+
+    # Apply probability filter
     if probability_filter != "All Probability":
         prob_range = probability_filter.split("-")
         min_prob = float(prob_range[0].rstrip("%"))
         max_prob = float(prob_range[1].rstrip("%"))
+        filtered_df['Probability_Num'] = pd.to_numeric(filtered_df['Probability'].str.rstrip('%'), errors='coerce')
         filtered_df = filtered_df[
             (filtered_df['Probability_Num'] >= min_prob) & 
             (filtered_df['Probability_Num'] <= max_prob)
         ]
-    
+
+    # Apply status filter
     if status_filter != "All Status":
         filtered_df = filtered_df[filtered_df['Sales Stage'] == status_filter]
-    
-    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)  # Consistent spacing
-    
+
     # Opportunities section with consistent styling
     st.markdown(f"""
         <div style='
