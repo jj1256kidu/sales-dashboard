@@ -1008,61 +1008,41 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
     
-    # Define display columns
-    display_columns = [
-        'Organization Name',
-        'Opportunity Name',
-        'Geography',
-        'Expected Close Date',
-        'Probability',
-        'Amount',
-        'Sales Owner',
-        'Pre-sales Technical Lead',
-        'Business Owner',
-        'Type',
-        'KritiKal Focus Areas'
-    ]
+    # Reset index to create proper serial numbers
+    filtered_df = filtered_df.reset_index(drop=True)
+    filtered_df.index = filtered_df.index + 1  # Start from 1 instead of 0
     
-    # Create a copy of filtered_df with only required columns
-    display_df = filtered_df[display_columns].copy()
+    # Create a copy of the filtered dataframe with only required columns
+    display_df = filtered_df[['Organization Name', 'Opportunity Name', 'Geography', 
+                            'Expected Close Date', 'Probability', 'Amount', 
+                            'Sales Owner', 'Pre-sales Technical Lead', 'Business Owner', 
+                            'Type', 'KritiKal Focus Areas']].copy()
     
-    # Convert Amount to Lakhs if not already
-    if 'Amount' in display_df.columns:
-        display_df['Amount (In Lacs)'] = round(display_df['Amount'] / 100000, 2)
-        display_df['Weighted Revenue (In Lacs)'] = round(display_df['Amount (In Lacs)'] * display_df['Probability'].fillna(0) / 100, 2)
+    # Rename columns for display
+    display_df = display_df.rename(columns={
+        'Amount': 'Amount (In Lacs)',
+        'Pre-sales Technical Lead': 'Tech Owner',
+        'Type': 'Hunting /farming'
+    })
     
-    # Drop the original Amount column
-    display_df = display_df.drop('Amount', axis=1)
+    # Convert Amount to Lacs
+    display_df['Amount (In Lacs)'] = display_df['Amount (In Lacs)'] / 100000
+    
+    # Calculate Weighted Revenue
+    display_df['Weighted Revenue (In Lacs)'] = display_df['Amount (In Lacs)'] * display_df['Probability'].str.rstrip('%').astype(float) / 100
+    
+    # Round the numeric columns to 2 decimal places
+    display_df['Amount (In Lacs)'] = display_df['Amount (In Lacs)'].round(2)
+    display_df['Weighted Revenue (In Lacs)'] = display_df['Weighted Revenue (In Lacs)'].round(2)
     
     # Format the Expected Close Date
-    if 'Expected Close Date' in display_df.columns:
-        display_df['Expected Close Date'] = pd.to_datetime(display_df['Expected Close Date']).dt.strftime('%d-%b-%Y')
+    display_df['Expected Close Date'] = pd.to_datetime(display_df['Expected Close Date']).dt.strftime('%d-%b-%Y')
     
-    # Add S.No column at the beginning
-    display_df = display_df.reset_index(drop=True)
-    display_df.index = display_df.index + 1  # Start from 1 instead of 0
-    display_df = display_df.rename_axis('S. No').reset_index()
-    
-    # Final column order
-    final_columns = [
-        'S. No',
-        'Organization Name',
-        'Opportunity Name',
-        'Geography',
-        'Expected Close Date',
-        'Probability',
-        'Amount (In Lacs)',
-        'Weighted Revenue (In Lacs)',
-        'Sales Owner',
-        'Pre-sales Technical Lead',
-        'Business Owner',
-        'Type',
-        'KritiKal Focus Areas'
-    ]
-    
-    # Only include columns that exist in the dataframe
-    final_columns = [col for col in final_columns if col in display_df.columns]
-    display_df = display_df[final_columns]
+    # Reorder columns
+    display_df = display_df[['Organization Name', 'Opportunity Name', 'Geography', 
+                            'Expected Close Date', 'Probability', 'Amount (In Lacs)', 
+                            'Weighted Revenue (In Lacs)', 'Sales Owner', 'Tech Owner', 
+                            'Business Owner', 'Hunting /farming', 'KritiKal Focus Areas']]
     
     st.dataframe(display_df, use_container_width=True)
     
