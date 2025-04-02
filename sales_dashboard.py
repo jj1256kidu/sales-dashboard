@@ -991,7 +991,15 @@ def show_sales_team():
         # Convert dates and extract months
         df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
         df['Month'] = df['Expected Close Date'].dt.strftime('%B')
-        available_months = sorted(df['Month'].dropna().unique().tolist())
+        
+        # Define Indian fiscal year order
+        fiscal_order = ['April', 'May', 'June', 'July', 'August', 'September', 
+                       'October', 'November', 'December', 'January', 'February', 'March']
+        
+        # Get available months and sort them according to fiscal order
+        available_months = df['Month'].dropna().unique().tolist()
+        available_months.sort(key=lambda x: fiscal_order.index(x) if x in fiscal_order else len(fiscal_order))
+        
         month_filter = st.selectbox("📅 Month", options=["All Months"] + available_months)
     with col2:
         quarter_filter = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
