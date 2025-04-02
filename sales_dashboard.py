@@ -65,7 +65,7 @@ if 'reset_triggered' not in st.session_state:
 if 'selected_team_member' not in st.session_state:
     st.session_state.selected_team_member = None
 if 'sales_target' not in st.session_state:
-    st.session_state.sales_target = 0.0
+    st.session_state.sales_target = 5550
 
 # Custom CSS for modern styling
 st.markdown("""
@@ -1017,6 +1017,60 @@ def show_sales_team():
             '>Sales Team Data</h2>
         </div>
     """, unsafe_allow_html=True)
+
+    # Initialize sales target in session state if not exists
+    if 'sales_target' not in st.session_state:
+        st.session_state.sales_target = 5550
+
+    # Annual Sales Target Input Section
+    st.markdown("""
+        <div style='
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        '>
+            <h4 style='color: #2a5298; margin: 0 0 10px 0; font-size: 1.1em; font-weight: 600;'>
+                Set Annual Sales Target
+            </h4>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Number input for sales target
+    new_target = st.number_input(
+        "Annual Sales Target (Lakhs)",
+        min_value=0,
+        value=int(st.session_state.sales_target),
+        step=100,
+        format="%d",
+        help="Enter the annual sales target in Lakhs (1L = ₹100,000)"
+    )
+
+    # Update session state if value changes
+    if new_target != st.session_state.sales_target:
+        st.session_state.sales_target = new_target
+
+    # Display target in metric card style
+    st.markdown(f"""
+        <div style='
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 25px;
+        '>
+            <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                🎯 Annual Target
+            </div>
+            <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                ₹{st.session_state.sales_target:,.2f}L
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Add spacing before the main metrics
+    st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
     # Calculate metrics once
     metrics = calculate_team_metrics(df)
