@@ -1012,7 +1012,62 @@ def show_sales_team():
     filtered_df = filtered_df.reset_index(drop=True)
     filtered_df.index = filtered_df.index + 1  # Start from 1 instead of 0
     
-    st.dataframe(filtered_df, use_container_width=True)
+    # Select and rename columns for display
+    display_columns = [
+        'Organization Name',
+        'Opportunity Name',
+        'Geography',
+        'Expected Close Date',
+        'Probability',
+        'Amount',
+        'Sales Owner',
+        'Tech Owner',
+        'Business Owner',
+        'Hunting /farming',
+        'KritiKal Focus Areas'
+    ]
+    
+    # Create a copy of filtered_df with only required columns
+    display_df = filtered_df[display_columns].copy()
+    
+    # Convert Amount to Lakhs if not already
+    if 'Amount' in display_df.columns:
+        display_df['Amount (In Lacs)'] = round(display_df['Amount'] / 100000, 2)
+        display_df['Weighted Revenue (In Lacs)'] = round(display_df['Amount (In Lacs)'] * display_df['Probability'].fillna(0) / 100, 2)
+    
+    # Drop the original Amount column
+    display_df = display_df.drop('Amount', axis=1)
+    
+    # Format the Expected Close Date
+    if 'Expected Close Date' in display_df.columns:
+        display_df['Expected Close Date'] = pd.to_datetime(display_df['Expected Close Date']).dt.strftime('%d-%b-%Y')
+    
+    # Reorder columns with S.No (index)
+    display_df = display_df.reset_index()
+    display_df = display_df.rename(columns={'index': 'S. No'})
+    
+    # Final column order
+    final_columns = [
+        'S. No',
+        'Organization Name',
+        'Opportunity Name',
+        'Geography',
+        'Expected Close Date',
+        'Probability',
+        'Amount (In Lacs)',
+        'Weighted Revenue (In Lacs)',
+        'Sales Owner',
+        'Tech Owner',
+        'Business Owner',
+        'Hunting /farming',
+        'KritiKal Focus Areas'
+    ]
+    
+    # Only include columns that exist in the dataframe
+    final_columns = [col for col in final_columns if col in display_df.columns]
+    display_df = display_df[final_columns]
+    
+    st.dataframe(display_df, use_container_width=True)
     
     st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)  # Consistent spacing
     
