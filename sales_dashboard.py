@@ -989,6 +989,29 @@ def show_sales_team():
     
     st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)  # Consistent spacing
     
+    # Opportunities section with consistent styling
+    st.markdown(f"""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin: 0;
+                font-size: 1.4em;
+                font-weight: 600;
+                font-family: "Segoe UI", sans-serif;
+            '>{display_title}</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.dataframe(filtered_df, use_container_width=True)
+    
+    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)  # Consistent spacing
+    
     # Team performance table with consistent styling
     st.markdown("""
         <div style='
@@ -1036,29 +1059,6 @@ def show_sales_team():
         summary_data[['Sales Owner', 'Closed Amount', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals', 'Win Rate']],
         use_container_width=True
     )
-    
-    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)  # Consistent spacing
-    
-    # Opportunities section with consistent styling
-    st.markdown(f"""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 25px 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        '>
-            <h3 style='
-                color: #2a5298;
-                margin: 0;
-                font-size: 1.4em;
-                font-weight: 600;
-                font-family: "Segoe UI", sans-serif;
-            '>{display_title}</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    st.dataframe(filtered_df, use_container_width=True)
 
 def show_detailed():
     if st.session_state.df is None:
