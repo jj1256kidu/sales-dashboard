@@ -360,7 +360,14 @@ def filter_dataframe(df, filters):
         mask &= (df['Probability_Num'] >= min_prob) & (df['Probability_Num'] <= max_prob)
     
     if filters.get('status_filter') != "All Status":
-        mask &= df['Sales Stage'] == filters['status_filter']
+        if filters['status_filter'] == "Committed for the Month":
+            current_month = pd.Timestamp.now().strftime('%B')
+            mask &= (df['Month'] == current_month) & (df['Probability_Num'] > 75)
+        elif filters['status_filter'] == "Upsides for the Month":
+            current_month = pd.Timestamp.now().strftime('%B')
+            mask &= (df['Month'] == current_month) & (df['Probability_Num'].between(25, 75))
+        else:
+            mask &= df['Sales Stage'] == filters['status_filter']
     
     if filters.get('focus_filter') != "All Focus":
         mask &= df['KritiKal Focus Areas'] == filters['focus_filter']
