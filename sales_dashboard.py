@@ -1206,21 +1206,32 @@ def show_sales_team():
                 </div>
                 <div style='position: relative;'>
                     <div style='position: absolute; left: 50%; transform: translateX(-50%); z-index: 1;'>
-                        {st.number_input(
-                            "",
-                            min_value=0,
-                            value=5000,
-                            step=100,
-                            key="sales_target_input",
-                            label_visibility="collapsed"
-                        )}
+            """, unsafe_allow_html=True)
+        
+        # Get the sales target value from session state or set default
+        if 'sales_target' not in st.session_state:
+            st.session_state.sales_target = 5000
+        
+        sales_target = st.number_input(
+            "",
+            min_value=0,
+            value=st.session_state.sales_target,
+            step=100,
+            key="sales_target_input",
+            label_visibility="collapsed"
+        )
+        
+        # Update session state with new value
+        st.session_state.sales_target = sales_target
+        
+        st.markdown(f"""
                     </div>
                     <div style='
                         color: white;
                         font-size: 1.8em;
                         font-weight: 800;
                         visibility: hidden;
-                    '>₹{5000}L</div>
+                    '>₹{sales_target}L</div>
                 </div>
                 <div style='color: rgba(255,255,255,0.9); font-size: 0.9em; margin-top: 8px;'>
                     Click to edit target
@@ -1284,7 +1295,7 @@ def show_sales_team():
         """, unsafe_allow_html=True)
 
     with m5:
-        achievement = (closed_won / sales_target * 100) if sales_target > 0 else 0
+        achievement = (closed_won / st.session_state.sales_target * 100) if st.session_state.sales_target > 0 else 0
         st.markdown(f"""
             <div style='
                 background: linear-gradient(135deg, #F39C12 0%, #F1C40F 100%);
