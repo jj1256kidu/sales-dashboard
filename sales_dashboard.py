@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 import numpy as np
 import io
+from functools import lru_cache
 
 # Format helper functions
 def format_amount(x):
@@ -232,6 +233,90 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
+
+# Cache data processing functions
+@st.cache_data
+def process_data(df):
+    """Process and prepare data for the dashboard"""
+    df = df.copy()
+    
+    # Convert dates once
+    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
+    df['Month'] = df['Expected Close Date'].dt.strftime('%B')
+    
+    # Convert probability once
+    def convert_probability(x):
+        try:
+            if pd.isna(x):
+                return 0
+            if isinstance(x, str):
+                x = x.rstrip('%')
+            return float(x)
+        except:
+            return 0
+    
+    df['Probability_Num'] = df['Probability'].apply(convert_probability)
+    
+    # Calculate common metrics once
+    df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
+    df['Amount_Lacs'] = df['Amount'] / 100000
+    
+    return df
+
+@st.cache_data
+def calculate_metrics(df):
+    """Calculate common metrics used across views"""
+    metrics = {
+        'Total Pipeline': round(df[~df['Is_Won']]['Amount_Lacs'].sum(), 1),
+        'Closed Won': round(df[df['Is_Won']]['Amount_Lacs'].sum(), 1),
+        'Pipeline Deals': len(df[~df['Is_Won']]),
+        'Closed Deals': len(df[df['Is_Won']])
+    }
+    return metrics
+
+@st.cache_data
+def filter_dataframe(df, filters):
+    """Apply filters to dataframe efficiently"""
+    filtered_df = df.copy()
+    
+    # Apply team member filter
+    if filters.get('selected_member') != "All Team Members":
+        filtered_df = filtered_df[filtered_df['Sales Owner'] == filters['selected_member']]
+    
+    # Apply search filter
+    if filters.get('search'):
+        search = filters['search'].lower()
+        mask = np.column_stack([
+            filtered_df[col].astype(str).str.lower().str.contains(search, na=False)
+            for col in filtered_df.columns
+        ])
+        filtered_df = filtered_df[mask.any(axis=1)]
+    
+    # Apply month filter
+    if filters.get('month_filter') != "All Months":
+        filtered_df = filtered_df[filtered_df['Month'] == filters['month_filter']]
+    
+    # Apply quarter filter
+    if filters.get('quarter_filter') != "All Quarters":
+        quarter_map = {'Q1': [1,2,3], 'Q2': [4,5,6], 'Q3': [7,8,9], 'Q4': [10,11,12]}
+        if filters['quarter_filter'] in quarter_map:
+            filtered_df = filtered_df[filtered_df['Expected Close Date'].dt.month.isin(quarter_map[filters['quarter_filter']])]
+    
+    # Apply probability filter
+    if filters.get('probability_filter') != "All Probability":
+        prob_range = filters['probability_filter'].split("-")
+        min_prob = float(prob_range[0].rstrip("%"))
+        max_prob = float(prob_range[1].rstrip("%"))
+        filtered_df = filtered_df[
+            (filtered_df['Probability_Num'] >= min_prob) & 
+            (filtered_df['Probability_Num'] <= max_prob)
+        ]
+    
+    # Apply status filter
+    if filters.get('status_filter') != "All Status":
+        filtered_df = filtered_df[filtered_df['Sales Stage'] == filters['status_filter']]
+    
+    return filtered_df
 
 def show_data_input():
     # Custom header
@@ -844,15 +929,8 @@ def show_sales_team():
         st.warning("Please upload your sales data to view team information")
         return
     
-    df = st.session_state.df.copy()
-    
-    # Check for required columns
-    required_columns = ['Sales Owner', 'Sales Stage', 'Amount', 'Practice']
-    missing_columns = [col for col in required_columns if col not in df.columns]
-    
-    if missing_columns:
-        st.error(f"Missing required columns: {', '.join(missing_columns)}")
-        return
+    # Process data once
+    df = process_data(st.session_state.df)
     
     # Get unique team members
     team_members = sorted(df['Sales Owner'].dropna().unique().tolist())
@@ -878,13 +956,8 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
 
-    # Calculate metrics first
-    metrics = {
-        'Total Pipeline': round(df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000, 1),
-        'Closed Won': round(df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000, 1),
-        'Pipeline Deals': len(df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]),
-        'Closed Deals': len(df[df['Sales Stage'].str.contains('Won', case=False, na=False)])
-    }
+    # Calculate metrics once
+    metrics = calculate_metrics(df)
     
     # Display metrics with consistent styling
     col1, col2, col3, col4 = st.columns(4)
@@ -965,19 +1038,15 @@ def show_sales_team():
             </div>
         """, unsafe_allow_html=True)
 
-    # Filters section
-    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
-    
-    # Sales Owner and Search
-    col1, col2 = st.columns(2)
-    with col1:
-        selected_member = st.selectbox(
+    # Collect all filters
+    filters = {
+        'selected_member': st.selectbox(
             "👤 Select Sales Owner",
             options=["All Team Members"] + team_members,
             key="team_member_filter"
-        )
-    with col2:
-        search = st.text_input("🔍 Search Deals", placeholder="Search in any field...")
+        ),
+        'search': st.text_input("🔍 Search Deals", placeholder="Search in any field...")
+    }
 
     # Time Period Filters
     st.markdown("""
@@ -988,10 +1057,6 @@ def show_sales_team():
     
     col1, col2 = st.columns(2)
     with col1:
-        # Convert dates and extract months
-        df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
-        df['Month'] = df['Expected Close Date'].dt.strftime('%B')
-        
         # Define Indian fiscal year order
         fiscal_order = ['April', 'May', 'June', 'July', 'August', 'September', 
                        'October', 'November', 'December', 'January', 'February', 'March']
@@ -1000,9 +1065,9 @@ def show_sales_team():
         available_months = df['Month'].dropna().unique().tolist()
         available_months.sort(key=lambda x: fiscal_order.index(x) if x in fiscal_order else len(fiscal_order))
         
-        month_filter = st.selectbox("📅 Month", options=["All Months"] + available_months)
+        filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months)
     with col2:
-        quarter_filter = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
+        filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
 
     # Deal Status Filters
     st.markdown("""
@@ -1013,69 +1078,15 @@ def show_sales_team():
     
     col1, col2 = st.columns(2)
     with col1:
-        # Convert probability to numeric first
-        def convert_probability(x):
-            try:
-                if pd.isna(x):
-                    return 0
-                if isinstance(x, str):
-                    x = x.rstrip('%')
-                return float(x)
-            except:
-                return 0
-        
-        df['Probability_Num'] = df['Probability'].apply(convert_probability)
         probability_ranges = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%"]
-        probability_filter = st.selectbox("📈 Probability", options=probability_ranges)
+        filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_ranges)
     with col2:
         status_values = sorted(df['Sales Stage'].dropna().unique().tolist())
-        status_filter = st.selectbox("🎯 Status", options=["All Status"] + status_values)
+        filters['status_filter'] = st.selectbox("🎯 Status", options=["All Status"] + status_values)
 
-    # Filter data based on selection
-    filtered_df = df.copy()
+    # Apply all filters at once
+    filtered_df = filter_dataframe(df, filters)
     
-    # Apply team member filter
-    if selected_member != "All Team Members":
-        filtered_df = filtered_df[filtered_df['Sales Owner'] == selected_member]
-        display_title = f"{selected_member}'s Opportunities"
-    else:
-        display_title = "All Team Opportunities"
-
-    # Apply search filter
-    if search:
-        # Convert all columns to string before searching
-        mask = np.column_stack([
-            filtered_df[col].astype(str).str.contains(search, case=False, na=False) 
-            if pd.api.types.is_object_dtype(filtered_df[col]) or pd.api.types.is_string_dtype(filtered_df[col])
-            else filtered_df[col].astype(str).str.contains(search, case=False, na=False)
-            for col in filtered_df.columns
-        ])
-        filtered_df = filtered_df[mask.any(axis=1)]
-
-    # Apply month filter
-    if month_filter != "All Months":
-        filtered_df = filtered_df[filtered_df['Month'] == month_filter]
-    
-    # Apply quarter filter
-    if quarter_filter != "All Quarters":
-        quarter_map = {'Q1': [1,2,3], 'Q2': [4,5,6], 'Q3': [7,8,9], 'Q4': [10,11,12]}
-        if quarter_filter in quarter_map:
-            filtered_df = filtered_df[filtered_df['Expected Close Date'].dt.month.isin(quarter_map[quarter_filter])]
-
-    # Apply probability filter
-    if probability_filter != "All Probability":
-        prob_range = probability_filter.split("-")
-        min_prob = float(prob_range[0].rstrip("%"))
-        max_prob = float(prob_range[1].rstrip("%"))
-        filtered_df = filtered_df[
-            (filtered_df['Probability_Num'] >= min_prob) & 
-            (filtered_df['Probability_Num'] <= max_prob)
-        ]
-
-    # Apply status filter
-    if status_filter != "All Status":
-        filtered_df = filtered_df[filtered_df['Sales Stage'] == status_filter]
-
     # Opportunities section with consistent styling
     st.markdown(f"""
         <div style='
@@ -1091,7 +1102,7 @@ def show_sales_team():
                 font-size: 1.4em;
                 font-weight: 600;
                 font-family: "Segoe UI", sans-serif;
-            '>{display_title}</h3>
+            '>Team Member Performance</h3>
         </div>
     """, unsafe_allow_html=True)
     
