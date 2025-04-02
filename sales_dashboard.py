@@ -1154,7 +1154,7 @@ def show_sales_team():
             filters['custom_prob_range'] = f"{min_prob}-{max_prob}%"
     with col7:
         # Get unique sales stages and add custom options
-        status_options = ["All Status", "Committed for the Month", "Upsides for the Month"] + sorted(df['Sales Stage'].dropna().unique().tolist())
+        status_options = ["All Status", "Committed for the Month", "Upsides for the Month"]
         filters['status_filter'] = st.selectbox("🎯 Status", options=status_options)
         
         # Handle custom status filters
@@ -1167,10 +1167,6 @@ def show_sales_team():
             # Filter for deals with medium probability (25-75%) and expected to close this month
             current_month = pd.Timestamp.now().strftime('%B')
             mask = (df['Month'] == current_month) & (df['Probability_Num'].between(25, 75))
-            filtered_df = df[mask]
-        elif filters['status_filter'] != "All Status":
-            # Handle regular sales stage filters
-            mask = df['Sales Stage'] == filters['status_filter']
             filtered_df = df[mask]
     with col8:
         filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All Focus"] + sorted(df['KritiKal Focus Areas'].dropna().unique().tolist()))
