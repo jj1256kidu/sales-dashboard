@@ -557,7 +557,7 @@ def show_overview():
     # V. Focus Areas
     st.markdown("""
         <div style='background: linear-gradient(90deg, #9b59b6 0%, #8e44ad 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
-            <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>KritiKal Focus Areas</h3>
+            <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Focus Areas</h3>
         </div>
     """, unsafe_allow_html=True)
     
