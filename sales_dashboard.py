@@ -27,6 +27,8 @@ if 'selected_stage' not in st.session_state:
     st.session_state.selected_stage = 'All'
 if 'reset_triggered' not in st.session_state:
     st.session_state.reset_triggered = False
+if 'selected_team_member' not in st.session_state:
+    st.session_state.selected_team_member = None
 
 # Custom CSS for modern styling
 st.markdown("""
@@ -801,6 +803,156 @@ def show_overview():
     else:
         st.info("Required columns (Expected Close Date, Amount, Sales Stage) not found in the dataset")
 
+def show_sales_team():
+    if st.session_state.df is None:
+        st.warning("Please upload your sales data to view team information")
+        return
+    
+    df = st.session_state.df.copy()
+    
+    if 'Opportunities Assigned to' not in df.columns:
+        st.error("'Opportunities Assigned to' column not found in the dataset")
+        return
+    
+    # Get unique team members
+    team_members = sorted(df['Opportunities Assigned to'].dropna().unique().tolist())
+    
+    # Sidebar team member selection
+    with st.sidebar:
+        st.markdown("""
+            <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
+                <h3 style='color: white; margin: 0; text-align: center; font-size: 1.4em; font-weight: 600;'>Sales Team</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        selected_member = st.selectbox(
+            "Select Team Member",
+            options=["All Team Members"] + team_members,
+            key="team_member_filter"
+        )
+        
+        if selected_member != "All Team Members":
+            st.session_state.selected_team_member = selected_member
+        else:
+            st.session_state.selected_team_member = None
+    
+    # Main content area
+    st.markdown("""
+        <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 30px;'>
+            <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Sales Team Performance</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Calculate team metrics
+    team_metrics = df.groupby('Opportunities Assigned to').agg({
+        'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
+        'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
+    }).reset_index()
+    
+    team_metrics.columns = ['Team Member', 'Closed Amount', 'Closed Deals']
+    
+    # Calculate total pipeline amount (excluding closed won)
+    pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
+    total_pipeline = pipeline_df.groupby('Opportunities Assigned to')['Amount'].sum() / 100000
+    team_metrics['Total Pipeline'] = team_metrics['Team Member'].map(total_pipeline)
+    
+    # Calculate total deals (excluding closed won)
+    total_deals = pipeline_df.groupby('Opportunities Assigned to').size()
+    team_metrics['Pipeline Deals'] = team_metrics['Team Member'].map(total_deals)
+    
+    # Calculate win rate
+    team_metrics['Win Rate'] = (team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100).round(1)
+    
+    # Sort by Total Pipeline in descending order
+    team_metrics = team_metrics.sort_values('Total Pipeline', ascending=False)
+    
+    # Display team performance metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        total_pipeline = team_metrics['Total Pipeline'].sum()
+        st.markdown(f"""
+            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                <div class='metric-label'>Total Pipeline</div>
+                <div class='metric-value'>₹{total_pipeline:,.1f}L</div>
+                <div style='color: #666; font-size: 0.9em;'>Active pipeline value</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        total_deals = team_metrics['Pipeline Deals'].sum()
+        st.markdown(f"""
+            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                <div class='metric-label'>Pipeline Deals</div>
+                <div class='metric-value'>{total_deals:,}</div>
+                <div style='color: #666; font-size: 0.9em;'>Active opportunities</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        total_won = team_metrics['Closed Deals'].sum()
+        win_rate = (total_won / (total_won + total_deals) * 100) if (total_won + total_deals) > 0 else 0
+        st.markdown(f"""
+            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                <div class='metric-label'>Win Rate</div>
+                <div class='metric-value'>{win_rate:.1f}%</div>
+                <div style='color: #666; font-size: 0.9em;'>{total_won:,} won</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        avg_deal_size = team_metrics['Closed Amount'].sum() / total_won if total_won > 0 else 0
+        st.markdown(f"""
+            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                <div class='metric-label'>Avg Deal Size</div>
+                <div class='metric-value'>₹{avg_deal_size:,.1f}L</div>
+                <div style='color: #666; font-size: 0.9em;'>Per won deal</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    # Display team member performance table
+    st.markdown("### Team Member Performance")
+    summary_data = team_metrics.copy()
+    summary_data['Closed Amount'] = summary_data['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L")
+    summary_data['Total Pipeline'] = summary_data['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L")
+    summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x:.1f}%")
+    
+    st.dataframe(
+        summary_data[['Team Member', 'Closed Amount', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals', 'Win Rate']],
+        use_container_width=True
+    )
+    
+    # If a team member is selected, show their detailed opportunities
+    if st.session_state.selected_team_member:
+        st.markdown(f"### {st.session_state.selected_team_member}'s Opportunities")
+        
+        # Filter data for selected team member
+        member_deals = df[df['Opportunities Assigned to'] == st.session_state.selected_team_member].copy()
+        
+        # Add search and filter options
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            search = st.text_input("Search Deals", placeholder="Search in any field...")
+        
+        with col2:
+            stage_filter = st.selectbox(
+                "Filter by Stage",
+                options=["All Stages"] + sorted(member_deals['Sales Stage'].unique().tolist())
+            )
+        
+        # Apply filters
+        if search:
+            mask = np.column_stack([member_deals[col].astype(str).str.contains(search, case=False, na=False) 
+                                  for col in member_deals.columns])
+            member_deals = member_deals[mask.any(axis=1)]
+        
+        if stage_filter != "All Stages":
+            member_deals = member_deals[member_deals['Sales Stage'] == stage_filter]
+        
+        # Display filtered deals
+        st.dataframe(member_deals, use_container_width=True)
+
 def show_detailed():
     if st.session_state.df is None:
         st.warning("Please upload your sales data to view detailed information")
@@ -829,7 +981,7 @@ def main():
         
         selected = st.radio(
             "Select View",
-            options=["Data Input", "Overview", "Detailed Data"],
+            options=["Data Input", "Overview", "Sales Team", "Detailed Data"],
             key="navigation"
         )
         
@@ -840,6 +992,8 @@ def main():
         show_data_input()
     elif st.session_state.current_view == "overview":
         show_overview()
+    elif st.session_state.current_view == "sales_team":
+        show_sales_team()
     elif st.session_state.current_view == "detailed_data":
         show_detailed()
 
