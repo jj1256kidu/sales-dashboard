@@ -810,8 +810,12 @@ def show_sales_team():
     
     df = st.session_state.df.copy()
     
-    if 'Sales Owner' not in df.columns:
-        st.error("'Sales Owner' column not found in the dataset")
+    # Check for required columns
+    required_columns = ['Sales Owner', 'Sales Stage', 'Amount', 'Practice']
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    
+    if missing_columns:
+        st.error(f"Missing required columns: {', '.join(missing_columns)}")
         return
     
     # Get unique team members
@@ -939,15 +943,19 @@ def show_sales_team():
         search = st.text_input("Search Deals", placeholder="Search in any field...")
     
     with col2:
+        # Safely get unique stages, handling potential null values
+        stages = sorted(member_deals['Sales Stage'].dropna().unique().tolist())
         stage_filter = st.selectbox(
             "Filter by Stage",
-            options=["All Stages"] + sorted(member_deals['Sales Stage'].unique().tolist())
+            options=["All Stages"] + stages
         )
     
     with col3:
+        # Safely get unique practices, handling potential null values
+        practices = sorted(member_deals['Practice'].dropna().unique().tolist())
         practice_filter = st.selectbox(
             "Filter by Practice",
-            options=["All Practices"] + sorted(member_deals['Practice'].unique().tolist())
+            options=["All Practices"] + practices
         )
     
     # Apply filters
