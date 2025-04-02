@@ -240,11 +240,13 @@ def process_data(df):
     """Process and prepare data for the dashboard"""
     df = df.copy()
     
-    # Convert dates once
+    # Convert dates and calculate time-based columns at once
     df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
     df['Month'] = df['Expected Close Date'].dt.strftime('%B')
+    df['Year'] = df['Expected Close Date'].dt.year
+    df['Quarter'] = 'Q' + df['Expected Close Date'].dt.quarter.astype(str)
     
-    # Convert probability once
+    # Convert probability and calculate numeric values at once
     def convert_probability(x):
         try:
             if pd.isna(x):
@@ -257,56 +259,63 @@ def process_data(df):
     
     df['Probability_Num'] = df['Probability'].apply(convert_probability)
     
-    # Calculate common metrics once
+    # Pre-calculate common flags and metrics
     df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
-    df['Amount_Lacs'] = df['Amount'] / 100000
+    df['Amount_Lacs'] = (df['Amount'] / 100000).round(0).astype(int)
+    df['Weighted_Amount'] = (df['Amount_Lacs'] * df['Probability_Num'] / 100).round(0).astype(int)
     
     return df
 
 @st.cache_data
-def calculate_metrics(df):
-    """Calculate common metrics used across views"""
-    metrics = {
-        'Total Pipeline': round(df[~df['Is_Won']]['Amount_Lacs'].sum(), 1),
-        'Closed Won': round(df[df['Is_Won']]['Amount_Lacs'].sum(), 1),
-        'Pipeline Deals': len(df[~df['Is_Won']]),
-        'Closed Deals': len(df[df['Is_Won']])
-    }
-    return metrics
+def calculate_team_metrics(df):
+    """Calculate all team-related metrics at once"""
+    # Calculate base metrics
+    team_metrics = df.groupby('Sales Owner').agg({
+        'Amount': lambda x: int(x[df['Is_Won']].sum() / 100000),
+        'Is_Won': 'sum',
+        'Amount_Lacs': lambda x: int(x[~df['Is_Won']].sum()),
+        'Weighted_Amount': lambda x: int(x[~df['Is_Won']].sum())
+    }).reset_index()
+    
+    team_metrics.columns = ['Sales Owner', 'Closed Won', 'Closed Deals', 'Current Pipeline', 'Weighted Projections']
+    
+    # Add Sales Target (default 5000L for demonstration)
+    team_metrics['Sales Target'] = 5000
+    
+    # Calculate Pipeline Deals
+    pipeline_deals = df[~df['Is_Won']].groupby('Sales Owner').size()
+    team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(pipeline_deals).fillna(0).astype(int)
+    
+    # Calculate derived metrics
+    team_metrics['Achievement %'] = (team_metrics['Closed Won'] / team_metrics['Sales Target'] * 100).round(0).astype(int)
+    team_metrics['Win Rate'] = (team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100).round(0).astype(int)
+    
+    return team_metrics
 
 @st.cache_data
 def filter_dataframe(df, filters):
     """Apply filters to dataframe efficiently"""
-    filtered_df = df.copy()
+    mask = pd.Series(True, index=df.index)
     
-    # Apply team member filter
     if filters.get('selected_member') != "All Team Members":
-        filtered_df = filtered_df[filtered_df['Sales Owner'] == filters['selected_member']]
+        mask &= df['Sales Owner'] == filters['selected_member']
     
-    # Apply search filter
     if filters.get('search'):
+        search_mask = pd.Series(False, index=df.index)
         search = filters['search'].lower()
-        mask = np.column_stack([
-            filtered_df[col].astype(str).str.lower().str.contains(search, na=False)
-            for col in filtered_df.columns
-        ])
-        filtered_df = filtered_df[mask.any(axis=1)]
+        for col in ['Organization Name', 'Opportunity Name', 'Sales Owner', 'Sales Stage']:
+            search_mask |= df[col].astype(str).str.lower().str.contains(search, na=False)
+        mask &= search_mask
     
-    # Apply month filter
     if filters.get('month_filter') != "All Months":
-        filtered_df = filtered_df[filtered_df['Month'] == filters['month_filter']]
+        mask &= df['Month'] == filters['month_filter']
     
-    # Apply quarter filter
     if filters.get('quarter_filter') != "All Quarters":
-        quarter_map = {'Q1': [1,2,3], 'Q2': [4,5,6], 'Q3': [7,8,9], 'Q4': [10,11,12]}
-        if filters['quarter_filter'] in quarter_map:
-            filtered_df = filtered_df[filtered_df['Expected Close Date'].dt.month.isin(quarter_map[filters['quarter_filter']])]
+        mask &= df['Quarter'] == filters['quarter_filter']
     
-    # Apply year filter
     if filters.get('year_filter') != "All Years":
-        filtered_df = filtered_df[filtered_df['Expected Close Date'].dt.year == filters['year_filter']]
+        mask &= df['Year'] == filters['year_filter']
     
-    # Apply probability filter
     if filters.get('probability_filter') != "All Probability":
         if filters['probability_filter'] == "Custom Range":
             prob_range = filters['custom_prob_range'].split("-")
@@ -316,20 +325,15 @@ def filter_dataframe(df, filters):
             prob_range = filters['probability_filter'].split("-")
             min_prob = float(prob_range[0])
             max_prob = float(prob_range[1].rstrip("%"))
-        filtered_df = filtered_df[
-            (filtered_df['Probability_Num'] >= min_prob) & 
-            (filtered_df['Probability_Num'] <= max_prob)
-        ]
+        mask &= (df['Probability_Num'] >= min_prob) & (df['Probability_Num'] <= max_prob)
     
-    # Apply status filter
     if filters.get('status_filter') != "All Status":
-        filtered_df = filtered_df[filtered_df['Sales Stage'] == filters['status_filter']]
+        mask &= df['Sales Stage'] == filters['status_filter']
     
-    # Apply focus areas filter
     if filters.get('focus_filter') != "All Focus":
-        filtered_df = filtered_df[filtered_df['KritiKal Focus Areas'] == filters['focus_filter']]
+        mask &= df['KritiKal Focus Areas'] == filters['focus_filter']
     
-    return filtered_df
+    return df[mask]
 
 def show_data_input():
     # Custom header
@@ -970,7 +974,7 @@ def show_sales_team():
     """, unsafe_allow_html=True)
 
     # Calculate metrics once
-    metrics = calculate_metrics(df)
+    metrics = calculate_team_metrics(df)
     
     # Display metrics with consistent styling
     col1, col2, col3, col4 = st.columns(4)
