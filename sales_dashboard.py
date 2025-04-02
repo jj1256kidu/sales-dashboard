@@ -989,7 +989,8 @@ def show_sales_team():
     col1, col2 = st.columns(2)
     with col1:
         # Convert dates and extract months
-        df['Month'] = pd.to_datetime(df['Expected Close Date']).dt.strftime('%B')
+        df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
+        df['Month'] = df['Expected Close Date'].dt.strftime('%B')
         available_months = sorted(df['Month'].dropna().unique().tolist())
         month_filter = st.selectbox("📅 Month", options=["All Months"] + available_months)
     with col2:
@@ -1005,9 +1006,17 @@ def show_sales_team():
     col1, col2 = st.columns(2)
     with col1:
         # Convert probability to numeric first
-        df['Probability_Num'] = df['Probability'].apply(
-            lambda x: float(str(x).rstrip('%')) if pd.notnull(x) and str(x).rstrip('%').replace('.', '').isdigit() else 0
-        )
+        def convert_probability(x):
+            try:
+                if pd.isna(x):
+                    return 0
+                if isinstance(x, str):
+                    x = x.rstrip('%')
+                return float(x)
+            except:
+                return 0
+        
+        df['Probability_Num'] = df['Probability'].apply(convert_probability)
         probability_ranges = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%"]
         probability_filter = st.selectbox("📈 Probability", options=probability_ranges)
     with col2:
@@ -1043,7 +1052,7 @@ def show_sales_team():
     if quarter_filter != "All Quarters":
         quarter_map = {'Q1': [1,2,3], 'Q2': [4,5,6], 'Q3': [7,8,9], 'Q4': [10,11,12]}
         if quarter_filter in quarter_map:
-            filtered_df = filtered_df[pd.to_datetime(filtered_df['Expected Close Date']).dt.month.isin(quarter_map[quarter_filter])]
+            filtered_df = filtered_df[filtered_df['Expected Close Date'].dt.month.isin(quarter_map[quarter_filter])]
 
     # Apply probability filter
     if probability_filter != "All Probability":
