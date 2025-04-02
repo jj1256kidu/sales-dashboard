@@ -261,6 +261,12 @@ def process_data(df):
     df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
     df['Amount_Lacs'] = df['Amount'] / 100000
     
+    # Pre-calculate unique values for filters
+    df['_unique_months'] = df['Month'].dropna().unique()
+    df['_unique_years'] = df['Expected Close Date'].dt.year.unique()
+    df['_unique_status'] = df['Sales Stage'].dropna().unique()
+    df['_unique_focus'] = df['KritiKal Focus Areas'].dropna().unique()
+    
     return df
 
 @st.cache_data
@@ -302,6 +308,10 @@ def filter_dataframe(df, filters):
         if filters['quarter_filter'] in quarter_map:
             filtered_df = filtered_df[filtered_df['Expected Close Date'].dt.month.isin(quarter_map[filters['quarter_filter']])]
     
+    # Apply year filter
+    if filters.get('year_filter') != "All Years":
+        filtered_df = filtered_df[filtered_df['Expected Close Date'].dt.year == filters['year_filter']]
+    
     # Apply probability filter
     if filters.get('probability_filter') != "All Probability":
         prob_range = filters['probability_filter'].split("-")
@@ -315,6 +325,10 @@ def filter_dataframe(df, filters):
     # Apply status filter
     if filters.get('status_filter') != "All Status":
         filtered_df = filtered_df[filtered_df['Sales Stage'] == filters['status_filter']]
+    
+    # Apply focus areas filter
+    if filters.get('focus_filter') != "All Focus":
+        filtered_df = filtered_df[filtered_df['KritiKal Focus Areas'] == filters['focus_filter']]
     
     return filtered_df
 
@@ -929,7 +943,7 @@ def show_sales_team():
         st.warning("Please upload your sales data to view team information")
         return
     
-    # Process data once
+    # Process data once with caching
     df = process_data(st.session_state.df)
     
     # Get unique team members
@@ -1062,22 +1076,20 @@ def show_sales_team():
         # Define Indian fiscal year order
         fiscal_order = ['April', 'May', 'June', 'July', 'August', 'September', 
                        'October', 'November', 'December', 'January', 'February', 'March']
-        available_months = df['Month'].dropna().unique().tolist()
+        available_months = sorted(df['_unique_months'].tolist())
         available_months.sort(key=lambda x: fiscal_order.index(x) if x in fiscal_order else len(fiscal_order))
         filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months)
     with col4:
         filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
     with col5:
-        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
+        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['_unique_years'].tolist()))
     with col6:
         probability_ranges = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%"]
         filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_ranges)
     with col7:
-        status_values = sorted(df['Sales Stage'].dropna().unique().tolist())
-        filters['status_filter'] = st.selectbox("🎯 Status", options=["All Status"] + status_values)
+        filters['status_filter'] = st.selectbox("🎯 Status", options=["All Status"] + sorted(df['_unique_status'].tolist()))
     with col8:
-        focus_areas = sorted(df['KritiKal Focus Areas'].dropna().unique().tolist())
-        filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All Focus"] + focus_areas)
+        filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All Focus"] + sorted(df['_unique_focus'].tolist()))
 
     # Apply all filters at once
     filtered_df = filter_dataframe(df, filters)
