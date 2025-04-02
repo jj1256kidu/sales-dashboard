@@ -1146,7 +1146,21 @@ def show_sales_team():
                 max_prob = st.number_input("Max %", min_value=0, max_value=100, value=100, step=1)
             filters['custom_prob_range'] = f"{min_prob}-{max_prob}%"
     with col7:
-        filters['status_filter'] = st.selectbox("🎯 Status", options=["All Status"] + sorted(df['Sales Stage'].dropna().unique().tolist()))
+        # Get unique sales stages and add custom options
+        status_options = ["All Status", "Committed for the Month", "Upsides for the Month"] + sorted(df['Sales Stage'].dropna().unique().tolist())
+        filters['status_filter'] = st.selectbox("🎯 Status", options=status_options)
+        
+        # Handle custom status filters
+        if filters['status_filter'] == "Committed for the Month":
+            # Filter for deals with high probability (e.g., >75%) and expected to close this month
+            current_month = pd.Timestamp.now().strftime('%B')
+            mask = (df['Month'] == current_month) & (df['Probability_Num'] > 75)
+            filtered_df = df[mask]
+        elif filters['status_filter'] == "Upsides for the Month":
+            # Filter for deals with medium probability (e.g., 25-75%) and expected to close this month
+            current_month = pd.Timestamp.now().strftime('%B')
+            mask = (df['Month'] == current_month) & (df['Probability_Num'].between(25, 75))
+            filtered_df = df[mask]
     with col8:
         filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All Focus"] + sorted(df['KritiKal Focus Areas'].dropna().unique().tolist()))
 
