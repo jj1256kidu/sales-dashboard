@@ -1021,9 +1021,9 @@ def show_sales_team():
         'Probability',
         'Amount',
         'Sales Owner',
-        'Tech Owner',
+        'Pre-sales Technical Lead',
         'Business Owner',
-        'Hunting /farming',
+        'Type',
         'KritiKal Focus Areas'
     ]
     
@@ -1057,9 +1057,9 @@ def show_sales_team():
         'Amount (In Lacs)',
         'Weighted Revenue (In Lacs)',
         'Sales Owner',
-        'Tech Owner',
+        'Pre-sales Technical Lead',
         'Business Owner',
-        'Hunting /farming',
+        'Type',
         'KritiKal Focus Areas'
     ]
     
