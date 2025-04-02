@@ -1143,7 +1143,7 @@ def show_sales_team():
         'Type': 'Hunting /farming'
     })
     
-    # Format numeric values and dates
+    # Convert Amount to Lacs and create numeric column for sorting
     display_df['Amount (In Lacs)'] = display_df['Amount (In Lacs)'].apply(lambda x: int(x/100000) if pd.notnull(x) else 0)
     display_df['Probability'] = display_df['Probability'].apply(format_percentage)
     display_df['Weighted Revenue (In Lacs)'] = display_df.apply(
@@ -1154,7 +1154,10 @@ def show_sales_team():
     # Format dates
     display_df['Expected Close Date'] = pd.to_datetime(display_df['Expected Close Date']).dt.strftime('%d-%b-%Y')
     
-    # Add S.No column
+    # Sort by Amount in descending order
+    display_df = display_df.sort_values('Amount (In Lacs)', ascending=False)
+    
+    # Add S.No column after sorting
     display_df.index = range(1, len(display_df) + 1)
     display_df.index.name = 'S.No'
     
