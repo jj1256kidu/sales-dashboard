@@ -1008,25 +1008,6 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
     
-    # Reset index to create proper serial numbers
-    filtered_df = filtered_df.reset_index(drop=True)
-    filtered_df.index = filtered_df.index + 1  # Start from 1 instead of 0
-    
-    # Select and rename columns for display
-    display_columns = [
-        'Organization Name',
-        'Opportunity Name',
-        'Geography',
-        'Expected Close Date',
-        'Probability',
-        'Amount',
-        'Sales Owner',
-        'Pre-sales Technical Lead',
-        'Business Owner',
-        'Type',
-        'KritiKal Focus Areas'
-    ]
-    
     # Create a copy of filtered_df with only required columns
     display_df = filtered_df[display_columns].copy()
     
@@ -1042,9 +1023,10 @@ def show_sales_team():
     if 'Expected Close Date' in display_df.columns:
         display_df['Expected Close Date'] = pd.to_datetime(display_df['Expected Close Date']).dt.strftime('%d-%b-%Y')
     
-    # Reorder columns with S.No (index)
-    display_df = display_df.reset_index()
-    display_df = display_df.rename(columns={'index': 'S. No'})
+    # Add S.No column at the beginning
+    display_df = display_df.reset_index(drop=True)
+    display_df.index = display_df.index + 1  # Start from 1 instead of 0
+    display_df = display_df.rename_axis('S. No').reset_index()
     
     # Final column order
     final_columns = [
