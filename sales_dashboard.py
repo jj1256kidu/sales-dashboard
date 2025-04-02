@@ -843,9 +843,33 @@ def show_sales_team():
     # Main content area with consistent spacing
     st.markdown("""
         <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 30px;'>
-            <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Sales Team Performance</h3>
+            <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Sales Team Data</h3>
         </div>
     """, unsafe_allow_html=True)
+    
+    # Add search and filter options with consistent spacing
+    st.markdown("<div style='margin-bottom: 20px;'>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        search = st.text_input("Search Deals", placeholder="Search in any field...")
+    
+    with col2:
+        # Safely get unique stages, handling potential null values
+        stages = sorted(df['Sales Stage'].dropna().unique().tolist())
+        stage_filter = st.selectbox(
+            "Filter by Stage",
+            options=["All Stages"] + stages
+        )
+    
+    with col3:
+        # Safely get unique practices, handling potential null values
+        practices = sorted(df['Practice'].dropna().unique().tolist())
+        practice_filter = st.selectbox(
+            "Filter by Practice",
+            options=["All Practices"] + practices
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
     
     # Calculate team metrics
     team_metrics = df.groupby('Sales Owner').agg({
@@ -877,6 +901,18 @@ def show_sales_team():
     else:
         filtered_df = df.copy()
         display_title = "All Opportunities"
+    
+    # Apply filters
+    if search:
+        mask = np.column_stack([filtered_df[col].astype(str).str.contains(search, case=False, na=False) 
+                              for col in filtered_df.columns])
+        filtered_df = filtered_df[mask.any(axis=1)]
+    
+    if stage_filter != "All Stages":
+        filtered_df = filtered_df[filtered_df['Sales Stage'] == stage_filter]
+        
+    if practice_filter != "All Practices":
+        filtered_df = filtered_df[filtered_df['Practice'] == practice_filter]
     
     # Calculate metrics for display
     metrics = {
@@ -945,42 +981,6 @@ def show_sales_team():
     
     # Display opportunities section
     st.markdown(f"### {display_title}")
-    
-    # Add search and filter options with consistent spacing
-    st.markdown("<div style='margin-bottom: 20px;'>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        search = st.text_input("Search Deals", placeholder="Search in any field...")
-    
-    with col2:
-        # Safely get unique stages, handling potential null values
-        stages = sorted(filtered_df['Sales Stage'].dropna().unique().tolist())
-        stage_filter = st.selectbox(
-            "Filter by Stage",
-            options=["All Stages"] + stages
-        )
-    
-    with col3:
-        # Safely get unique practices, handling potential null values
-        practices = sorted(filtered_df['Practice'].dropna().unique().tolist())
-        practice_filter = st.selectbox(
-            "Filter by Practice",
-            options=["All Practices"] + practices
-        )
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    # Apply filters
-    if search:
-        mask = np.column_stack([filtered_df[col].astype(str).str.contains(search, case=False, na=False) 
-                              for col in filtered_df.columns])
-        filtered_df = filtered_df[mask.any(axis=1)]
-    
-    if stage_filter != "All Stages":
-        filtered_df = filtered_df[filtered_df['Sales Stage'] == stage_filter]
-        
-    if practice_filter != "All Practices":
-        filtered_df = filtered_df[filtered_df['Practice'] == practice_filter]
     
     # Display filtered deals with consistent spacing
     st.markdown("<div style='margin-bottom: 30px;'>", unsafe_allow_html=True)
