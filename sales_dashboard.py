@@ -1216,26 +1216,57 @@ def show_sales_team():
         'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
     }).reset_index()
     
-    team_metrics.columns = ['Sales Owner', 'Closed Amount', 'Closed Deals']
+    team_metrics.columns = ['Sales Owner', 'Closed Won', 'Closed Deals']
     
-    # Calculate pipeline metrics with rounded numbers
+    # Add Sales Target (default 5000L for demonstration)
+    team_metrics['Sales Target'] = 5000  # This can be customized per team member if data is available
+    
+    # Calculate Current Pipeline
     pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
     total_pipeline = round(pipeline_df.groupby('Sales Owner')['Amount'].sum() / 100000, 1)
-    team_metrics['Total Pipeline'] = team_metrics['Sales Owner'].map(total_pipeline)
+    team_metrics['Current Pipeline'] = team_metrics['Sales Owner'].map(total_pipeline)
+    
+    # Calculate Weighted Projections
+    def calculate_weighted_projection(owner):
+        owner_pipeline = pipeline_df[pipeline_df['Sales Owner'] == owner]
+        weighted_sum = sum((amount * prob / 100) 
+                         for amount, prob in zip(owner_pipeline['Amount'], 
+                                              owner_pipeline['Probability_Num']))
+        return round(weighted_sum / 100000, 1)  # Convert to Lacs
+    
+    team_metrics['Weighted Projections'] = team_metrics['Sales Owner'].apply(calculate_weighted_projection)
+    
+    # Calculate Achievement Percentage
+    team_metrics['Achievement %'] = round((team_metrics['Closed Won'] / team_metrics['Sales Target'] * 100), 1)
     
     total_deals = pipeline_df.groupby('Sales Owner').size()
     team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(total_deals)
     
     team_metrics['Win Rate'] = round((team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100), 1)
-    team_metrics = team_metrics.sort_values('Total Pipeline', ascending=False)
+    team_metrics = team_metrics.sort_values('Current Pipeline', ascending=False)
     
+    # Format the display data
     summary_data = team_metrics.copy()
-    summary_data['Closed Amount'] = summary_data['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L")
-    summary_data['Total Pipeline'] = summary_data['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L")
-    summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x:.1f}%")
+    summary_data['Sales Target'] = summary_data['Sales Target'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Current Pipeline'] = summary_data['Current Pipeline'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Weighted Projections'] = summary_data['Weighted Projections'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Closed Won'] = summary_data['Closed Won'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Achievement %'] = summary_data['Achievement %'].apply(lambda x: f"{x}%")
+    summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x}%")
     
+    # Display the enhanced team performance table
     st.dataframe(
-        summary_data[['Sales Owner', 'Closed Amount', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals', 'Win Rate']],
+        summary_data[[
+            'Sales Owner',
+            'Sales Target',
+            'Current Pipeline',
+            'Weighted Projections',
+            'Closed Won',
+            'Achievement %',
+            'Pipeline Deals',
+            'Closed Deals',
+            'Win Rate'
+        ]],
         use_container_width=True
     )
 
