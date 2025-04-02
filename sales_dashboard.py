@@ -821,31 +821,24 @@ def show_sales_team():
     # Get unique team members
     team_members = sorted(df['Sales Owner'].dropna().unique().tolist())
     
-    # Sidebar team member selection
-    with st.sidebar:
-        st.markdown("""
-            <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
-                <h3 style='color: white; margin: 0; text-align: center; font-size: 1.4em; font-weight: 600;'>Sales Team</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        selected_member = st.selectbox(
-            "Select Sales Owner",
-            options=["All Team Members"] + team_members,
-            key="team_member_filter"
-        )
-        
-        if selected_member != "All Team Members":
-            st.session_state.selected_team_member = selected_member
-        else:
-            st.session_state.selected_team_member = None
-    
     # Main content area with consistent spacing
     st.markdown("""
         <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 30px;'>
             <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Sales Team Data</h3>
         </div>
     """, unsafe_allow_html=True)
+
+    # Team member selection moved to main content
+    selected_member = st.selectbox(
+        "Select Sales Owner",
+        options=["All Team Members"] + team_members,
+        key="team_member_filter"
+    )
+    
+    if selected_member != "All Team Members":
+        st.session_state.selected_team_member = selected_member
+    else:
+        st.session_state.selected_team_member = None
     
     # Add search and filter options with consistent spacing
     st.markdown("<div style='margin-bottom: 20px;'>", unsafe_allow_html=True)
