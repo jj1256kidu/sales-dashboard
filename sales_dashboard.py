@@ -488,7 +488,6 @@ def show_overview():
         new_target = st.number_input(
             "Enter Target (in Lakhs)", 
             value=float(st.session_state.get('sales_target', 5000.0)), 
-            step=50.0, 
             format="%.2f",
             label_visibility="collapsed",
             key="overview_target_input"
@@ -1074,7 +1073,6 @@ def show_sales_team():
         new_target = st.number_input(
             "Enter Target (in Lakhs)", 
             value=float(st.session_state.get('sales_target', 5000.0)), 
-            step=50.0, 
             format="%.2f",
             label_visibility="collapsed",
             key="sales_team_target_input"
