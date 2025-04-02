@@ -9,19 +9,34 @@ import io
 # Format helper functions
 def format_amount(x):
     try:
-        return f"₹{int(float(x))}L"
+        if pd.isna(x) or x == 0:
+            return "₹0L"
+        # Convert to float first to handle string inputs, then to int
+        value = float(str(x).replace('₹', '').replace('L', '').replace(',', ''))
+        return f"₹{int(value)}L"
     except:
         return "₹0L"
 
 def format_percentage(x):
     try:
-        return f"{int(float(x))}%"
+        if pd.isna(x) or x == 0:
+            return "0%"
+        # Handle string percentage inputs
+        if isinstance(x, str):
+            value = float(x.rstrip('%'))
+        else:
+            value = float(x)
+        return f"{int(value)}%"
     except:
         return "0%"
 
 def format_number(x):
     try:
-        return f"{int(float(x)):,}"
+        if pd.isna(x) or x == 0:
+            return "0"
+        # Convert to float first to handle string inputs, then to int
+        value = float(str(x).replace(',', ''))
+        return f"{int(value):,}"
     except:
         return "0"
 
@@ -1165,11 +1180,11 @@ def show_sales_team():
         'Type': 'Hunting /farming'
     })
     
-    # Convert and format numeric values
-    display_df['Amount (In Lacs)'] = display_df['Amount'].apply(lambda x: int(x/100000))
-    display_df['Probability'] = display_df['Probability'].apply(lambda x: f"{int(float(str(x).rstrip('%')))}%")
+    # Format numeric values and dates
+    display_df['Amount (In Lacs)'] = display_df['Amount (In Lacs)'].apply(lambda x: int(x/100000) if pd.notnull(x) else 0)
+    display_df['Probability'] = display_df['Probability'].apply(format_percentage)
     display_df['Weighted Revenue (In Lacs)'] = display_df.apply(
-        lambda row: int((row['Amount']/100000) * float(str(row['Probability']).rstrip('%'))/100), 
+        lambda row: int((row['Amount (In Lacs)']) * float(str(row['Probability']).rstrip('%'))/100) if pd.notnull(row['Amount (In Lacs)']) else 0, 
         axis=1
     )
     
@@ -1186,11 +1201,21 @@ def show_sales_team():
         column_config={
             'Amount (In Lacs)': st.column_config.NumberColumn(
                 'Amount (In Lacs)',
-                format="₹%d L"
+                format="₹%d L",
+                help="Amount in Lakhs"
             ),
             'Weighted Revenue (In Lacs)': st.column_config.NumberColumn(
                 'Weighted Revenue (In Lacs)',
-                format="₹%d L"
+                format="₹%d L",
+                help="Weighted Revenue in Lakhs"
+            ),
+            'Probability': st.column_config.TextColumn(
+                'Probability',
+                help="Probability of winning the deal"
+            ),
+            'Expected Close Date': st.column_config.TextColumn(
+                'Expected Close Date',
+                help="Expected closing date"
             )
         }
     )
