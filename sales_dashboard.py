@@ -1196,59 +1196,36 @@ def show_sales_team():
     
     # Sales Target Input and Display
     with m1:
-        st.markdown("""
-            <style>
-                /* Custom styling for number input */
-                [data-testid="stNumberInput"] {
-                    position: relative;
-                    background: transparent !important;
-                }
-                [data-testid="stNumberInput"] > div > div > input {
-                    color: white !important;
-                    font-size: 1.8em !important;
-                    font-weight: 800 !important;
-                    text-align: center !important;
-                    background: transparent !important;
-                    border: none !important;
-                    padding: 0 !important;
-                }
-                /* Hide the increment/decrement buttons */
-                [data-testid="stNumberInput"] > div > div > div {
-                    display: none !important;
-                }
-                /* Container styling */
-                div[data-testid="column"] > div > div > div > div > div {
-                    background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
-                    padding: 20px;
-                    border-radius: 10px;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                    text-align: center;
-                }
-            </style>
-        """, unsafe_allow_html=True)
-        
-        st.markdown("""
+        st.markdown(f"""
             <div style='
                 background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
-                padding: 20px 20px 10px 20px;
-                border-radius: 10px 10px 0 0;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
                 text-align: center;
+                height: 100%;
             '>
-                <div style='color: white; font-size: 1.1em; font-weight: 600;'>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
                     🎯 Sales Target
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(st.session_state.sales_target)}L
                 </div>
             </div>
         """, unsafe_allow_html=True)
         
-        # Number input for sales target
+        # Initialize session state if not exists
+        if 'sales_target' not in st.session_state:
+            st.session_state.sales_target = 5000
+        
+        # Number input below the card
         sales_target = st.number_input(
-            "",
+            "Edit Target",
             min_value=0,
             value=int(st.session_state.sales_target),
             step=1000,
             format="%d",
-            label_visibility="collapsed",
-            key="sales_target_input"
+            label_visibility="collapsed"
         )
         
         # Update session state
