@@ -231,6 +231,27 @@ st.markdown("""
         margin: 30px 0;
         border-top: 1px solid #eee;
     }
+
+    /* Custom styling for number input */
+    [data-testid="stNumberInput"] {
+        position: relative;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 5px;
+        padding: 0;
+    }
+    [data-testid="stNumberInput"] > div > div > input {
+        color: white !important;
+        font-size: 1.8em !important;
+        font-weight: 800 !important;
+        text-align: center !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+    /* Hide the increment/decrement buttons */
+    [data-testid="stNumberInput"] > div > div > div {
+        display: none !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1147,6 +1168,31 @@ def show_sales_team():
     
     # Sales Target Input and Display
     with m1:
+        st.markdown("""
+            <style>
+                /* Custom styling for number input */
+                [data-testid="stNumberInput"] {
+                    position: relative;
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 5px;
+                    padding: 0;
+                }
+                [data-testid="stNumberInput"] > div > div > input {
+                    color: white !important;
+                    font-size: 1.8em !important;
+                    font-weight: 800 !important;
+                    text-align: center !important;
+                    background: transparent !important;
+                    border: none !important;
+                    padding: 0 !important;
+                }
+                /* Hide the increment/decrement buttons */
+                [data-testid="stNumberInput"] > div > div > div {
+                    display: none !important;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+        
         st.markdown(f"""
             <div style='
                 background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
@@ -1158,34 +1204,26 @@ def show_sales_team():
                 <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
                     🎯 Sales Target
                 </div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Create the number input
-        sales_target = st.number_input(
-            "Set Target (Lacs)",
-            min_value=0,
-            value=5000,
-            step=100,
-            key="sales_target_input",
-            label_visibility="collapsed"
-        )
-        
-        # Display the formatted value
-        st.markdown(f"""
-            <div style='
-                background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
-                padding: 10px;
-                border-radius: 0 0 10px 10px;
-                text-align: center;
-                margin-top: -20px;
-            '>
-                <div style='
-                    color: white;
-                    font-size: 1.8em;
-                    font-weight: 800;
-                '>
-                    ₹{sales_target}L
+                <div style='position: relative;'>
+                    <div style='position: absolute; left: 50%; transform: translateX(-50%); z-index: 1;'>
+                        {st.number_input(
+                            "",
+                            min_value=0,
+                            value=5000,
+                            step=100,
+                            key="sales_target_input",
+                            label_visibility="collapsed"
+                        )}
+                    </div>
+                    <div style='
+                        color: white;
+                        font-size: 1.8em;
+                        font-weight: 800;
+                        visibility: hidden;
+                    '>₹{5000}L</div>
+                </div>
+                <div style='color: rgba(255,255,255,0.9); font-size: 0.9em; margin-top: 8px;'>
+                    Click to edit target
                 </div>
             </div>
         """, unsafe_allow_html=True)
