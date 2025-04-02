@@ -1130,6 +1130,124 @@ def show_sales_team():
     # Apply all filters at once
     filtered_df = filter_dataframe(df, filters)
     
+    # Performance Metrics Row
+    st.markdown("""
+        <div style='margin-bottom: 20px;'>
+            <h3 style='color: #2a5298; margin: 0; font-size: 1.4em; font-weight: 600;'>Performance Metrics</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Create columns for metrics
+    m1, m2, m3, m4, m5 = st.columns(5)
+
+    # Get the metrics values
+    current_pipeline = filtered_df[~filtered_df['Is_Won']]['Amount_Lacs'].sum()
+    weighted_projections = filtered_df[~filtered_df['Is_Won']]['Weighted_Amount'].sum()
+    closed_won = filtered_df[filtered_df['Is_Won']]['Amount_Lacs'].sum()
+    
+    # Sales Target Input
+    with m1:
+        sales_target = st.number_input(
+            "Set Target (Lacs)",
+            min_value=0,
+            value=5000,
+            step=100,
+            key="sales_target_input",
+            label_visibility="collapsed"
+        )
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                    🎯 Sales Target
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{sales_target}L
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with m2:
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                    🌊 Current Pipeline
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(current_pipeline)}L
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with m3:
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #6B5B95 0%, #846EA9 100%);
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                    ⚖️ Weighted Projections
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(weighted_projections)}L
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with m4:
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                    💰 Closed Won
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(closed_won)}L
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with m5:
+        achievement = (closed_won / sales_target * 100) if sales_target > 0 else 0
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #F39C12 0%, #F1C40F 100%);
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                    📈 Achieved %
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    {int(achievement)}%
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # Add some spacing after the metrics
+    st.markdown("<div style='margin: 25px 0;'></div>", unsafe_allow_html=True)
+
     # Opportunities section with consistent styling
     st.markdown(f"""
         <div style='
