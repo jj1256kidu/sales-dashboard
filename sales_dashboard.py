@@ -1008,6 +1008,21 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
     
+    # Define display columns
+    display_columns = [
+        'Organization Name',
+        'Opportunity Name',
+        'Geography',
+        'Expected Close Date',
+        'Probability',
+        'Amount',
+        'Sales Owner',
+        'Pre-sales Technical Lead',
+        'Business Owner',
+        'Type',
+        'KritiKal Focus Areas'
+    ]
+    
     # Create a copy of filtered_df with only required columns
     display_df = filtered_df[display_columns].copy()
     
