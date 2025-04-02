@@ -821,14 +821,89 @@ def show_sales_team():
     # Get unique team members
     team_members = sorted(df['Sales Owner'].dropna().unique().tolist())
     
-    # Main content area with consistent spacing
+    # Main content area with enhanced styling
     st.markdown("""
-        <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 30px;'>
-            <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Sales Team Data</h3>
+        <div style='
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        '>
+            <h2 style='
+                color: white;
+                margin: 0;
+                text-align: center;
+                font-size: 2.2em;
+                font-weight: 700;
+                letter-spacing: 1px;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            '>Sales Team Data</h2>
+            <p style='
+                color: rgba(255,255,255,0.9);
+                text-align: center;
+                margin-top: 10px;
+                font-size: 1.1em;
+                font-weight: 300;
+            '>Track and analyze team performance metrics</p>
         </div>
     """, unsafe_allow_html=True)
 
-    # Team member selection moved to main content
+    # Search and filter section with enhanced styling
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin-bottom: 15px;
+                font-size: 1.4em;
+                font-weight: 600;
+            '>Search and Filters</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        search = st.text_input("🔍 Search Deals", placeholder="Search in any field...")
+    
+    with col2:
+        stages = sorted(df['Sales Stage'].dropna().unique().tolist())
+        stage_filter = st.selectbox(
+            "📊 Filter by Stage",
+            options=["All Stages"] + stages
+        )
+    
+    with col3:
+        practices = sorted(df['Practice'].dropna().unique().tolist())
+        practice_filter = st.selectbox(
+            "🎯 Filter by Practice",
+            options=["All Practices"] + practices
+        )
+
+    # Team member selection with enhanced styling
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin-bottom: 15px;
+                font-size: 1.4em;
+                font-weight: 600;
+            '>Team Member Selection</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
     selected_member = st.selectbox(
         "Select Sales Owner",
         options=["All Team Members"] + team_members,
@@ -840,60 +915,13 @@ def show_sales_team():
     else:
         st.session_state.selected_team_member = None
     
-    # Add search and filter options with consistent spacing
-    st.markdown("<div style='margin-bottom: 20px;'>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        search = st.text_input("Search Deals", placeholder="Search in any field...")
-    
-    with col2:
-        # Safely get unique stages, handling potential null values
-        stages = sorted(df['Sales Stage'].dropna().unique().tolist())
-        stage_filter = st.selectbox(
-            "Filter by Stage",
-            options=["All Stages"] + stages
-        )
-    
-    with col3:
-        # Safely get unique practices, handling potential null values
-        practices = sorted(df['Practice'].dropna().unique().tolist())
-        practice_filter = st.selectbox(
-            "Filter by Practice",
-            options=["All Practices"] + practices
-        )
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    # Calculate team metrics
-    team_metrics = df.groupby('Sales Owner').agg({
-        'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
-        'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
-    }).reset_index()
-    
-    team_metrics.columns = ['Sales Owner', 'Closed Amount', 'Closed Deals']
-    
-    # Calculate total pipeline amount (excluding closed won)
-    pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
-    total_pipeline = pipeline_df.groupby('Sales Owner')['Amount'].sum() / 100000
-    team_metrics['Total Pipeline'] = team_metrics['Sales Owner'].map(total_pipeline)
-    
-    # Calculate total deals (excluding closed won)
-    total_deals = pipeline_df.groupby('Sales Owner').size()
-    team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(total_deals)
-    
-    # Calculate win rate
-    team_metrics['Win Rate'] = (team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100).round(1)
-    
-    # Sort by Total Pipeline in descending order
-    team_metrics = team_metrics.sort_values('Total Pipeline', ascending=False)
-    
     # Filter data based on selection
     if st.session_state.selected_team_member:
         filtered_df = df[df['Sales Owner'] == st.session_state.selected_team_member].copy()
         display_title = f"{st.session_state.selected_team_member}'s Opportunities"
     else:
         filtered_df = df.copy()
-        display_title = "All Opportunities"
+        display_title = "All Team Opportunities"
     
     # Apply filters
     if search:
@@ -907,7 +935,7 @@ def show_sales_team():
     if practice_filter != "All Practices":
         filtered_df = filtered_df[filtered_df['Practice'] == practice_filter]
     
-    # Calculate metrics for display
+    # Calculate metrics
     metrics = {
         'Total Pipeline': filtered_df[~filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
         'Closed Won': filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
@@ -915,52 +943,125 @@ def show_sales_team():
         'Closed Deals': len(filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)])
     }
     
-    # Display metrics with consistent spacing
-    st.markdown("<div style='margin-bottom: 30px;'>", unsafe_allow_html=True)
+    # Display metrics with enhanced styling
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin-bottom: 15px;
+                font-size: 1.4em;
+                font-weight: 600;
+            '>Performance Metrics</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.markdown(f"""
-            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                <div class='metric-label'>Pipeline Value</div>
-                <div class='metric-value'>₹{metrics['Total Pipeline']:,.1f}L</div>
-                <div style='color: #666; font-size: 0.9em;'>Active opportunities</div>
+            <div style='
+                text-align: center;
+                padding: 20px;
+                background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+                border-radius: 15px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 500; margin-bottom: 10px;'>Pipeline Value</div>
+                <div style='color: white; font-size: 2em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{metrics['Total Pipeline']:,.1f}L</div>
+                <div style='color: rgba(255,255,255,0.9); font-size: 0.9em; margin-top: 5px;'>Active opportunities</div>
             </div>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown(f"""
-            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                <div class='metric-label'>Closed Won</div>
-                <div class='metric-value'>₹{metrics['Closed Won']:,.1f}L</div>
-                <div style='color: #666; font-size: 0.9em;'>Won opportunities</div>
+            <div style='
+                text-align: center;
+                padding: 20px;
+                background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                border-radius: 15px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 500; margin-bottom: 10px;'>Closed Won</div>
+                <div style='color: white; font-size: 2em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{metrics['Closed Won']:,.1f}L</div>
+                <div style='color: rgba(255,255,255,0.9); font-size: 0.9em; margin-top: 5px;'>Won opportunities</div>
             </div>
         """, unsafe_allow_html=True)
     
     with col3:
         win_rate = (metrics['Closed Deals'] / (metrics['Closed Deals'] + metrics['Pipeline Deals']) * 100) if (metrics['Closed Deals'] + metrics['Pipeline Deals']) > 0 else 0
         st.markdown(f"""
-            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                <div class='metric-label'>Win Rate</div>
-                <div class='metric-value'>{win_rate:.1f}%</div>
-                <div style='color: #666; font-size: 0.9em;'>{metrics['Closed Deals']:,} won</div>
+            <div style='
+                text-align: center;
+                padding: 20px;
+                background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+                border-radius: 15px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 500; margin-bottom: 10px;'>Win Rate</div>
+                <div style='color: white; font-size: 2em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>{win_rate:.1f}%</div>
+                <div style='color: rgba(255,255,255,0.9); font-size: 0.9em; margin-top: 5px;'>{metrics['Closed Deals']:,} won</div>
             </div>
         """, unsafe_allow_html=True)
     
     with col4:
         avg_deal_size = metrics['Closed Won'] / metrics['Closed Deals'] if metrics['Closed Deals'] > 0 else 0
         st.markdown(f"""
-            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                <div class='metric-label'>Avg Deal Size</div>
-                <div class='metric-value'>₹{avg_deal_size:,.1f}L</div>
-                <div style='color: #666; font-size: 0.9em;'>Per won deal</div>
+            <div style='
+                text-align: center;
+                padding: 20px;
+                background: linear-gradient(135deg, #f12711 0%, #f5af19 100%);
+                border-radius: 15px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 500; margin-bottom: 10px;'>Avg Deal Size</div>
+                <div style='color: white; font-size: 2em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{avg_deal_size:,.1f}L</div>
+                <div style='color: rgba(255,255,255,0.9); font-size: 0.9em; margin-top: 5px;'>Per won deal</div>
             </div>
         """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
     
-    # Display team member performance table with consistent spacing
-    st.markdown("<div style='margin-bottom: 30px;'>", unsafe_allow_html=True)
-    st.markdown("### Team Member Performance")
+    # Team performance table with enhanced styling
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin-bottom: 15px;
+                font-size: 1.4em;
+                font-weight: 600;
+            '>Team Member Performance</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Calculate and display team metrics
+    team_metrics = df.groupby('Sales Owner').agg({
+        'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
+        'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
+    }).reset_index()
+    
+    team_metrics.columns = ['Sales Owner', 'Closed Amount', 'Closed Deals']
+    
+    # Calculate pipeline metrics
+    pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
+    total_pipeline = pipeline_df.groupby('Sales Owner')['Amount'].sum() / 100000
+    team_metrics['Total Pipeline'] = team_metrics['Sales Owner'].map(total_pipeline)
+    
+    total_deals = pipeline_df.groupby('Sales Owner').size()
+    team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(total_deals)
+    
+    team_metrics['Win Rate'] = (team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100).round(1)
+    team_metrics = team_metrics.sort_values('Total Pipeline', ascending=False)
+    
     summary_data = team_metrics.copy()
     summary_data['Closed Amount'] = summary_data['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L")
     summary_data['Total Pipeline'] = summary_data['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L")
@@ -970,15 +1071,26 @@ def show_sales_team():
         summary_data[['Sales Owner', 'Closed Amount', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals', 'Win Rate']],
         use_container_width=True
     )
-    st.markdown("</div>", unsafe_allow_html=True)
     
-    # Display opportunities section
-    st.markdown(f"### {display_title}")
+    # Opportunities section with enhanced styling
+    st.markdown(f"""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin-bottom: 15px;
+                font-size: 1.4em;
+                font-weight: 600;
+            '>{display_title}</h3>
+        </div>
+    """, unsafe_allow_html=True)
     
-    # Display filtered deals with consistent spacing
-    st.markdown("<div style='margin-bottom: 30px;'>", unsafe_allow_html=True)
     st.dataframe(filtered_df, use_container_width=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
 def show_detailed():
     if st.session_state.df is None:
