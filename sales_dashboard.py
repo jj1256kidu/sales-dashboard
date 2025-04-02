@@ -482,31 +482,17 @@ def show_overview():
     # Sales Target Header Section
     st.markdown("### 🎯 Annual Sales Target")
 
-    # Editable number input
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        new_target = st.number_input(
-            "Enter Target (in Lakhs)", 
-            value=float(st.session_state.get('sales_target', 5000.0)), 
-            step=50.0, 
-            format="%.2f",
-            label_visibility="collapsed",
-            key="overview_target_input"
-        )
-
-    # Save it to session state if changed
-    if new_target != st.session_state.get('sales_target', 0):
+    # Manual target input
+    new_target = st.number_input(
+        "Annual Sales Target (Lakhs)",
+        value=float(st.session_state.sales_target),
+        step=1.0,
+        format="%.2f",
+        help="Enter the annual sales target in Lakhs (1L = ₹100,000)"
+    )
+    if new_target != st.session_state.sales_target:
         st.session_state.sales_target = new_target
         st.rerun()
-
-    # Show target value as bold ₹X,XXX.00L
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown(f"""
-            <div style='text-align: center; font-size: 32px; font-weight: 700; color: red;'>
-                ₹{new_target:,.2f}L
-            </div>
-        """, unsafe_allow_html=True)
 
     # Calculate achievement after target is set
     won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
