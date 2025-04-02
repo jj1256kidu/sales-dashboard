@@ -1147,17 +1147,6 @@ def show_sales_team():
     
     # Sales Target Input and Display
     with m1:
-        target_col1, target_col2 = st.columns([2, 3])
-        with target_col1:
-            sales_target = st.number_input(
-                "",  # Empty label since we'll show it in the card
-                min_value=0,
-                value=5000,
-                step=100,
-                key="sales_target_input",
-                label_visibility="collapsed"
-            )
-        
         st.markdown(f"""
             <div style='
                 background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
@@ -1165,34 +1154,38 @@ def show_sales_team():
                 border-radius: 10px;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.1);
                 text-align: center;
-                height: 100%;
             '>
                 <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
                     🎯 Sales Target
                 </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Create the number input
+        sales_target = st.number_input(
+            "Set Target (Lacs)",
+            min_value=0,
+            value=5000,
+            step=100,
+            key="sales_target_input",
+            label_visibility="collapsed"
+        )
+        
+        # Display the formatted value
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+                padding: 10px;
+                border-radius: 0 0 10px 10px;
+                text-align: center;
+                margin-top: -20px;
+            '>
                 <div style='
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    gap: 10px;
-                    margin-top: 5px;
+                    color: white;
+                    font-size: 1.8em;
+                    font-weight: 800;
                 '>
-                    <div class="stNumberInput" style="
-                        background: rgba(255, 255, 255, 0.1);
-                        border-radius: 5px;
-                        padding: 5px;
-                        width: fit-content;
-                        margin: 0 auto;
-                    ">
-                        {target_col1.markdown('')}
-                    </div>
-                    <div style='
-                        color: white;
-                        font-size: 1.8em;
-                        font-weight: 800;
-                    '>
-                        ₹{sales_target}L
-                    </div>
+                    ₹{sales_target}L
                 </div>
             </div>
         """, unsafe_allow_html=True)
