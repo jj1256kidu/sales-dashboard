@@ -810,12 +810,12 @@ def show_sales_team():
     
     df = st.session_state.df.copy()
     
-    if 'Opportunities Assigned to' not in df.columns:
-        st.error("'Opportunities Assigned to' column not found in the dataset")
+    if 'Sales Owner' not in df.columns:
+        st.error("'Sales Owner' column not found in the dataset")
         return
     
     # Get unique team members
-    team_members = sorted(df['Opportunities Assigned to'].dropna().unique().tolist())
+    team_members = sorted(df['Sales Owner'].dropna().unique().tolist())
     
     # Sidebar team member selection
     with st.sidebar:
@@ -826,7 +826,7 @@ def show_sales_team():
         """, unsafe_allow_html=True)
         
         selected_member = st.selectbox(
-            "Select Team Member",
+            "Select Sales Owner",
             options=["All Team Members"] + team_members,
             key="team_member_filter"
         )
@@ -844,21 +844,21 @@ def show_sales_team():
     """, unsafe_allow_html=True)
     
     # Calculate team metrics
-    team_metrics = df.groupby('Opportunities Assigned to').agg({
+    team_metrics = df.groupby('Sales Owner').agg({
         'Amount': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
         'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
     }).reset_index()
     
-    team_metrics.columns = ['Team Member', 'Closed Amount', 'Closed Deals']
+    team_metrics.columns = ['Sales Owner', 'Closed Amount', 'Closed Deals']
     
     # Calculate total pipeline amount (excluding closed won)
     pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
-    total_pipeline = pipeline_df.groupby('Opportunities Assigned to')['Amount'].sum() / 100000
-    team_metrics['Total Pipeline'] = team_metrics['Team Member'].map(total_pipeline)
+    total_pipeline = pipeline_df.groupby('Sales Owner')['Amount'].sum() / 100000
+    team_metrics['Total Pipeline'] = team_metrics['Sales Owner'].map(total_pipeline)
     
     # Calculate total deals (excluding closed won)
-    total_deals = pipeline_df.groupby('Opportunities Assigned to').size()
-    team_metrics['Pipeline Deals'] = team_metrics['Team Member'].map(total_deals)
+    total_deals = pipeline_df.groupby('Sales Owner').size()
+    team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(total_deals)
     
     # Calculate win rate
     team_metrics['Win Rate'] = (team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100).round(1)
@@ -918,7 +918,7 @@ def show_sales_team():
     summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x:.1f}%")
     
     st.dataframe(
-        summary_data[['Team Member', 'Closed Amount', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals', 'Win Rate']],
+        summary_data[['Sales Owner', 'Closed Amount', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals', 'Win Rate']],
         use_container_width=True
     )
     
@@ -927,10 +927,10 @@ def show_sales_team():
         st.markdown(f"### {st.session_state.selected_team_member}'s Opportunities")
         
         # Filter data for selected team member
-        member_deals = df[df['Opportunities Assigned to'] == st.session_state.selected_team_member].copy()
+        member_deals = df[df['Sales Owner'] == st.session_state.selected_team_member].copy()
         
         # Add search and filter options
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         
         with col1:
             search = st.text_input("Search Deals", placeholder="Search in any field...")
@@ -941,6 +941,12 @@ def show_sales_team():
                 options=["All Stages"] + sorted(member_deals['Sales Stage'].unique().tolist())
             )
         
+        with col3:
+            practice_filter = st.selectbox(
+                "Filter by Practice",
+                options=["All Practices"] + sorted(member_deals['Practice'].unique().tolist())
+            )
+        
         # Apply filters
         if search:
             mask = np.column_stack([member_deals[col].astype(str).str.contains(search, case=False, na=False) 
@@ -949,6 +955,58 @@ def show_sales_team():
         
         if stage_filter != "All Stages":
             member_deals = member_deals[member_deals['Sales Stage'] == stage_filter]
+            
+        if practice_filter != "All Practices":
+            member_deals = member_deals[member_deals['Practice'] == practice_filter]
+        
+        # Calculate member-specific metrics
+        member_metrics = {
+            'Total Pipeline': member_deals[~member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
+            'Closed Won': member_deals[member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
+            'Pipeline Deals': len(member_deals[~member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]),
+            'Closed Deals': len(member_deals[member_deals['Sales Stage'].str.contains('Won', case=False, na=False)])
+        }
+        
+        # Display member metrics
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.markdown(f"""
+                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                    <div class='metric-label'>Pipeline Value</div>
+                    <div class='metric-value'>₹{member_metrics['Total Pipeline']:,.1f}L</div>
+                    <div style='color: #666; font-size: 0.9em;'>Active opportunities</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            st.markdown(f"""
+                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                    <div class='metric-label'>Closed Won</div>
+                    <div class='metric-value'>₹{member_metrics['Closed Won']:,.1f}L</div>
+                    <div style='color: #666; font-size: 0.9em;'>Won opportunities</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            win_rate = (member_metrics['Closed Deals'] / (member_metrics['Closed Deals'] + member_metrics['Pipeline Deals']) * 100) if (member_metrics['Closed Deals'] + member_metrics['Pipeline Deals']) > 0 else 0
+            st.markdown(f"""
+                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                    <div class='metric-label'>Win Rate</div>
+                    <div class='metric-value'>{win_rate:.1f}%</div>
+                    <div style='color: #666; font-size: 0.9em;'>{member_metrics['Closed Deals']:,} won</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col4:
+            avg_deal_size = member_metrics['Closed Won'] / member_metrics['Closed Deals'] if member_metrics['Closed Deals'] > 0 else 0
+            st.markdown(f"""
+                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                    <div class='metric-label'>Avg Deal Size</div>
+                    <div class='metric-value'>₹{avg_deal_size:,.1f}L</div>
+                    <div style='color: #666; font-size: 0.9em;'>Per won deal</div>
+                </div>
+            """, unsafe_allow_html=True)
         
         # Display filtered deals
         st.dataframe(member_deals, use_container_width=True)
