@@ -288,7 +288,7 @@ def show_overview():
             "Annual Sales Target (Lakhs)",
             value=float(st.session_state.sales_target),
             step=1.0,
-            format="%.2f",
+            format="%d",
             help="Enter the annual sales target in Lakhs (1L = ₹100,000)"
         )
         if new_target != st.session_state.sales_target:
@@ -311,7 +311,7 @@ def show_overview():
                 <div style='background: #e74c3c; height: 40px; border-radius: 20px; overflow: hidden; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);'>
                     <div style='background: #2ecc71; height: 100%; width: {min(100, achievement_pct)}%; transition: width 0.5s ease-in-out;'></div>
                     <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 600; font-size: 1.2em; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);'>
-                        {achievement_pct:.1f}% Complete
+                        {int(achievement_pct)}% Complete
                     </div>
                 </div>
                 <div style='display: flex; justify-content: space-between; margin-top: 5px; color: #666; font-size: 1.1em; font-weight: 400;'>
@@ -372,7 +372,7 @@ def show_overview():
                     x=practice_metrics['Practice'],
                     y=practice_metrics['Total Pipeline'],
                     name='Pipeline',
-                    text=practice_metrics['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L"),
+                    text=practice_metrics['Total Pipeline'].apply(lambda x: f"₹{int(x)}L"),
                     textposition='outside',
                     textfont=dict(size=16, color='#4A90E2', family='Segoe UI', weight='bold'),
                     marker_color='#4A90E2',
@@ -384,7 +384,7 @@ def show_overview():
                     x=practice_metrics['Practice'],
                     y=practice_metrics['Closed Amount'],
                     name='Closed Won',
-                    text=practice_metrics['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L"),
+                    text=practice_metrics['Closed Amount'].apply(lambda x: f"₹{int(x)}L"),
                     textposition='outside',
                     textfont=dict(size=16, color='#2ecc71', family='Segoe UI', weight='bold'),
                     marker_color='#2ecc71',
@@ -529,7 +529,7 @@ def show_overview():
                 st.markdown(f"""
                     <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                         <div class='metric-label'>Total Pipeline</div>
-                        <div class='metric-value'>₹{total_pipeline:,.1f}L</div>
+                        <div class='metric-value'>₹{int(total_pipeline)}L</div>
                         <div style='color: #666; font-size: 0.9em;'>Active pipeline value</div>
                     </div>
                 """, unsafe_allow_html=True)
@@ -539,7 +539,7 @@ def show_overview():
                 st.markdown(f"""
                     <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                         <div class='metric-label'>Pipeline Deals</div>
-                        <div class='metric-value'>{total_deals:,}</div>
+                        <div class='metric-value'>{int(total_deals)}</div>
                         <div style='color: #666; font-size: 0.9em;'>Active opportunities</div>
                     </div>
                 """, unsafe_allow_html=True)
@@ -550,8 +550,8 @@ def show_overview():
                 st.markdown(f"""
                     <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                         <div class='metric-label'>Win Rate</div>
-                        <div class='metric-value'>{win_rate:.1f}%</div>
-                        <div style='color: #666; font-size: 0.9em;'>{total_won:,} won</div>
+                        <div class='metric-value'>{int(win_rate)}%</div>
+                        <div style='color: #666; font-size: 0.9em;'>{int(total_won)} won</div>
                     </div>
                 """, unsafe_allow_html=True)
             
@@ -560,7 +560,7 @@ def show_overview():
                 st.markdown(f"""
                     <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                         <div class='metric-label'>Avg Deal Size</div>
-                        <div class='metric-value'>₹{avg_deal_size:,.1f}L</div>
+                        <div class='metric-value'>₹{int(avg_deal_size)}L</div>
                         <div style='color: #666; font-size: 0.9em;'>Per won deal</div>
                     </div>
                 """, unsafe_allow_html=True)
@@ -571,9 +571,9 @@ def show_overview():
             summary_data['Win Rate'] = (summary_data['Closed Deals'] / (summary_data['Closed Deals'] + summary_data['Pipeline Deals']) * 100).round(1)
             
             # Format the summary table
-            summary_data['Closed Amount'] = summary_data['Closed Amount'].apply(lambda x: f"₹{x:,.1f}L")
-            summary_data['Total Pipeline'] = summary_data['Total Pipeline'].apply(lambda x: f"₹{x:,.1f}L")
-            summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x:.1f}%")
+            summary_data['Closed Amount'] = summary_data['Closed Amount'].apply(lambda x: f"₹{int(x)}L")
+            summary_data['Total Pipeline'] = summary_data['Total Pipeline'].apply(lambda x: f"₹{int(x)}L")
+            summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{int(x)}%")
             
             st.dataframe(
                 summary_data[['Practice', 'Closed Amount', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals', 'Win Rate']],
@@ -620,8 +620,8 @@ def show_overview():
         # First show the summary table
         st.markdown("### Focus Areas Summary")
         summary_data = focus_metrics.copy()
-        summary_data['Total Amount'] = summary_data['Total Amount'].apply(lambda x: f"₹{x:,.1f}L")
-        summary_data['Share %'] = summary_data['Share %'].apply(lambda x: f"{x:.1f}%")
+        summary_data['Total Amount'] = summary_data['Total Amount'].apply(lambda x: f"₹{int(x)}L")
+        summary_data['Share %'] = summary_data['Share %'].apply(lambda x: f"{int(x)}%")
         
         # Reset index to start from 1 and make it visible
         summary_data = summary_data.reset_index(drop=True)
@@ -639,7 +639,7 @@ def show_overview():
             values=focus_metrics['Total Amount'],
             hole=.4,
             textinfo='label+percent+value',
-            texttemplate='%{label}<br>%{percent}<br>₹%{value:,.1f}L',
+            texttemplate='%{label}<br>%{percent}<br>' + format_amount('%{value}'),
             textfont=dict(size=14, family='Segoe UI', weight='bold'),
             marker=dict(colors=['#4A90E2', '#2ecc71', '#e74c3c', '#f1c40f', '#9b59b6', '#1abc9c', '#e67e22', '#34495e'])
         )])
@@ -666,7 +666,7 @@ def show_overview():
                 borderwidth=1
             ),
             annotations=[dict(
-                text=f"Total: ₹{total_amount:,.1f}L",
+                text=f"Total: ₹{int(total_amount)}L",
                 font=dict(size=16, family='Segoe UI', weight='bold'),
                 showarrow=False,
                 x=0.5,
@@ -726,7 +726,7 @@ def show_overview():
             name=deal_type,
             line=dict(color=color, width=3),
             marker=dict(size=8, color=color),
-            text=monthly_data['Amount'].apply(lambda x: f"₹{x:,.1f}L"),
+            text=monthly_data['Amount'].apply(lambda x: f"₹{int(x)}L"),
             textposition='top center',
             textfont=dict(size=12, family='Segoe UI', weight='bold')
         ))
@@ -776,7 +776,7 @@ def show_overview():
             st.markdown(f"""
                 <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                     <div class='metric-label'>Total Value</div>
-                    <div class='metric-value'>₹{total_value:,.1f}L</div>
+                    <div class='metric-value'>₹{int(total_value)}L</div>
                     <div style='color: #666; font-size: 0.9em;'>Overall</div>
                 </div>
             """, unsafe_allow_html=True)
@@ -786,7 +786,7 @@ def show_overview():
             st.markdown(f"""
                 <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                     <div class='metric-label'>Monthly Average</div>
-                    <div class='metric-value'>₹{avg_monthly:,.1f}L</div>
+                    <div class='metric-value'>₹{int(avg_monthly)}L</div>
                     <div style='color: #666; font-size: 0.9em;'>Per month</div>
                 </div>
             """, unsafe_allow_html=True)
@@ -796,7 +796,7 @@ def show_overview():
             st.markdown(f"""
                 <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                     <div class='metric-label'>Total Deals</div>
-                    <div class='metric-value'>{total_deals:,}</div>
+                    <div class='metric-value'>{int(total_deals)}</div>
                     <div style='color: #666; font-size: 0.9em;'>Number of deals</div>
                 </div>
             """, unsafe_allow_html=True)
@@ -895,7 +895,7 @@ def show_sales_team():
         st.markdown(f"""
             <div style='{metric_style.format(gradient="#2193b0 0%, #6dd5ed 100%")}'>
                 <div style='{label_style}'>Pipeline Value</div>
-                <div style='{metric_text_style}'>₹{metrics['Total Pipeline']:,.1f}L</div>
+                <div style='{metric_text_style}'>{format_amount(metrics['Total Pipeline'])}</div>
                 <div style='{sublabel_style}'>Active opportunities</div>
             </div>
         """, unsafe_allow_html=True)
@@ -904,7 +904,7 @@ def show_sales_team():
         st.markdown(f"""
             <div style='{metric_style.format(gradient="#11998e 0%, #38ef7d 100%")}'>
                 <div style='{label_style}'>Closed Won</div>
-                <div style='{metric_text_style}'>₹{metrics['Closed Won']:,.1f}L</div>
+                <div style='{metric_text_style}'>{format_amount(metrics['Closed Won'])}</div>
                 <div style='{sublabel_style}'>Won opportunities</div>
             </div>
         """, unsafe_allow_html=True)
@@ -914,8 +914,8 @@ def show_sales_team():
         st.markdown(f"""
             <div style='{metric_style.format(gradient="#4e54c8 0%, #8f94fb 100%")}'>
                 <div style='{label_style}'>Win Rate</div>
-                <div style='{metric_text_style}'>{win_rate}%</div>
-                <div style='{sublabel_style}'>{metrics['Closed Deals']:,} won</div>
+                <div style='{metric_text_style}'>{format_percentage(win_rate)}</div>
+                <div style='{sublabel_style}'>{format_number(metrics['Closed Deals'])} won</div>
             </div>
         """, unsafe_allow_html=True)
     
@@ -924,7 +924,7 @@ def show_sales_team():
         st.markdown(f"""
             <div style='{metric_style.format(gradient="#f12711 0%, #f5af19 100%")}'>
                 <div style='{label_style}'>Avg Deal Size</div>
-                <div style='{metric_text_style}'>₹{avg_deal_size:,.1f}L</div>
+                <div style='{metric_text_style}'>{format_amount(avg_deal_size)}</div>
                 <div style='{sublabel_style}'>Per won deal</div>
             </div>
         """, unsafe_allow_html=True)
