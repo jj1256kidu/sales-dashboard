@@ -6,6 +6,25 @@ from datetime import datetime
 import numpy as np
 import io
 
+# Format helper functions
+def format_amount(x):
+    try:
+        return f"₹{int(float(x))}L"
+    except:
+        return "₹0L"
+
+def format_percentage(x):
+    try:
+        return f"{int(float(x))}%"
+    except:
+        return "0%"
+
+def format_number(x):
+    try:
+        return f"{int(float(x)):,}"
+    except:
+        return "0"
+
 # Set page config
 st.set_page_config(
     page_title="Sales Dashboard",
@@ -29,6 +48,8 @@ if 'reset_triggered' not in st.session_state:
     st.session_state.reset_triggered = False
 if 'selected_team_member' not in st.session_state:
     st.session_state.selected_team_member = None
+if 'sales_target' not in st.session_state:
+    st.session_state.sales_target = 0.0
 
 # Custom CSS for modern styling
 st.markdown("""
@@ -286,9 +307,9 @@ def show_overview():
         # Manual target input
         new_target = st.number_input(
             "Annual Sales Target (Lakhs)",
-            value=float(st.session_state.sales_target),
+            value=st.session_state.sales_target,
             step=1.0,
-            format="%d",
+            format="%.0f",
             help="Enter the annual sales target in Lakhs (1L = ₹100,000)"
         )
         if new_target != st.session_state.sales_target:
