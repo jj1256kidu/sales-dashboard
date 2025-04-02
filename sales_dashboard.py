@@ -308,9 +308,14 @@ def filter_dataframe(df, filters):
     
     # Apply probability filter
     if filters.get('probability_filter') != "All Probability":
-        prob_range = filters['probability_filter'].split("-")
-        min_prob = float(prob_range[0].rstrip("%"))
-        max_prob = float(prob_range[1].rstrip("%"))
+        if filters['probability_filter'] == "Custom Range":
+            prob_range = filters['custom_prob_range'].split("-")
+            min_prob = float(prob_range[0])
+            max_prob = float(prob_range[1].rstrip("%"))
+        else:
+            prob_range = filters['probability_filter'].split("-")
+            min_prob = float(prob_range[0])
+            max_prob = float(prob_range[1].rstrip("%"))
         filtered_df = filtered_df[
             (filtered_df['Probability_Num'] >= min_prob) & 
             (filtered_df['Probability_Num'] <= max_prob)
@@ -1082,8 +1087,18 @@ def show_sales_team():
     with col5:
         filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
     with col6:
-        probability_ranges = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%"]
-        filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_ranges)
+        # Probability filter with custom range option
+        probability_options = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%", "Custom Range"]
+        filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_options)
+        
+        # Show custom range inputs when "Custom Range" is selected
+        if filters['probability_filter'] == "Custom Range":
+            col6a, col6b = st.columns(2)
+            with col6a:
+                min_prob = st.number_input("Min %", min_value=0, max_value=100, value=0, step=1)
+            with col6b:
+                max_prob = st.number_input("Max %", min_value=0, max_value=100, value=100, step=1)
+            filters['custom_prob_range'] = f"{min_prob}-{max_prob}%"
     with col7:
         filters['status_filter'] = st.selectbox("🎯 Status", options=["All Status"] + sorted(df['Sales Stage'].dropna().unique().tolist()))
     with col8:
