@@ -554,10 +554,10 @@ def show_overview():
     else:
         st.error("Required data fields (Sales Stage, Amount) not found in the dataset")
 
-    # V. Focus Areas
+    # V. KritiKal Focus Areas
     st.markdown("""
         <div style='background: linear-gradient(90deg, #9b59b6 0%, #8e44ad 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
-            <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Focus Areas</h3>
+            <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>KritiKal Focus Areas</h3>
         </div>
     """, unsafe_allow_html=True)
     
@@ -646,6 +646,131 @@ def show_overview():
         st.plotly_chart(fig_focus, use_container_width=True)
     else:
         st.info("KritiKal Focus Areas column not found in the dataset")
+
+    # V. Monthly Pipeline Trend
+    st.markdown("""
+        <div style='background: linear-gradient(90deg, #00b4db 0%, #0083b0 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
+            <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Monthly Pipeline Trend</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    if 'Expected Close Date' in df.columns and 'Amount' in df.columns and 'Sales Stage' in df.columns:
+        # Convert Expected Close Date to datetime
+        df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
+        
+        # Create a selectbox for deal type
+        deal_type = st.selectbox(
+            "Select Deal Type",
+            ["🌊 Pipeline", "🟢 Closed Won", "📦 All Deals"],
+            index=0
+        )
+        
+        # Filter data based on selection
+        if deal_type == "🌊 Pipeline":
+            filtered_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
+            color = '#00b4db'
+        elif deal_type == "🟢 Closed Won":
+            filtered_df = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
+            color = '#2ecc71'
+        else:  # All Deals
+            filtered_df = df
+            color = '#9b59b6'
+        
+        # Group by month and calculate metrics
+        monthly_data = filtered_df.groupby(filtered_df['Expected Close Date'].dt.to_period('M')).agg({
+            'Amount': 'sum',
+            'Sales Stage': 'count'
+        }).reset_index()
+        
+        monthly_data['Expected Close Date'] = monthly_data['Expected Close Date'].astype(str)
+        monthly_data['Amount'] = monthly_data['Amount'] / 100000  # Convert to Lakhs
+        
+        # Create line chart
+        fig_trend = go.Figure()
+        
+        fig_trend.add_trace(go.Scatter(
+            x=monthly_data['Expected Close Date'],
+            y=monthly_data['Amount'],
+            mode='lines+markers',
+            name=deal_type,
+            line=dict(color=color, width=3),
+            marker=dict(size=8, color=color),
+            text=monthly_data['Amount'].apply(lambda x: f"₹{x:,.1f}L"),
+            textposition='top center',
+            textfont=dict(size=12, family='Segoe UI', weight='bold')
+        ))
+        
+        fig_trend.update_layout(
+            title=dict(
+                text=f"{deal_type} Trend",
+                font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
+                x=0.5,
+                y=0.95,
+                xanchor='center',
+                yanchor='top'
+            ),
+            height=500,
+            showlegend=False,
+            xaxis_title=dict(
+                text="Month",
+                font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                standoff=15
+            ),
+            yaxis_title=dict(
+                text="Amount (Lakhs)",
+                font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                standoff=15
+            ),
+            font=dict(size=14, family='Segoe UI'),
+            xaxis=dict(
+                tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
+                gridcolor='rgba(0, 0, 0, 0.1)'
+            ),
+            yaxis=dict(
+                tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
+                gridcolor='rgba(0, 0, 0, 0.1)'
+            ),
+            plot_bgcolor='white',
+            paper_bgcolor='white',
+            margin=dict(t=80, b=40, l=40, r=40)
+        )
+        
+        st.plotly_chart(fig_trend, use_container_width=True)
+        
+        # Add summary metrics
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            total_value = monthly_data['Amount'].sum()
+            st.markdown(f"""
+                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                    <div class='metric-label'>Total Value</div>
+                    <div class='metric-value'>₹{total_value:,.1f}L</div>
+                    <div style='color: #666; font-size: 0.9em;'>Overall</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col2:
+            avg_monthly = monthly_data['Amount'].mean()
+            st.markdown(f"""
+                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                    <div class='metric-label'>Monthly Average</div>
+                    <div class='metric-value'>₹{avg_monthly:,.1f}L</div>
+                    <div style='color: #666; font-size: 0.9em;'>Per month</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with col3:
+            total_deals = monthly_data['Sales Stage'].sum()
+            st.markdown(f"""
+                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                    <div class='metric-label'>Total Deals</div>
+                    <div class='metric-value'>{total_deals:,}</div>
+                    <div style='color: #666; font-size: 0.9em;'>Number of deals</div>
+                </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.info("Required columns (Expected Close Date, Amount, Sales Stage) not found in the dataset")
 
 def show_detailed():
     if st.session_state.df is None:
