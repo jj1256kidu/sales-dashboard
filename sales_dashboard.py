@@ -980,39 +980,42 @@ def show_sales_team():
         padding: 20px;
         background: linear-gradient(135deg, {gradient});
         border-radius: 15px;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         margin: 10px 5px;
     """
     
     metric_text_style = """
         color: #FFFFFF;
         font-family: 'Segoe UI', sans-serif;
-        font-size: 2.4em;
-        font-weight: 700;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        font-size: 2.6em;
+        font-weight: 800;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
         margin: 15px 0;
         letter-spacing: 0.5px;
+        -webkit-font-smoothing: antialiased;
     """
     
     label_style = """
         color: #FFFFFF;
         font-family: 'Segoe UI', sans-serif;
-        font-size: 1.4em;
-        font-weight: 700;
+        font-size: 1.5em;
+        font-weight: 800;
         margin-bottom: 12px;
         text-transform: uppercase;
         letter-spacing: 1px;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        -webkit-font-smoothing: antialiased;
     """
     
     sublabel_style = """
         color: #FFFFFF;
         font-family: 'Segoe UI', sans-serif;
-        font-size: 1.1em;
+        font-size: 1.2em;
         font-weight: 700;
         margin-top: 8px;
         letter-spacing: 0.5px;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        -webkit-font-smoothing: antialiased;
     """
     
     with col1:
