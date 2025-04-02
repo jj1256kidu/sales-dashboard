@@ -479,36 +479,27 @@ def show_overview():
     if 'sales_target' not in st.session_state:
         st.session_state.sales_target = 5000.0
 
-    # Sales Target Header Section with loading indicator
-    with st.spinner('Loading Sales Target...'):
-        st.markdown("### 🎯 Annual Sales Target")
+    # Sales Target Header Section
+    st.markdown("### 🎯 Annual Sales Target")
 
-        # Manual target input with error handling
-        try:
-            new_target = st.number_input(
-                "Annual Sales Target (Lakhs)",
-                value=float(st.session_state.sales_target),
-                step=1.0,
-                format="%.2f",
-                help="Enter the annual sales target in Lakhs (1L = ₹100,000)",
-                key="target_input"
-            )
-            
-            # Update session state if value changes
-            if new_target != st.session_state.sales_target:
-                st.session_state.sales_target = new_target
-                st.rerun()
-                
-            # Show current target value
-            st.markdown(f"""
-                <div style='text-align: center; font-size: 32px; font-weight: 700; color: red;'>
-                    ₹{new_target:,.2f}L
-                </div>
-            """, unsafe_allow_html=True)
-            
-        except Exception as e:
-            st.error(f"Error updating target: {str(e)}")
-            st.session_state.sales_target = 5000.0  # Reset to default if error occurs
+    # Editable input
+    new_target = st.number_input(
+        "Annual Sales Target (Lakhs)",
+        value=float(st.session_state.sales_target),
+        step=1.0,
+        format="%.2f"
+    )
+
+    # Display the amount below
+    st.markdown(
+        f"<div style='text-align: right; font-size: 1.8em; font-weight: bold; color: red;'>₹{new_target:,.2f}L</div>",
+        unsafe_allow_html=True
+    )
+
+    # Save the new input
+    if new_target != st.session_state.sales_target:
+        st.session_state.sales_target = new_target
+        st.rerun()
 
     # Calculate achievement after target is set
     won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
@@ -1065,38 +1056,29 @@ def show_sales_team():
 
     # Initialize target if not in session state
     if 'sales_target' not in st.session_state:
-        st.session_state.sales_target = 0
+        st.session_state.sales_target = 5000.0
 
-    # Sales Target Header Section with loading indicator
-    with st.spinner('Loading Sales Target...'):
-        st.markdown("### 🎯 Annual Sales Target")
+    # Sales Target Header Section
+    st.markdown("### 🎯 Annual Sales Target")
 
-        # Manual target input with error handling
-        try:
-            new_target = st.number_input(
-                "Annual Sales Target (Lakhs)",
-                value=float(st.session_state.sales_target),
-                step=1.0,
-                format="%.2f",
-                help="Enter the annual sales target in Lakhs (1L = ₹100,000)",
-                key="target_input"
-            )
-            
-            # Update session state if value changes
-            if new_target != st.session_state.sales_target:
-                st.session_state.sales_target = new_target
-                st.rerun()
-                
-            # Show current target value
-            st.markdown(f"""
-                <div style='text-align: center; font-size: 32px; font-weight: 700; color: red;'>
-                    ₹{new_target:,.2f}L
-                </div>
-            """, unsafe_allow_html=True)
-            
-        except Exception as e:
-            st.error(f"Error updating target: {str(e)}")
-            st.session_state.sales_target = 5000.0  # Reset to default if error occurs
+    # Editable input
+    new_target = st.number_input(
+        "Annual Sales Target (Lakhs)",
+        value=float(st.session_state.sales_target),
+        step=1.0,
+        format="%.2f"
+    )
+
+    # Display the amount below
+    st.markdown(
+        f"<div style='text-align: right; font-size: 1.8em; font-weight: bold; color: red;'>₹{new_target:,.2f}L</div>",
+        unsafe_allow_html=True
+    )
+
+    # Save the new input
+    if new_target != st.session_state.sales_target:
+        st.session_state.sales_target = new_target
+        st.rerun()
 
     # Calculate metrics once
     metrics = calculate_team_metrics(df)
