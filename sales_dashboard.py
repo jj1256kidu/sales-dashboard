@@ -1168,31 +1168,6 @@ def show_sales_team():
     
     # Sales Target Input and Display
     with m1:
-        st.markdown("""
-            <style>
-                /* Custom styling for number input */
-                [data-testid="stNumberInput"] {
-                    position: relative;
-                    background: rgba(255, 255, 255, 0.1);
-                    border-radius: 5px;
-                    padding: 0;
-                }
-                [data-testid="stNumberInput"] > div > div > input {
-                    color: white !important;
-                    font-size: 1.8em !important;
-                    font-weight: 800 !important;
-                    text-align: center !important;
-                    background: transparent !important;
-                    border: none !important;
-                    padding: 0 !important;
-                }
-                /* Hide the increment/decrement buttons */
-                [data-testid="stNumberInput"] > div > div > div {
-                    display: none !important;
-                }
-            </style>
-        """, unsafe_allow_html=True)
-        
         st.markdown(f"""
             <div style='
                 background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
@@ -1204,37 +1179,33 @@ def show_sales_team():
                 <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
                     🎯 Sales Target
                 </div>
-                <div style='position: relative;'>
-                    <div style='position: absolute; left: 50%; transform: translateX(-50%); z-index: 1;'>
-            """, unsafe_allow_html=True)
+            </div>
+        """, unsafe_allow_html=True)
         
-        # Get the sales target value from session state or set default
-        if 'sales_target' not in st.session_state:
-            st.session_state.sales_target = 5000
-        
+        # Simple number input for sales target
         sales_target = st.number_input(
             "",
             min_value=0,
-            value=st.session_state.sales_target,
-            step=100,
-            key="sales_target_input",
+            value=int(st.session_state.sales_target),
+            step=1000,
+            format="%d",
             label_visibility="collapsed"
         )
         
-        # Update session state with new value
+        # Update session state
         st.session_state.sales_target = sales_target
         
+        # Display the value
         st.markdown(f"""
-                    </div>
-                    <div style='
-                        color: white;
-                        font-size: 1.8em;
-                        font-weight: 800;
-                        visibility: hidden;
-                    '>₹{sales_target}L</div>
-                </div>
-                <div style='color: rgba(255,255,255,0.9); font-size: 0.9em; margin-top: 8px;'>
-                    Click to edit target
+            <div style='
+                background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+                padding: 10px;
+                border-radius: 0 0 10px 10px;
+                text-align: center;
+                margin-top: -20px;
+            '>
+                <div style='color: white; font-size: 0.9em; font-weight: 500;'>
+                    Click to edit
                 </div>
             </div>
         """, unsafe_allow_html=True)
