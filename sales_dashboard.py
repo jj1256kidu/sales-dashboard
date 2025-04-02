@@ -1032,11 +1032,17 @@ def show_sales_team():
         -webkit-font-smoothing: antialiased;
     """
     
+    # Calculate total metrics
+    total_pipeline = metrics['Current Pipeline'].sum()
+    total_closed = metrics['Closed Won'].sum()
+    total_closed_deals = metrics['Closed Deals'].sum()
+    total_pipeline_deals = metrics['Pipeline Deals'].sum()
+    
     with col1:
         st.markdown(f"""
             <div style='{metric_style.format(gradient="#2193b0 0%, #6dd5ed 100%")}'>
                 <div style='{label_style}'>Pipeline Value</div>
-                <div style='{metric_text_style}'>{format_amount(metrics['Total Pipeline'])}</div>
+                <div style='{metric_text_style}'>₹{int(total_pipeline)}L</div>
                 <div style='{sublabel_style}'>Active opportunities</div>
             </div>
         """, unsafe_allow_html=True)
@@ -1045,27 +1051,27 @@ def show_sales_team():
         st.markdown(f"""
             <div style='{metric_style.format(gradient="#11998e 0%, #38ef7d 100%")}'>
                 <div style='{label_style}'>Closed Won</div>
-                <div style='{metric_text_style}'>{format_amount(metrics['Closed Won'])}</div>
+                <div style='{metric_text_style}'>₹{int(total_closed)}L</div>
                 <div style='{sublabel_style}'>Won opportunities</div>
             </div>
         """, unsafe_allow_html=True)
     
     with col3:
-        win_rate = round((metrics['Closed Deals'] / (metrics['Closed Deals'] + metrics['Pipeline Deals']) * 100), 1) if (metrics['Closed Deals'] + metrics['Pipeline Deals']) > 0 else 0
+        win_rate = round((total_closed_deals / (total_closed_deals + total_pipeline_deals) * 100), 1) if (total_closed_deals + total_pipeline_deals) > 0 else 0
         st.markdown(f"""
             <div style='{metric_style.format(gradient="#4e54c8 0%, #8f94fb 100%")}'>
                 <div style='{label_style}'>Win Rate</div>
-                <div style='{metric_text_style}'>{format_percentage(win_rate)}</div>
-                <div style='{sublabel_style}'>{format_number(metrics['Closed Deals'])} won</div>
+                <div style='{metric_text_style}'>{int(win_rate)}%</div>
+                <div style='{sublabel_style}'>{int(total_closed_deals)} won</div>
             </div>
         """, unsafe_allow_html=True)
     
     with col4:
-        avg_deal_size = round(metrics['Closed Won'] / metrics['Closed Deals'], 1) if metrics['Closed Deals'] > 0 else 0
+        avg_deal_size = round(total_closed / total_closed_deals, 1) if total_closed_deals > 0 else 0
         st.markdown(f"""
             <div style='{metric_style.format(gradient="#f12711 0%, #f5af19 100%")}'>
                 <div style='{label_style}'>Avg Deal Size</div>
-                <div style='{metric_text_style}'>{format_amount(avg_deal_size)}</div>
+                <div style='{metric_text_style}'>₹{int(avg_deal_size)}L</div>
                 <div style='{sublabel_style}'>Per won deal</div>
             </div>
         """, unsafe_allow_html=True)
