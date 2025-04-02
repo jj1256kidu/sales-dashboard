@@ -1060,38 +1060,6 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
 
-    # Initialize target if not in session state
-    if 'sales_target' not in st.session_state:
-        st.session_state.sales_target = 5000.0
-
-    # Sales Target Header Section
-    st.markdown("### 🎯 Annual Sales Target")
-
-    # Editable number input
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        new_target = st.number_input(
-            "Enter Target (in Lakhs)", 
-            value=float(st.session_state.get('sales_target', 5000.0)), 
-            format="%.2f",
-            label_visibility="collapsed",
-            key="sales_team_target_input"
-        )
-
-    # Save it to session state if changed
-    if new_target != st.session_state.get('sales_target', 0):
-        st.session_state.sales_target = new_target
-        st.rerun()
-
-    # Show target value as bold ₹X,XXX.00L
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown(f"""
-            <div style='text-align: center; font-size: 32px; font-weight: 700; color: red;'>
-                ₹{new_target:,.2f}L
-            </div>
-        """, unsafe_allow_html=True)
-
     # Calculate metrics once
     metrics = calculate_team_metrics(df)
     
