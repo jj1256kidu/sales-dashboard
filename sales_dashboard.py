@@ -1045,8 +1045,9 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
 
-    # Sales Owner and Search in one row
-    col1, col2 = st.columns(2)
+    # All filters in one row
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    
     with col1:
         filters = {
             'selected_member': st.selectbox(
@@ -1056,52 +1057,27 @@ def show_sales_team():
             )
         }
     with col2:
-        filters['search'] = st.text_input("🔍 Search Deals", placeholder="Search in any field...")
-
-    # Time Period Filters
-    st.markdown("""
-        <div style='padding: 10px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 10px 0;'>
-            <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>⏰ Time Period</h4>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
+        filters['search'] = st.text_input("🔍 Search", placeholder="Search...")
+    with col3:
         # Define Indian fiscal year order
         fiscal_order = ['April', 'May', 'June', 'July', 'August', 'September', 
                        'October', 'November', 'December', 'January', 'February', 'March']
-        
-        # Get available months and sort them according to fiscal order
         available_months = df['Month'].dropna().unique().tolist()
         available_months.sort(key=lambda x: fiscal_order.index(x) if x in fiscal_order else len(fiscal_order))
-        
         filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months)
-    with col2:
-        filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
-    with col3:
-        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
     with col4:
-        filters['practice_filter'] = st.selectbox("🏢 Practice", options=["All Practices"] + sorted(df['Practice'].dropna().unique().tolist()))
-
-    # Deal Status Filters
-    st.markdown("""
-        <div style='padding: 10px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 10px 0;'>
-            <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>📦 Deal Status</h4>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
+        filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
+    with col5:
+        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
+    with col6:
         probability_ranges = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%"]
         filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_ranges)
-    with col2:
+    with col7:
         status_values = sorted(df['Sales Stage'].dropna().unique().tolist())
         filters['status_filter'] = st.selectbox("🎯 Status", options=["All Status"] + status_values)
-    with col3:
+    with col8:
         focus_areas = sorted(df['KritiKal Focus Areas'].dropna().unique().tolist())
-        filters['focus_filter'] = st.selectbox("🎯 Focus Areas", options=["All Focus Areas"] + focus_areas)
-    with col4:
-        filters['type_filter'] = st.selectbox("🎯 Type", options=["All Types"] + sorted(df['Type'].dropna().unique().tolist()))
+        filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All Focus"] + focus_areas)
 
     # Apply all filters at once
     filtered_df = filter_dataframe(df, filters)
