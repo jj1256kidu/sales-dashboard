@@ -1076,20 +1076,22 @@ def show_sales_team():
         # Define Indian fiscal year order
         fiscal_order = ['April', 'May', 'June', 'July', 'August', 'September', 
                        'October', 'November', 'December', 'January', 'February', 'March']
-        available_months = sorted(df['_unique_months'].tolist())
+        
+        # Get available months and sort them according to fiscal order
+        available_months = df['Month'].dropna().unique().tolist()
         available_months.sort(key=lambda x: fiscal_order.index(x) if x in fiscal_order else len(fiscal_order))
         filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months)
     with col4:
         filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
     with col5:
-        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['_unique_years'].tolist()))
+        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
     with col6:
         probability_ranges = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%"]
         filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_ranges)
     with col7:
-        filters['status_filter'] = st.selectbox("🎯 Status", options=["All Status"] + sorted(df['_unique_status'].tolist()))
+        filters['status_filter'] = st.selectbox("🎯 Status", options=["All Status"] + sorted(df['Sales Stage'].dropna().unique().tolist()))
     with col8:
-        filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All Focus"] + sorted(df['_unique_focus'].tolist()))
+        filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All Focus"] + sorted(df['KritiKal Focus Areas'].dropna().unique().tolist()))
 
     # Apply all filters at once
     filtered_df = filter_dataframe(df, filters)
