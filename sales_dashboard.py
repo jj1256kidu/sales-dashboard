@@ -482,7 +482,7 @@ def show_overview():
     # Simple Sales Target Section
     st.markdown("### 🎯 Annual Sales Target")
     
-    # Add custom CSS to hide increment/decrement buttons
+    # Add custom CSS to hide increment/decrement buttons and style the input
     st.markdown("""
         <style>
         /* Hide increment/decrement buttons */
@@ -494,15 +494,30 @@ def show_overview():
             -webkit-appearance: none;
             margin: 0;
         }
+        /* Style the input field */
+        [data-testid="stNumberInput"] > div > div > input {
+            background: transparent !important;
+            border: none !important;
+            color: #FF6B6B !important;
+            font-size: 1.8em !important;
+            font-weight: 800 !important;
+            text-align: center !important;
+            padding: 0 !important;
+        }
+        /* Hide the label */
+        [data-testid="stNumberInput"] > div > div > label {
+            display: none !important;
+        }
         </style>
     """, unsafe_allow_html=True)
     
-    # Simple number input
+    # Clean number input
     new_target = st.number_input(
         "Annual Sales Target (Lakhs)",
         value=float(st.session_state.sales_target),
         step=1.0,
-        format="%.2f"
+        format="%.2f",
+        label_visibility="collapsed"
     )
 
     # Update session state if value changes
@@ -510,7 +525,7 @@ def show_overview():
         st.session_state.sales_target = new_target
         st.rerun()
 
-    # Simple display
+    # Display the amount below
     st.markdown(f"₹{new_target:,.2f}L")
 
     # Calculate achievement after target is set
@@ -1073,7 +1088,7 @@ def show_sales_team():
     # Simple Sales Target Section
     st.markdown("### 🎯 Annual Sales Target")
     
-    # Add custom CSS to hide increment/decrement buttons
+    # Add custom CSS to hide increment/decrement buttons and style the input
     st.markdown("""
         <style>
         /* Hide increment/decrement buttons */
@@ -1085,15 +1100,30 @@ def show_sales_team():
             -webkit-appearance: none;
             margin: 0;
         }
+        /* Style the input field */
+        [data-testid="stNumberInput"] > div > div > input {
+            background: transparent !important;
+            border: none !important;
+            color: #FF6B6B !important;
+            font-size: 1.8em !important;
+            font-weight: 800 !important;
+            text-align: center !important;
+            padding: 0 !important;
+        }
+        /* Hide the label */
+        [data-testid="stNumberInput"] > div > div > label {
+            display: none !important;
+        }
         </style>
     """, unsafe_allow_html=True)
     
-    # Simple number input
+    # Clean number input
     new_target = st.number_input(
         "Annual Sales Target (Lakhs)",
         value=float(st.session_state.sales_target),
         step=1.0,
-        format="%.2f"
+        format="%.2f",
+        label_visibility="collapsed"
     )
 
     # Update session state if value changes
@@ -1101,7 +1131,7 @@ def show_sales_team():
         st.session_state.sales_target = new_target
         st.rerun()
 
-    # Simple display
+    # Display the amount below
     st.markdown(f"₹{new_target:,.2f}L")
 
     # Calculate metrics once
