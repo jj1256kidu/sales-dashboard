@@ -65,7 +65,7 @@ if 'reset_triggered' not in st.session_state:
 if 'selected_team_member' not in st.session_state:
     st.session_state.selected_team_member = None
 if 'sales_target' not in st.session_state:
-    st.session_state.sales_target = 5000
+    st.session_state.sales_target = 5000.0
 
 # Custom CSS for modern styling
 st.markdown("""
@@ -477,62 +477,36 @@ def show_overview():
     
     # Initialize target if not in session state
     if 'sales_target' not in st.session_state:
-        st.session_state.sales_target = 5000
+        st.session_state.sales_target = 5000.0
 
-    # Custom CSS for number input styling
-    st.markdown("""
-        <style>
-            /* Hide increment buttons */
-            [data-testid="stNumberInput"] input[type="number"] {
-                -moz-appearance: textfield;
-            }
-            [data-testid="stNumberInput"] input[type="number"]::-webkit-outer-spin-button,
-            [data-testid="stNumberInput"] input[type="number"]::-webkit-inner-spin-button {
-                -webkit-appearance: none;
-                margin: 0;
-            }
-            
-            /* Style the input field */
-            [data-testid="stNumberInput"] {
-                background: transparent;
-            }
-            
-            /* Style the display value */
-            .target-value {
-                font-family: 'Segoe UI', sans-serif;
-                font-size: 2.5em;
-                font-weight: 800;
-                color: #FF6B6B;
-                text-align: center;
-                padding: 20px;
-                margin: 10px 0;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    # Sales Target Header Section
+    st.markdown("### 🎯 Annual Sales Target")
 
-    # Number input for sales target
-    new_target = st.number_input(
-        "",
-        min_value=0,
-        value=int(st.session_state.sales_target),
-        step=100,
-        format="%d",
-        label_visibility="collapsed",
-        key="overview_target_input"
-    )
+    # Editable number input
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        new_target = st.number_input(
+            "Enter Target (in Lakhs)", 
+            value=float(st.session_state.get('sales_target', 5000.0)), 
+            step=50.0, 
+            format="%.2f",
+            label_visibility="collapsed",
+            key="overview_target_input"
+        )
 
-    # Display the value in the specified format
-    st.markdown(f"""
-        <div class="target-value">
-            ₹{new_target:,.2f}L
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Update session state and trigger rerun if value changes
-    if new_target != st.session_state.sales_target:
+    # Save it to session state if changed
+    if new_target != st.session_state.get('sales_target', 0):
         st.session_state.sales_target = new_target
         st.rerun()
+
+    # Show target value as bold ₹X,XXX.00L
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown(f"""
+            <div style='text-align: center; font-size: 32px; font-weight: 700; color: red;'>
+                ₹{new_target:,.2f}L
+            </div>
+        """, unsafe_allow_html=True)
 
     # Calculate achievement after target is set
     won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
@@ -1087,63 +1061,38 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
 
-    # Initialize sales target in session state if not exists
+    # Initialize target if not in session state
     if 'sales_target' not in st.session_state:
-        st.session_state.sales_target = 5000
+        st.session_state.sales_target = 5000.0
 
-    # Custom CSS to hide increment buttons and style the input
-    st.markdown("""
-        <style>
-            /* Hide increment buttons */
-            [data-testid="stNumberInput"] input[type="number"] {
-                -moz-appearance: textfield;
-            }
-            [data-testid="stNumberInput"] input[type="number"]::-webkit-outer-spin-button,
-            [data-testid="stNumberInput"] input[type="number"]::-webkit-inner-spin-button {
-                -webkit-appearance: none;
-                margin: 0;
-            }
-            
-            /* Style the input field */
-            [data-testid="stNumberInput"] {
-                background: transparent;
-            }
-            
-            /* Style the display value */
-            .target-value {
-                font-family: 'Segoe UI', sans-serif;
-                font-size: 2.5em;
-                font-weight: 800;
-                color: #FF6B6B;
-                text-align: center;
-                padding: 20px;
-                margin: 10px 0;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-            }
-        </style>
-    """, unsafe_allow_html=True)
+    # Sales Target Header Section
+    st.markdown("### 🎯 Annual Sales Target")
 
-    # Number input for sales target
-    new_target = st.number_input(
-        "",
-        min_value=0,
-        value=int(st.session_state.sales_target),
-        step=100,
-        format="%d",
-        label_visibility="collapsed"
-    )
+    # Editable number input
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        new_target = st.number_input(
+            "Enter Target (in Lakhs)", 
+            value=float(st.session_state.get('sales_target', 5000.0)), 
+            step=50.0, 
+            format="%.2f",
+            label_visibility="collapsed",
+            key="sales_team_target_input"
+        )
 
-    # Display the value in the specified format
-    st.markdown(f"""
-        <div class="target-value">
-            ₹{new_target:,.2f}L
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Update session state and trigger rerun if value changes
-    if new_target != st.session_state.sales_target:
+    # Save it to session state if changed
+    if new_target != st.session_state.get('sales_target', 0):
         st.session_state.sales_target = new_target
         st.rerun()
+
+    # Show target value as bold ₹X,XXX.00L
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown(f"""
+            <div style='text-align: center; font-size: 32px; font-weight: 700; color: red;'>
+                ₹{new_target:,.2f}L
+            </div>
+        """, unsafe_allow_html=True)
 
     # Calculate metrics once
     metrics = calculate_team_metrics(df)
