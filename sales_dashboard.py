@@ -865,25 +865,30 @@ def show_sales_team():
     metric_text_style = """
         color: white;
         font-family: 'Segoe UI', sans-serif;
-        font-size: 1.8em;
-        font-weight: 600;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-        margin: 10px 0;
+        font-size: 2.2em;
+        font-weight: 700;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        margin: 15px 0;
+        letter-spacing: 0.5px;
     """
     
     label_style = """
         color: white;
         font-family: 'Segoe UI', sans-serif;
-        font-size: 1.1em;
-        font-weight: 500;
-        margin-bottom: 10px;
+        font-size: 1.3em;
+        font-weight: 600;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     """
     
     sublabel_style = """
-        color: rgba(255,255,255,0.9);
+        color: rgba(255,255,255,0.95);
         font-family: 'Segoe UI', sans-serif;
-        font-size: 0.9em;
-        margin-top: 5px;
+        font-size: 1em;
+        font-weight: 500;
+        margin-top: 8px;
+        letter-spacing: 0.5px;
     """
     
     with col1:
