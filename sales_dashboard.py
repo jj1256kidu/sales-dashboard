@@ -242,7 +242,7 @@ def show_overview():
     if 'Sales Stage' in df.columns and 'Amount' in df.columns:
         # I. Target vs Closed Won
         st.markdown("""
-            <div style='background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+            <div style='background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%); padding: 15px; border-radius: 10px; margin-bottom: 30px;'>
                 <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Target vs Closed Won</h3>
             </div>
         """, unsafe_allow_html=True)
@@ -266,7 +266,7 @@ def show_overview():
         
         # Enhanced horizontal progress bar with metrics
         st.markdown(f"""
-            <div style='background: #f0f2f6; padding: 15px; border-radius: 12px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+            <div style='background: #f0f2f6; padding: 15px; border-radius: 12px; margin-top: 30px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
                 <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;'>
                     <div>
                         <h3 style='margin: 0; color: #2ecc71; font-size: 1.2em; font-weight: 500;'>Closed Won</h3>
@@ -292,7 +292,7 @@ def show_overview():
         
         # II. Practice
         st.markdown("""
-            <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
+            <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 30px;'>
                 <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Practice</h3>
             </div>
         """, unsafe_allow_html=True)
@@ -649,7 +649,7 @@ def show_overview():
 
     # V. Monthly Pipeline Trend
     st.markdown("""
-        <div style='background: linear-gradient(90deg, #00b4db 0%, #0083b0 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
+        <div style='background: linear-gradient(90deg, #00b4db 0%, #0083b0 100%); padding: 15px; border-radius: 10px; margin-bottom: 30px;'>
             <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Monthly Pipeline Trend</h3>
         </div>
     """, unsafe_allow_html=True)
