@@ -477,7 +477,67 @@ def show_overview():
     
     # Initialize target if not in session state
     if 'sales_target' not in st.session_state:
-        st.session_state.sales_target = 0
+        st.session_state.sales_target = 5000
+
+    # Custom CSS for number input styling
+    st.markdown("""
+        <style>
+            /* Hide increment buttons */
+            [data-testid="stNumberInput"] input[type="number"] {
+                -moz-appearance: textfield;
+            }
+            [data-testid="stNumberInput"] input[type="number"]::-webkit-outer-spin-button,
+            [data-testid="stNumberInput"] input[type="number"]::-webkit-inner-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+            }
+            
+            /* Style the input field */
+            [data-testid="stNumberInput"] {
+                background: transparent;
+            }
+            
+            /* Style the display value */
+            .target-value {
+                font-family: 'Segoe UI', sans-serif;
+                font-size: 2.5em;
+                font-weight: 800;
+                color: #FF6B6B;
+                text-align: center;
+                padding: 20px;
+                margin: 10px 0;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Number input for sales target
+    new_target = st.number_input(
+        "",
+        min_value=0,
+        value=int(st.session_state.sales_target),
+        step=100,
+        format="%d",
+        label_visibility="collapsed",
+        key="overview_target_input"
+    )
+
+    # Display the value in the specified format
+    st.markdown(f"""
+        <div class="target-value">
+            ₹{new_target:,.2f}L
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Update session state and trigger rerun if value changes
+    if new_target != st.session_state.sales_target:
+        st.session_state.sales_target = new_target
+        st.rerun()
+
+    # Calculate achievement after target is set
+    won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
+    won_amount = won_deals['Amount'].sum() / 100000
+    achievement_pct = (won_amount / st.session_state.sales_target * 100) if st.session_state.sales_target > 0 else 0
     
     if 'Sales Stage' in df.columns and 'Amount' in df.columns:
         # I. Target vs Closed Won
@@ -486,24 +546,6 @@ def show_overview():
                 <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Target vs Closed Won</h3>
             </div>
         """, unsafe_allow_html=True)
-        
-        # Calculate achievement
-        won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
-        won_amount = won_deals['Amount'].sum() / 100000
-        achievement_pct = (won_amount / st.session_state.sales_target * 100) if st.session_state.sales_target > 0 else 0
-        
-        # Manual target input
-        new_target = st.number_input(
-            "Annual Sales Target (Lakhs)",
-            value=int(st.session_state.sales_target),
-            min_value=0,
-            step=1000,
-            format="%d",
-            help="Enter the annual sales target in Lakhs (1L = ₹100,000)"
-        )
-        if new_target != st.session_state.sales_target:
-            st.session_state.sales_target = new_target
-            st.rerun()
         
         # Enhanced horizontal progress bar with metrics
         st.markdown(f"""
