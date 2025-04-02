@@ -870,43 +870,56 @@ def show_sales_team():
     # Sort by Total Pipeline in descending order
     team_metrics = team_metrics.sort_values('Total Pipeline', ascending=False)
     
-    # Display team performance metrics with consistent spacing
+    # Filter data based on selection
+    if st.session_state.selected_team_member:
+        filtered_df = df[df['Sales Owner'] == st.session_state.selected_team_member].copy()
+        display_title = f"{st.session_state.selected_team_member}'s Opportunities"
+    else:
+        filtered_df = df.copy()
+        display_title = "All Opportunities"
+    
+    # Calculate metrics for display
+    metrics = {
+        'Total Pipeline': filtered_df[~filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
+        'Closed Won': filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
+        'Pipeline Deals': len(filtered_df[~filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]),
+        'Closed Deals': len(filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)])
+    }
+    
+    # Display metrics with consistent spacing
     st.markdown("<div style='margin-bottom: 30px;'>", unsafe_allow_html=True)
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        total_pipeline = team_metrics['Total Pipeline'].sum()
         st.markdown(f"""
             <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
                 <div class='metric-label'>Pipeline Value</div>
-                <div class='metric-value'>₹{total_pipeline:,.1f}L</div>
-                <div style='color: #666; font-size: 0.9em;'>Active pipeline value</div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        total_deals = team_metrics['Pipeline Deals'].sum()
-        st.markdown(f"""
-            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                <div class='metric-label'>Pipeline Deals</div>
-                <div class='metric-value'>{total_deals:,}</div>
+                <div class='metric-value'>₹{metrics['Total Pipeline']:,.1f}L</div>
                 <div style='color: #666; font-size: 0.9em;'>Active opportunities</div>
             </div>
         """, unsafe_allow_html=True)
     
+    with col2:
+        st.markdown(f"""
+            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                <div class='metric-label'>Closed Won</div>
+                <div class='metric-value'>₹{metrics['Closed Won']:,.1f}L</div>
+                <div style='color: #666; font-size: 0.9em;'>Won opportunities</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
     with col3:
-        total_won = team_metrics['Closed Deals'].sum()
-        win_rate = (total_won / (total_won + total_deals) * 100) if (total_won + total_deals) > 0 else 0
+        win_rate = (metrics['Closed Deals'] / (metrics['Closed Deals'] + metrics['Pipeline Deals']) * 100) if (metrics['Closed Deals'] + metrics['Pipeline Deals']) > 0 else 0
         st.markdown(f"""
             <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
                 <div class='metric-label'>Win Rate</div>
                 <div class='metric-value'>{win_rate:.1f}%</div>
-                <div style='color: #666; font-size: 0.9em;'>{total_won:,} won</div>
+                <div style='color: #666; font-size: 0.9em;'>{metrics['Closed Deals']:,} won</div>
             </div>
         """, unsafe_allow_html=True)
     
     with col4:
-        avg_deal_size = team_metrics['Closed Amount'].sum() / total_won if total_won > 0 else 0
+        avg_deal_size = metrics['Closed Won'] / metrics['Closed Deals'] if metrics['Closed Deals'] > 0 else 0
         st.markdown(f"""
             <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
                 <div class='metric-label'>Avg Deal Size</div>
@@ -930,15 +943,8 @@ def show_sales_team():
     )
     st.markdown("</div>", unsafe_allow_html=True)
     
-    # If a team member is selected, show their detailed opportunities
-    if st.session_state.selected_team_member:
-        st.markdown(f"### {st.session_state.selected_team_member}'s Opportunities")
-        
-        # Filter data for selected team member
-        member_deals = df[df['Sales Owner'] == st.session_state.selected_team_member].copy()
-    else:
-        st.markdown("### All Opportunities")
-        member_deals = df.copy()
+    # Display opportunities section
+    st.markdown(f"### {display_title}")
     
     # Add search and filter options with consistent spacing
     st.markdown("<div style='margin-bottom: 20px;'>", unsafe_allow_html=True)
@@ -949,7 +955,7 @@ def show_sales_team():
     
     with col2:
         # Safely get unique stages, handling potential null values
-        stages = sorted(member_deals['Sales Stage'].dropna().unique().tolist())
+        stages = sorted(filtered_df['Sales Stage'].dropna().unique().tolist())
         stage_filter = st.selectbox(
             "Filter by Stage",
             options=["All Stages"] + stages
@@ -957,7 +963,7 @@ def show_sales_team():
     
     with col3:
         # Safely get unique practices, handling potential null values
-        practices = sorted(member_deals['Practice'].dropna().unique().tolist())
+        practices = sorted(filtered_df['Practice'].dropna().unique().tolist())
         practice_filter = st.selectbox(
             "Filter by Practice",
             options=["All Practices"] + practices
@@ -966,70 +972,19 @@ def show_sales_team():
     
     # Apply filters
     if search:
-        mask = np.column_stack([member_deals[col].astype(str).str.contains(search, case=False, na=False) 
-                              for col in member_deals.columns])
-        member_deals = member_deals[mask.any(axis=1)]
+        mask = np.column_stack([filtered_df[col].astype(str).str.contains(search, case=False, na=False) 
+                              for col in filtered_df.columns])
+        filtered_df = filtered_df[mask.any(axis=1)]
     
     if stage_filter != "All Stages":
-        member_deals = member_deals[member_deals['Sales Stage'] == stage_filter]
+        filtered_df = filtered_df[filtered_df['Sales Stage'] == stage_filter]
         
     if practice_filter != "All Practices":
-        member_deals = member_deals[member_deals['Practice'] == practice_filter]
-    
-    # Calculate member-specific metrics
-    member_metrics = {
-        'Total Pipeline': member_deals[~member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
-        'Closed Won': member_deals[member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
-        'Pipeline Deals': len(member_deals[~member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]),
-        'Closed Deals': len(member_deals[member_deals['Sales Stage'].str.contains('Won', case=False, na=False)])
-    }
-    
-    # Display member metrics with consistent spacing
-    st.markdown("<div style='margin-bottom: 30px;'>", unsafe_allow_html=True)
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown(f"""
-            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                <div class='metric-label'>Pipeline Value</div>
-                <div class='metric-value'>₹{member_metrics['Total Pipeline']:,.1f}L</div>
-                <div style='color: #666; font-size: 0.9em;'>Active opportunities</div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"""
-            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                <div class='metric-label'>Closed Won</div>
-                <div class='metric-value'>₹{member_metrics['Closed Won']:,.1f}L</div>
-                <div style='color: #666; font-size: 0.9em;'>Won opportunities</div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        win_rate = (member_metrics['Closed Deals'] / (member_metrics['Closed Deals'] + member_metrics['Pipeline Deals']) * 100) if (member_metrics['Closed Deals'] + member_metrics['Pipeline Deals']) > 0 else 0
-        st.markdown(f"""
-            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                <div class='metric-label'>Win Rate</div>
-                <div class='metric-value'>{win_rate:.1f}%</div>
-                <div style='color: #666; font-size: 0.9em;'>{member_metrics['Closed Deals']:,} won</div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        avg_deal_size = member_metrics['Closed Won'] / member_metrics['Closed Deals'] if member_metrics['Closed Deals'] > 0 else 0
-        st.markdown(f"""
-            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                <div class='metric-label'>Avg Deal Size</div>
-                <div class='metric-value'>₹{avg_deal_size:,.1f}L</div>
-                <div style='color: #666; font-size: 0.9em;'>Per won deal</div>
-            </div>
-        """, unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
+        filtered_df = filtered_df[filtered_df['Practice'] == practice_filter]
     
     # Display filtered deals with consistent spacing
     st.markdown("<div style='margin-bottom: 30px;'>", unsafe_allow_html=True)
-    st.dataframe(member_deals, use_container_width=True)
+    st.dataframe(filtered_df, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 def show_detailed():
