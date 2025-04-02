@@ -1232,7 +1232,7 @@ def show_sales_team():
             </div>
         """, unsafe_allow_html=True)
         
-        # Hidden number input for sales target
+        # Number input for sales target
         sales_target = st.number_input(
             "",
             min_value=0,
@@ -1242,6 +1242,21 @@ def show_sales_team():
             label_visibility="collapsed",
             key="sales_target_input"
         )
+        
+        # Format the value with ₹ and L
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+                padding: 10px;
+                border-radius: 0 0 10px 10px;
+                text-align: center;
+                margin-top: -20px;
+            '>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{sales_target}L
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
         
         # Update session state
         st.session_state.sales_target = sales_target
