@@ -1187,51 +1187,14 @@ def show_sales_team():
     """, unsafe_allow_html=True)
 
     # Create columns for metrics
-    m1, m2, m3, m4, m5 = st.columns(5)
+    m1, m2, m3, m4 = st.columns(4)
 
     # Get the metrics values
     current_pipeline = filtered_df[~filtered_df['Is_Won']]['Amount_Lacs'].sum()
     weighted_projections = filtered_df[~filtered_df['Is_Won']]['Weighted_Amount'].sum()
     closed_won = filtered_df[filtered_df['Is_Won']]['Amount_Lacs'].sum()
-    
-    # Sales Target Input and Display
-    with m1:
-        st.markdown(f"""
-            <div style='
-                background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                text-align: center;
-                height: 100%;
-            '>
-                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
-                    🎯 Sales Target
-                </div>
-                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
-                    ₹{int(st.session_state.sales_target)}L
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Initialize session state if not exists
-        if 'sales_target' not in st.session_state:
-            st.session_state.sales_target = 5000
-        
-        # Number input below the card
-        sales_target = st.number_input(
-            "Edit Target",
-            min_value=0,
-            value=int(st.session_state.sales_target),
-            step=1000,
-            format="%d",
-            label_visibility="collapsed"
-        )
-        
-        # Update session state
-        st.session_state.sales_target = sales_target
 
-    with m2:
+    with m1:
         st.markdown(f"""
             <div style='
                 background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
@@ -1250,7 +1213,7 @@ def show_sales_team():
             </div>
         """, unsafe_allow_html=True)
 
-    with m3:
+    with m2:
         st.markdown(f"""
             <div style='
                 background: linear-gradient(135deg, #6B5B95 0%, #846EA9 100%);
@@ -1268,7 +1231,7 @@ def show_sales_team():
             </div>
         """, unsafe_allow_html=True)
 
-    with m4:
+    with m3:
         st.markdown(f"""
             <div style='
                 background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
@@ -1286,7 +1249,7 @@ def show_sales_team():
             </div>
         """, unsafe_allow_html=True)
 
-    with m5:
+    with m4:
         achievement = (closed_won / st.session_state.sales_target * 100) if st.session_state.sales_target > 0 else 0
         st.markdown(f"""
             <div style='
