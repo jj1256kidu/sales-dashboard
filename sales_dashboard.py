@@ -1008,6 +1008,10 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
     
+    # Reset index to create proper serial numbers
+    filtered_df = filtered_df.reset_index(drop=True)
+    filtered_df.index = filtered_df.index + 1  # Start from 1 instead of 0
+    
     st.dataframe(filtered_df, use_container_width=True)
     
     st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)  # Consistent spacing
