@@ -939,26 +939,6 @@ def show_sales_team():
             </div>
         """, unsafe_allow_html=True)
 
-    # Search and filter section with enhanced styling
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        search = st.text_input("🔍 Search Deals", placeholder="Search in any field...")
-    
-    with col2:
-        stages = sorted(df['Sales Stage'].dropna().unique().tolist())
-        stage_filter = st.selectbox(
-            "📊 Filter by Stage",
-            options=["All Stages"] + stages
-        )
-    
-    with col3:
-        practices = sorted(df['Practice'].dropna().unique().tolist())
-        practice_filter = st.selectbox(
-            "🎯 Filter by Practice",
-            options=["All Practices"] + practices
-        )
-
     # Team member selection with enhanced styling
     st.markdown("""
         <div style='
@@ -977,16 +957,39 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
     
-    selected_member = st.selectbox(
-        "Select Sales Owner",
-        options=["All Team Members"] + team_members,
-        key="team_member_filter"
-    )
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        selected_member = st.selectbox(
+            "Select Sales Owner",
+            options=["All Team Members"] + team_members,
+            key="team_member_filter"
+        )
+    
+    with col2:
+        search = st.text_input("🔍 Search Deals", placeholder="Search in any field...")
     
     if selected_member != "All Team Members":
         st.session_state.selected_team_member = selected_member
     else:
         st.session_state.selected_team_member = None
+
+    # Other filters
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        stages = sorted(df['Sales Stage'].dropna().unique().tolist())
+        stage_filter = st.selectbox(
+            "📊 Filter by Stage",
+            options=["All Stages"] + stages
+        )
+    
+    with col2:
+        practices = sorted(df['Practice'].dropna().unique().tolist())
+        practice_filter = st.selectbox(
+            "🎯 Filter by Practice",
+            options=["All Practices"] + practices
+        )
     
     # Filter data based on selection
     if st.session_state.selected_team_member:
