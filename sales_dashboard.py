@@ -244,9 +244,9 @@ def process_data(df):
     df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
     df['Month'] = df['Expected Close Date'].dt.strftime('%B')
     df['Year'] = df['Expected Close Date'].dt.year
-    df['Quarter'] = 'Q' + df['Expected Close Date'].dt.quarter.astype(str)
+    df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
     
-    # Convert probability and calculate numeric values at once
+    # Convert probability and calculate numeric values at once with safe null handling
     def convert_probability(x):
         try:
             if pd.isna(x):
@@ -259,9 +259,9 @@ def process_data(df):
     
     df['Probability_Num'] = df['Probability'].apply(convert_probability)
     
-    # Pre-calculate common flags and metrics
+    # Pre-calculate common flags and metrics with safe null handling
     df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
-    df['Amount_Lacs'] = (df['Amount'] / 100000).round(0).astype(int)
+    df['Amount_Lacs'] = df['Amount'].fillna(0).div(100000).round(0).astype(int)
     df['Weighted_Amount'] = (df['Amount_Lacs'] * df['Probability_Num'] / 100).round(0).astype(int)
     
     return df
@@ -269,26 +269,36 @@ def process_data(df):
 @st.cache_data
 def calculate_team_metrics(df):
     """Calculate all team-related metrics at once"""
-    # Calculate base metrics
+    # Calculate base metrics with safe null handling
     team_metrics = df.groupby('Sales Owner').agg({
-        'Amount': lambda x: int(x[df['Is_Won']].sum() / 100000),
+        'Amount': lambda x: int(x[df['Is_Won'] & x.notna()].sum() / 100000) if len(x[df['Is_Won'] & x.notna()]) > 0 else 0,
         'Is_Won': 'sum',
-        'Amount_Lacs': lambda x: int(x[~df['Is_Won']].sum()),
-        'Weighted_Amount': lambda x: int(x[~df['Is_Won']].sum())
+        'Amount_Lacs': lambda x: int(x[~df['Is_Won'] & x.notna()].sum()) if len(x[~df['Is_Won'] & x.notna()]) > 0 else 0,
+        'Weighted_Amount': lambda x: int(x[~df['Is_Won'] & x.notna()].sum()) if len(x[~df['Is_Won'] & x.notna()]) > 0 else 0
     }).reset_index()
     
     team_metrics.columns = ['Sales Owner', 'Closed Won', 'Closed Deals', 'Current Pipeline', 'Weighted Projections']
     
+    # Fill NaN values with 0
+    team_metrics = team_metrics.fillna(0)
+    
     # Add Sales Target (default 5000L for demonstration)
     team_metrics['Sales Target'] = 5000
     
-    # Calculate Pipeline Deals
+    # Calculate Pipeline Deals with safe null handling
     pipeline_deals = df[~df['Is_Won']].groupby('Sales Owner').size()
     team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(pipeline_deals).fillna(0).astype(int)
     
-    # Calculate derived metrics
-    team_metrics['Achievement %'] = (team_metrics['Closed Won'] / team_metrics['Sales Target'] * 100).round(0).astype(int)
-    team_metrics['Win Rate'] = (team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100).round(0).astype(int)
+    # Calculate derived metrics with safe division
+    team_metrics['Achievement %'] = (team_metrics['Closed Won'] / team_metrics['Sales Target'] * 100).fillna(0).round(0).astype(int)
+    
+    # Safe calculation of Win Rate to avoid division by zero
+    total_deals = team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']
+    team_metrics['Win Rate'] = np.where(
+        total_deals > 0,
+        (team_metrics['Closed Deals'] / total_deals * 100).round(0),
+        0
+    ).astype(int)
     
     return team_metrics
 
