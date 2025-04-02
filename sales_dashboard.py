@@ -456,9 +456,10 @@ def show_overview():
         # Manual target input
         new_target = st.number_input(
             "Annual Sales Target (Lakhs)",
-            value=st.session_state.sales_target,
-            step=1.0,
-            format="%.0f",
+            value=int(st.session_state.sales_target),
+            min_value=0,
+            step=1000,
+            format="%d",
             help="Enter the annual sales target in Lakhs (1L = ₹100,000)"
         )
         if new_target != st.session_state.sales_target:
