@@ -482,6 +482,21 @@ def show_overview():
     # Simple Sales Target Section
     st.markdown("### 🎯 Annual Sales Target")
     
+    # Add custom CSS to hide increment/decrement buttons
+    st.markdown("""
+        <style>
+        /* Hide increment/decrement buttons */
+        [data-testid="stNumberInput"] input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        [data-testid="stNumberInput"] input[type="number"]::-webkit-outer-spin-button,
+        [data-testid="stNumberInput"] input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
     # Simple number input
     new_target = st.number_input(
         "Annual Sales Target (Lakhs)",
@@ -1057,6 +1072,21 @@ def show_sales_team():
 
     # Simple Sales Target Section
     st.markdown("### 🎯 Annual Sales Target")
+    
+    # Add custom CSS to hide increment/decrement buttons
+    st.markdown("""
+        <style>
+        /* Hide increment/decrement buttons */
+        [data-testid="stNumberInput"] input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        [data-testid="stNumberInput"] input[type="number"]::-webkit-outer-spin-button,
+        [data-testid="stNumberInput"] input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
     # Simple number input
     new_target = st.number_input(
