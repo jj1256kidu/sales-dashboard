@@ -482,24 +482,25 @@ def show_overview():
     # Sales Target Header Section
     st.markdown("### 🎯 Annual Sales Target")
 
-    # Editable input
+    # Editable input with direct value binding
     new_target = st.number_input(
         "Annual Sales Target (Lakhs)",
         value=float(st.session_state.sales_target),
         step=1.0,
-        format="%.2f"
+        format="%.2f",
+        key="target_input"  # Add a unique key
     )
+
+    # Update session state if value changes
+    if new_target != st.session_state.sales_target:
+        st.session_state.sales_target = new_target
+        st.rerun()
 
     # Display the amount below
     st.markdown(
         f"<div style='text-align: right; font-size: 1.8em; font-weight: bold; color: red;'>₹{new_target:,.2f}L</div>",
         unsafe_allow_html=True
     )
-
-    # Save the new input
-    if new_target != st.session_state.sales_target:
-        st.session_state.sales_target = new_target
-        st.rerun()
 
     # Calculate achievement after target is set
     won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
@@ -1061,24 +1062,25 @@ def show_sales_team():
     # Sales Target Header Section
     st.markdown("### 🎯 Annual Sales Target")
 
-    # Editable input
+    # Editable input with direct value binding
     new_target = st.number_input(
         "Annual Sales Target (Lakhs)",
         value=float(st.session_state.sales_target),
         step=1.0,
-        format="%.2f"
+        format="%.2f",
+        key="target_input"  # Add a unique key
     )
+
+    # Update session state if value changes
+    if new_target != st.session_state.sales_target:
+        st.session_state.sales_target = new_target
+        st.rerun()
 
     # Display the amount below
     st.markdown(
         f"<div style='text-align: right; font-size: 1.8em; font-weight: bold; color: red;'>₹{new_target:,.2f}L</div>",
         unsafe_allow_html=True
     )
-
-    # Save the new input
-    if new_target != st.session_state.sales_target:
-        st.session_state.sales_target = new_target
-        st.rerun()
 
     # Calculate metrics once
     metrics = calculate_team_metrics(df)
