@@ -1004,30 +1004,30 @@ def show_sales_team():
     # Convert Expected Close Date to datetime if not already
     df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'])
     
-    # Extract timeline components
-    df['Year'] = df['Expected Close Date'].dt.year
-    df['Month'] = df['Expected Close Date'].dt.month
-    df['Quarter'] = df['Expected Close Date'].dt.quarter
+    # Extract timeline components and ensure they are integers
+    df['Year'] = df['Expected Close Date'].dt.year.astype(int)
+    df['Month'] = df['Expected Close Date'].dt.month.astype(int)
+    df['Quarter'] = df['Expected Close Date'].dt.quarter.astype(int)
     
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        years = sorted(df['Year'].unique().tolist())
+        years = sorted(df['Year'].dropna().unique().tolist())
         year_filter = st.selectbox(
             "Year",
-            options=["All Years"] + [str(year) for year in years]
+            options=["All Years"] + [str(int(year)) for year in years if pd.notnull(year)]
         )
     
     with col2:
-        months = sorted(df['Month'].unique().tolist())
-        month_names = ["All Months"] + [datetime.strptime(str(month), "%m").strftime("%B") for month in months]
+        months = sorted(df['Month'].dropna().unique().tolist())
+        month_names = ["All Months"] + [datetime.strptime(str(int(month)), "%m").strftime("%B") for month in months if pd.notnull(month)]
         month_filter = st.selectbox("Month", options=month_names)
     
     with col3:
-        quarters = sorted(df['Quarter'].unique().tolist())
+        quarters = sorted(df['Quarter'].dropna().unique().tolist())
         quarter_filter = st.selectbox(
             "Quarter",
-            options=["All Quarters"] + [f"Q{quarter}" for quarter in quarters]
+            options=["All Quarters"] + [f"Q{int(quarter)}" for quarter in quarters if pd.notnull(quarter)]
         )
     
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
