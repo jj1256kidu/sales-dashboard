@@ -1153,21 +1153,21 @@ def show_sales_team():
             # If it's already a number between 0 and 1
             if isinstance(prob, (int, float)):
                 if 0 <= prob <= 1:
-                    return prob * 100
+                    return int(prob * 100)
                 elif 0 <= prob <= 100:
-                    return prob
+                    return int(prob)
                 return 0
             # If it's a string, remove '%' and convert to float
             elif isinstance(prob, str):
                 # Remove '%' symbol and any whitespace
                 cleaned_prob = prob.rstrip('%').strip()
-                # Convert to float
+                # Convert to float and then to integer
                 prob_value = float(cleaned_prob)
                 # Check range and convert if needed
                 if 0 <= prob_value <= 1:
-                    return prob_value * 100
+                    return int(prob_value * 100)
                 elif 0 <= prob_value <= 100:
-                    return prob_value
+                    return int(prob_value)
                 return 0
             return 0
         except:
@@ -1187,7 +1187,7 @@ def show_sales_team():
     display_df['Expected Close Date'] = pd.to_datetime(display_df['Expected Close Date']).dt.strftime('%d-%b-%Y')
     
     # Ensure Probability is displayed with % symbol and no decimal places
-    display_df['Probability'] = display_df['Probability_Numeric'].apply(lambda x: f"{x:.0f}%")
+    display_df['Probability'] = display_df['Probability_Numeric'].apply(lambda x: f"{int(x)}%")
     
     # Drop the temporary numeric probability column
     display_df = display_df.drop('Probability_Numeric', axis=1)
