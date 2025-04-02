@@ -1144,61 +1144,35 @@ def show_sales_team():
         'Type': 'Hunting /farming'
     })
     
-    # Convert Amount to Lacs
-    display_df['Amount (In Lacs)'] = display_df['Amount (In Lacs)'] / 100000
+    # Convert and format numeric values
+    display_df['Amount (In Lacs)'] = display_df['Amount'].apply(lambda x: int(x/100000))
+    display_df['Probability'] = display_df['Probability'].apply(lambda x: f"{int(float(str(x).rstrip('%')))}%")
+    display_df['Weighted Revenue (In Lacs)'] = display_df.apply(
+        lambda row: int((row['Amount']/100000) * float(str(row['Probability']).rstrip('%'))/100), 
+        axis=1
+    )
     
-    # Handle Probability conversion safely
-    def convert_probability(prob):
-        try:
-            # If it's already a number between 0 and 1
-            if isinstance(prob, (int, float)):
-                if 0 <= prob <= 1:
-                    return int(prob * 100)
-                elif 0 <= prob <= 100:
-                    return int(prob)
-                return 0
-            # If it's a string, remove '%' and convert to float
-            elif isinstance(prob, str):
-                # Remove '%' symbol and any whitespace
-                cleaned_prob = prob.rstrip('%').strip()
-                # Convert to float and then to integer
-                prob_value = float(cleaned_prob)
-                # Check range and convert if needed
-                if 0 <= prob_value <= 1:
-                    return int(prob_value * 100)
-                elif 0 <= prob_value <= 100:
-                    return int(prob_value)
-                return 0
-            return 0
-        except:
-            return 0
-
-    # Convert probability to numeric value
-    display_df['Probability_Numeric'] = display_df['Probability'].apply(convert_probability)
-    
-    # Calculate Weighted Revenue
-    display_df['Weighted Revenue (In Lacs)'] = display_df['Amount (In Lacs)'] * display_df['Probability_Numeric'] / 100
-    
-    # Round the numeric columns to 2 decimal places
-    display_df['Amount (In Lacs)'] = display_df['Amount (In Lacs)'].round(2)
-    display_df['Weighted Revenue (In Lacs)'] = display_df['Weighted Revenue (In Lacs)'].round(2)
-    
-    # Format the Expected Close Date
+    # Format dates
     display_df['Expected Close Date'] = pd.to_datetime(display_df['Expected Close Date']).dt.strftime('%d-%b-%Y')
     
-    # Ensure Probability is displayed with % symbol and no decimal places
-    display_df['Probability'] = display_df['Probability_Numeric'].apply(lambda x: f"{int(x)}%")
+    # Add S.No column
+    display_df.index = range(1, len(display_df) + 1)
+    display_df.index.name = 'S.No'
     
-    # Drop the temporary numeric probability column
-    display_df = display_df.drop('Probability_Numeric', axis=1)
-    
-    # Reorder columns
-    display_df = display_df[['Organization Name', 'Opportunity Name', 'Geography', 
-                            'Expected Close Date', 'Probability', 'Amount (In Lacs)', 
-                            'Weighted Revenue (In Lacs)', 'Sales Owner', 'Tech Owner', 
-                            'Business Owner', 'Hunting /farming', 'KritiKal Focus Areas']]
-    
-    st.dataframe(display_df, use_container_width=True)
+    # Format the display
+    st.dataframe(
+        display_df,
+        column_config={
+            'Amount (In Lacs)': st.column_config.NumberColumn(
+                'Amount (In Lacs)',
+                format="₹%d L"
+            ),
+            'Weighted Revenue (In Lacs)': st.column_config.NumberColumn(
+                'Weighted Revenue (In Lacs)',
+                format="₹%d L"
+            )
+        }
+    )
     
     st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)  # Consistent spacing
     
