@@ -235,9 +235,9 @@ st.markdown("""
     /* Custom styling for number input */
     [data-testid="stNumberInput"] {
         position: relative;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 5px;
-        padding: 0;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
     }
     [data-testid="stNumberInput"] > div > div > input {
         color: white !important;
@@ -247,6 +247,7 @@ st.markdown("""
         background: transparent !important;
         border: none !important;
         padding: 0 !important;
+        width: 100% !important;
     }
     /* Hide the increment/decrement buttons */
     [data-testid="stNumberInput"] > div > div > div {
@@ -1168,9 +1169,35 @@ def show_sales_team():
     
     # Sales Target Input and Display
     with m1:
+        st.markdown("""
+            <style>
+                /* Custom styling for number input */
+                [data-testid="stNumberInput"] {
+                    position: relative;
+                    background: transparent !important;
+                    border: none !important;
+                    padding: 0 !important;
+                }
+                [data-testid="stNumberInput"] > div > div > input {
+                    color: white !important;
+                    font-size: 1.8em !important;
+                    font-weight: 800 !important;
+                    text-align: center !important;
+                    background: transparent !important;
+                    border: none !important;
+                    padding: 0 !important;
+                    width: 100% !important;
+                }
+                /* Hide the increment/decrement buttons */
+                [data-testid="stNumberInput"] > div > div > div {
+                    display: none !important;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+        
         st.markdown(f"""
             <div style='
-                background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
                 padding: 20px;
                 border-radius: 10px;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -1179,9 +1206,6 @@ def show_sales_team():
             '>
                 <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
                     🎯 Sales Target
-                </div>
-                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
-                    ₹{int(st.session_state.sales_target)}L
                 </div>
             </div>
         """, unsafe_allow_html=True)
