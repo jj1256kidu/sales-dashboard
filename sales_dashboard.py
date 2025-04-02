@@ -988,9 +988,10 @@ def show_sales_team():
     
     col1, col2 = st.columns(2)
     with col1:
-        month_options = ["All Months", "January", "February", "March", "April", "May", "June",
-                        "July", "August", "September", "October", "November", "December"]
-        month_filter = st.selectbox("📅 Month", options=month_options)
+        # Convert dates and extract months
+        df['Month'] = pd.to_datetime(df['Expected Close Date']).dt.strftime('%B')
+        available_months = sorted(df['Month'].dropna().unique().tolist())
+        month_filter = st.selectbox("📅 Month", options=["All Months"] + available_months)
     with col2:
         quarter_filter = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
 
@@ -1003,6 +1004,10 @@ def show_sales_team():
     
     col1, col2 = st.columns(2)
     with col1:
+        # Convert probability to numeric first
+        df['Probability_Num'] = df['Probability'].apply(
+            lambda x: float(str(x).rstrip('%')) if pd.notnull(x) and str(x).rstrip('%').replace('.', '').isdigit() else 0
+        )
         probability_ranges = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%"]
         probability_filter = st.selectbox("📈 Probability", options=probability_ranges)
     with col2:
@@ -1025,10 +1030,11 @@ def show_sales_team():
                               for col in filtered_df.columns])
         filtered_df = filtered_df[mask.any(axis=1)]
 
-    # Apply time period filters
+    # Apply month filter
     if month_filter != "All Months":
-        filtered_df = filtered_df[pd.to_datetime(filtered_df['Expected Close Date']).dt.strftime('%B') == month_filter]
+        filtered_df = filtered_df[filtered_df['Month'] == month_filter]
     
+    # Apply quarter filter
     if quarter_filter != "All Quarters":
         quarter_map = {'Q1': [1,2,3], 'Q2': [4,5,6], 'Q3': [7,8,9], 'Q4': [10,11,12]}
         if quarter_filter in quarter_map:
@@ -1039,7 +1045,6 @@ def show_sales_team():
         prob_range = probability_filter.split("-")
         min_prob = float(prob_range[0].rstrip("%"))
         max_prob = float(prob_range[1].rstrip("%"))
-        filtered_df['Probability_Num'] = pd.to_numeric(filtered_df['Probability'].str.rstrip('%'), errors='coerce')
         filtered_df = filtered_df[
             (filtered_df['Probability_Num'] >= min_prob) & 
             (filtered_df['Probability_Num'] <= max_prob)
