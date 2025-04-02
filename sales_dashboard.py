@@ -1197,7 +1197,7 @@ def show_sales_team():
         
         st.markdown(f"""
             <div style='
-                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+                background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
                 padding: 20px;
                 border-radius: 10px;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -1206,6 +1206,9 @@ def show_sales_team():
             '>
                 <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
                     🎯 Sales Target
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(st.session_state.sales_target)}L
                 </div>
             </div>
         """, unsafe_allow_html=True)
