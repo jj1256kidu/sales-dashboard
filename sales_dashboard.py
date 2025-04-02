@@ -928,88 +928,91 @@ def show_sales_team():
         
         # Filter data for selected team member
         member_deals = df[df['Sales Owner'] == st.session_state.selected_team_member].copy()
+    else:
+        st.markdown("### All Opportunities")
+        member_deals = df.copy()
+    
+    # Add search and filter options
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        search = st.text_input("Search Deals", placeholder="Search in any field...")
+    
+    with col2:
+        stage_filter = st.selectbox(
+            "Filter by Stage",
+            options=["All Stages"] + sorted(member_deals['Sales Stage'].unique().tolist())
+        )
+    
+    with col3:
+        practice_filter = st.selectbox(
+            "Filter by Practice",
+            options=["All Practices"] + sorted(member_deals['Practice'].unique().tolist())
+        )
+    
+    # Apply filters
+    if search:
+        mask = np.column_stack([member_deals[col].astype(str).str.contains(search, case=False, na=False) 
+                              for col in member_deals.columns])
+        member_deals = member_deals[mask.any(axis=1)]
+    
+    if stage_filter != "All Stages":
+        member_deals = member_deals[member_deals['Sales Stage'] == stage_filter]
         
-        # Add search and filter options
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            search = st.text_input("Search Deals", placeholder="Search in any field...")
-        
-        with col2:
-            stage_filter = st.selectbox(
-                "Filter by Stage",
-                options=["All Stages"] + sorted(member_deals['Sales Stage'].unique().tolist())
-            )
-        
-        with col3:
-            practice_filter = st.selectbox(
-                "Filter by Practice",
-                options=["All Practices"] + sorted(member_deals['Practice'].unique().tolist())
-            )
-        
-        # Apply filters
-        if search:
-            mask = np.column_stack([member_deals[col].astype(str).str.contains(search, case=False, na=False) 
-                                  for col in member_deals.columns])
-            member_deals = member_deals[mask.any(axis=1)]
-        
-        if stage_filter != "All Stages":
-            member_deals = member_deals[member_deals['Sales Stage'] == stage_filter]
-            
-        if practice_filter != "All Practices":
-            member_deals = member_deals[member_deals['Practice'] == practice_filter]
-        
-        # Calculate member-specific metrics
-        member_metrics = {
-            'Total Pipeline': member_deals[~member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
-            'Closed Won': member_deals[member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
-            'Pipeline Deals': len(member_deals[~member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]),
-            'Closed Deals': len(member_deals[member_deals['Sales Stage'].str.contains('Won', case=False, na=False)])
-        }
-        
-        # Display member metrics
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.markdown(f"""
-                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
-                    <div class='metric-label'>Pipeline Value</div>
-                    <div class='metric-value'>₹{member_metrics['Total Pipeline']:,.1f}L</div>
-                    <div style='color: #666; font-size: 0.9em;'>Active opportunities</div>
-                </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown(f"""
-                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
-                    <div class='metric-label'>Closed Won</div>
-                    <div class='metric-value'>₹{member_metrics['Closed Won']:,.1f}L</div>
-                    <div style='color: #666; font-size: 0.9em;'>Won opportunities</div>
-                </div>
-            """, unsafe_allow_html=True)
-        
-        with col3:
-            win_rate = (member_metrics['Closed Deals'] / (member_metrics['Closed Deals'] + member_metrics['Pipeline Deals']) * 100) if (member_metrics['Closed Deals'] + member_metrics['Pipeline Deals']) > 0 else 0
-            st.markdown(f"""
-                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
-                    <div class='metric-label'>Win Rate</div>
-                    <div class='metric-value'>{win_rate:.1f}%</div>
-                    <div style='color: #666; font-size: 0.9em;'>{member_metrics['Closed Deals']:,} won</div>
-                </div>
-            """, unsafe_allow_html=True)
-        
-        with col4:
-            avg_deal_size = member_metrics['Closed Won'] / member_metrics['Closed Deals'] if member_metrics['Closed Deals'] > 0 else 0
-            st.markdown(f"""
-                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
-                    <div class='metric-label'>Avg Deal Size</div>
-                    <div class='metric-value'>₹{avg_deal_size:,.1f}L</div>
-                    <div style='color: #666; font-size: 0.9em;'>Per won deal</div>
-                </div>
-            """, unsafe_allow_html=True)
-        
-        # Display filtered deals
-        st.dataframe(member_deals, use_container_width=True)
+    if practice_filter != "All Practices":
+        member_deals = member_deals[member_deals['Practice'] == practice_filter]
+    
+    # Calculate member-specific metrics
+    member_metrics = {
+        'Total Pipeline': member_deals[~member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
+        'Closed Won': member_deals[member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
+        'Pipeline Deals': len(member_deals[~member_deals['Sales Stage'].str.contains('Won', case=False, na=False)]),
+        'Closed Deals': len(member_deals[member_deals['Sales Stage'].str.contains('Won', case=False, na=False)])
+    }
+    
+    # Display member metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown(f"""
+            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                <div class='metric-label'>Pipeline Value</div>
+                <div class='metric-value'>₹{member_metrics['Total Pipeline']:,.1f}L</div>
+                <div style='color: #666; font-size: 0.9em;'>Active opportunities</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                <div class='metric-label'>Closed Won</div>
+                <div class='metric-value'>₹{member_metrics['Closed Won']:,.1f}L</div>
+                <div style='color: #666; font-size: 0.9em;'>Won opportunities</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        win_rate = (member_metrics['Closed Deals'] / (member_metrics['Closed Deals'] + member_metrics['Pipeline Deals']) * 100) if (member_metrics['Closed Deals'] + member_metrics['Pipeline Deals']) > 0 else 0
+        st.markdown(f"""
+            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                <div class='metric-label'>Win Rate</div>
+                <div class='metric-value'>{win_rate:.1f}%</div>
+                <div style='color: #666; font-size: 0.9em;'>{member_metrics['Closed Deals']:,} won</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        avg_deal_size = member_metrics['Closed Won'] / member_metrics['Closed Deals'] if member_metrics['Closed Deals'] > 0 else 0
+        st.markdown(f"""
+            <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                <div class='metric-label'>Avg Deal Size</div>
+                <div class='metric-value'>₹{avg_deal_size:,.1f}L</div>
+                <div style='color: #666; font-size: 0.9em;'>Per won deal</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    # Display filtered deals
+    st.dataframe(member_deals, use_container_width=True)
 
 def show_detailed():
     if st.session_state.df is None:
