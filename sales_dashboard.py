@@ -242,7 +242,7 @@ def show_overview():
     if 'Sales Stage' in df.columns and 'Amount' in df.columns:
         # I. Target vs Closed Won
         st.markdown("""
-            <div style='background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
+            <div style='background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
                 <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Target vs Closed Won</h3>
             </div>
         """, unsafe_allow_html=True)
@@ -266,15 +266,15 @@ def show_overview():
         
         # Enhanced horizontal progress bar with metrics
         st.markdown(f"""
-            <div style='background: #f0f2f6; padding: 25px; border-radius: 12px; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
-                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;'>
+            <div style='background: #f0f2f6; padding: 15px; border-radius: 12px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+                <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;'>
                     <div>
                         <h3 style='margin: 0; color: #2ecc71; font-size: 1.2em; font-weight: 500;'>Closed Won</h3>
-                        <h2 style='margin: 8px 0; color: #2ecc71; font-size: 2.8em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{won_amount:,.2f}L</h2>
+                        <h2 style='margin: 5px 0; color: #2ecc71; font-size: 2.8em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{won_amount:,.2f}L</h2>
                     </div>
                     <div style='text-align: right;'>
                         <h3 style='margin: 0; color: #e74c3c; font-size: 1.2em; font-weight: 500;'>Target</h3>
-                        <h2 style='margin: 8px 0; color: #e74c3c; font-size: 2.8em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{new_target:,.2f}L</h2>
+                        <h2 style='margin: 5px 0; color: #e74c3c; font-size: 2.8em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{new_target:,.2f}L</h2>
                     </div>
                 </div>
                 <div style='background: #e74c3c; height: 40px; border-radius: 20px; overflow: hidden; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);'>
@@ -283,7 +283,7 @@ def show_overview():
                         {achievement_pct:.1f}% Complete
                     </div>
                 </div>
-                <div style='display: flex; justify-content: space-between; margin-top: 10px; color: #666; font-size: 1.1em; font-weight: 400;'>
+                <div style='display: flex; justify-content: space-between; margin-top: 5px; color: #666; font-size: 1.1em; font-weight: 400;'>
                     <span>₹0L</span>
                     <span>₹{new_target:,.1f}L</span>
                 </div>
@@ -292,7 +292,7 @@ def show_overview():
         
         # II. Practice
         st.markdown("""
-            <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;'>
+            <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 10px;'>
                 <h3 style='color: white; margin: 0; text-align: center; font-size: 1.8em; font-weight: 600;'>Practice</h3>
             </div>
         """, unsafe_allow_html=True)
