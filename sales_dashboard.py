@@ -1026,8 +1026,13 @@ def show_sales_team():
 
     # Apply search filter
     if search:
-        mask = np.column_stack([filtered_df[col].astype(str).str.contains(search, case=False, na=False) 
-                              for col in filtered_df.columns])
+        # Convert all columns to string before searching
+        mask = np.column_stack([
+            filtered_df[col].astype(str).str.contains(search, case=False, na=False) 
+            if pd.api.types.is_object_dtype(filtered_df[col]) or pd.api.types.is_string_dtype(filtered_df[col])
+            else filtered_df[col].astype(str).str.contains(search, case=False, na=False)
+            for col in filtered_df.columns
+        ])
         filtered_df = filtered_df[mask.any(axis=1)]
 
     # Apply month filter
