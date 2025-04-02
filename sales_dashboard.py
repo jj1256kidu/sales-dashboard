@@ -261,12 +261,6 @@ def process_data(df):
     df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
     df['Amount_Lacs'] = df['Amount'] / 100000
     
-    # Pre-calculate unique values for filters
-    df['_unique_months'] = df['Month'].dropna().unique()
-    df['_unique_years'] = df['Expected Close Date'].dt.year.unique()
-    df['_unique_status'] = df['Sales Stage'].dropna().unique()
-    df['_unique_focus'] = df['KritiKal Focus Areas'].dropna().unique()
-    
     return df
 
 @st.cache_data
