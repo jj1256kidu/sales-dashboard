@@ -479,17 +479,16 @@ def show_overview():
     if 'sales_target' not in st.session_state:
         st.session_state.sales_target = 5000.0
 
-    # Sales Target Header Section
+    # Sales Target Section with simple styling
     st.markdown("### 🎯 Annual Sales Target")
-
-    # Editable number input
+    
+    # Simple editable input with clean styling
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         new_target = st.number_input(
             "Enter Target (in Lakhs)", 
             value=float(st.session_state.get('sales_target', 5000.0)), 
             format="%.2f",
-            label_visibility="collapsed",
             key="overview_target_input"
         )
 
@@ -498,7 +497,7 @@ def show_overview():
         st.session_state.sales_target = new_target
         st.rerun()
 
-    # Show target value as bold ₹X,XXX.00L
+    # Show target value in a clean format
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.markdown(f"""
