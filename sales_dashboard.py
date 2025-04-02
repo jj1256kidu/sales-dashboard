@@ -849,6 +849,96 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
 
+    # Calculate metrics first
+    metrics = {
+        'Total Pipeline': df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
+        'Closed Won': df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000,
+        'Pipeline Deals': len(df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]),
+        'Closed Deals': len(df[df['Sales Stage'].str.contains('Won', case=False, na=False)])
+    }
+    
+    # Display metrics with enhanced styling
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin-bottom: 15px;
+                font-size: 1.4em;
+                font-weight: 600;
+            '>Performance Metrics</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown(f"""
+            <div style='
+                text-align: center;
+                padding: 20px;
+                background: linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%);
+                border-radius: 15px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 500; margin-bottom: 10px;'>Pipeline Value</div>
+                <div style='color: white; font-size: 2em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{metrics['Total Pipeline']:,.1f}L</div>
+                <div style='color: rgba(255,255,255,0.9); font-size: 0.9em; margin-top: 5px;'>Active opportunities</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+            <div style='
+                text-align: center;
+                padding: 20px;
+                background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+                border-radius: 15px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 500; margin-bottom: 10px;'>Closed Won</div>
+                <div style='color: white; font-size: 2em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{metrics['Closed Won']:,.1f}L</div>
+                <div style='color: rgba(255,255,255,0.9); font-size: 0.9em; margin-top: 5px;'>Won opportunities</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        win_rate = (metrics['Closed Deals'] / (metrics['Closed Deals'] + metrics['Pipeline Deals']) * 100) if (metrics['Closed Deals'] + metrics['Pipeline Deals']) > 0 else 0
+        st.markdown(f"""
+            <div style='
+                text-align: center;
+                padding: 20px;
+                background: linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%);
+                border-radius: 15px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 500; margin-bottom: 10px;'>Win Rate</div>
+                <div style='color: white; font-size: 2em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>{win_rate:.1f}%</div>
+                <div style='color: rgba(255,255,255,0.9); font-size: 0.9em; margin-top: 5px;'>{metrics['Closed Deals']:,} won</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        avg_deal_size = metrics['Closed Won'] / metrics['Closed Deals'] if metrics['Closed Deals'] > 0 else 0
+        st.markdown(f"""
+            <div style='
+                text-align: center;
+                padding: 20px;
+                background: linear-gradient(135deg, #f12711 0%, #f5af19 100%);
+                border-radius: 15px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 500; margin-bottom: 10px;'>Avg Deal Size</div>
+                <div style='color: white; font-size: 2em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{avg_deal_size:,.1f}L</div>
+                <div style='color: rgba(255,255,255,0.9); font-size: 0.9em; margin-top: 5px;'>Per won deal</div>
+            </div>
+        """, unsafe_allow_html=True)
+
     # Search and filter section with enhanced styling
     st.markdown("""
         <div style='
