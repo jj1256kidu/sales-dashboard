@@ -1175,40 +1175,30 @@ def show_sales_team():
                 border-radius: 10px;
                 box-shadow: 0 4px 6px rgba(0,0,0,0.1);
                 text-align: center;
+                height: 100%;
             '>
                 <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
                     🎯 Sales Target
                 </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(st.session_state.sales_target)}L
+                </div>
             </div>
         """, unsafe_allow_html=True)
         
-        # Simple number input for sales target
+        # Hidden number input for sales target
         sales_target = st.number_input(
             "",
             min_value=0,
             value=int(st.session_state.sales_target),
             step=1000,
             format="%d",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key="sales_target_input"
         )
         
         # Update session state
         st.session_state.sales_target = sales_target
-        
-        # Display the value
-        st.markdown(f"""
-            <div style='
-                background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
-                padding: 10px;
-                border-radius: 0 0 10px 10px;
-                text-align: center;
-                margin-top: -20px;
-            '>
-                <div style='color: white; font-size: 0.9em; font-weight: 500;'>
-                    Click to edit
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
 
     with m2:
         st.markdown(f"""
