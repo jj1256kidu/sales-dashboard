@@ -51,8 +51,8 @@ st.markdown("""
     .stCard {
         background-color: var(--secondary-background-color);
         border-radius: 10px;
-        padding: 20px;
-        margin: 10px 0;
+        padding: 15px;
+        margin: 30px 0;
         border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
@@ -84,7 +84,7 @@ st.markdown("""
         font-size: 1.8em;
         font-weight: 700;
         color: #2c3e50;
-        margin: 20px 0 15px;
+        margin: 30px 0;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
 
@@ -162,6 +162,35 @@ st.markdown("""
         padding: 15px;
         border-radius: 4px;
         margin: 10px 0;
+    }
+
+    /* Container styling */
+    .container {
+        margin: 30px 0;
+        padding: 15px;
+    }
+
+    /* Graph container */
+    .graph-container {
+        margin: 30px 0;
+        padding: 15px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* Metric container */
+    .metric-container {
+        margin: 30px 0;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+
+    /* Section divider */
+    .section-divider {
+        margin: 30px 0;
+        border-top: 1px solid #eee;
     }
 </style>
 """, unsafe_allow_html=True)
