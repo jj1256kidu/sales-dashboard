@@ -479,16 +479,15 @@ def show_overview():
     if 'sales_target' not in st.session_state:
         st.session_state.sales_target = 5000.0
 
-    # Sales Target Header Section
+    # Simple Sales Target Section
     st.markdown("### 🎯 Annual Sales Target")
-
-    # Editable input with direct value binding
+    
+    # Simple number input
     new_target = st.number_input(
         "Annual Sales Target (Lakhs)",
         value=float(st.session_state.sales_target),
         step=1.0,
-        format="%.2f",
-        key="target_input"  # Add a unique key
+        format="%.2f"
     )
 
     # Update session state if value changes
@@ -496,11 +495,8 @@ def show_overview():
         st.session_state.sales_target = new_target
         st.rerun()
 
-    # Display the amount below
-    st.markdown(
-        f"<div style='text-align: right; font-size: 1.8em; font-weight: bold; color: red;'>₹{new_target:,.2f}L</div>",
-        unsafe_allow_html=True
-    )
+    # Simple display
+    st.markdown(f"₹{new_target:,.2f}L")
 
     # Calculate achievement after target is set
     won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
@@ -1059,16 +1055,15 @@ def show_sales_team():
     if 'sales_target' not in st.session_state:
         st.session_state.sales_target = 5000.0
 
-    # Sales Target Header Section
+    # Simple Sales Target Section
     st.markdown("### 🎯 Annual Sales Target")
-
-    # Editable input with direct value binding
+    
+    # Simple number input
     new_target = st.number_input(
         "Annual Sales Target (Lakhs)",
         value=float(st.session_state.sales_target),
         step=1.0,
-        format="%.2f",
-        key="target_input"  # Add a unique key
+        format="%.2f"
     )
 
     # Update session state if value changes
@@ -1076,11 +1071,8 @@ def show_sales_team():
         st.session_state.sales_target = new_target
         st.rerun()
 
-    # Display the amount below
-    st.markdown(
-        f"<div style='text-align: right; font-size: 1.8em; font-weight: bold; color: red;'>₹{new_target:,.2f}L</div>",
-        unsafe_allow_html=True
-    )
+    # Simple display
+    st.markdown(f"₹{new_target:,.2f}L")
 
     # Calculate metrics once
     metrics = calculate_team_metrics(df)
