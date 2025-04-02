@@ -65,7 +65,7 @@ if 'reset_triggered' not in st.session_state:
 if 'selected_team_member' not in st.session_state:
     st.session_state.selected_team_member = None
 if 'sales_target' not in st.session_state:
-    st.session_state.sales_target = 5000.0
+    st.session_state.sales_target = 0
 
 # Custom CSS for modern styling
 st.markdown("""
@@ -477,35 +477,48 @@ def show_overview():
     
     # Initialize target if not in session state
     if 'sales_target' not in st.session_state:
-        st.session_state.sales_target = 5000.0
+        st.session_state.sales_target = 0
 
     # Sales Target Header Section
     st.markdown("### 🎯 Annual Sales Target")
 
-    # Editable number input
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        new_target = st.number_input(
-            "Enter Target (in Lakhs)", 
-            value=float(st.session_state.get('sales_target', 5000.0)), 
-            format="%.2f",
-            label_visibility="collapsed",
-            key="overview_target_input"
-        )
-
-    # Save it to session state if changed
-    if new_target != st.session_state.get('sales_target', 0):
+    # Manual target input
+    new_target = st.number_input(
+        "Annual Sales Target (Lakhs)",
+        value=float(st.session_state.sales_target),
+        step=1.0,
+        format="%.2f",
+        help="Enter the annual sales target in Lakhs (1L = ₹100,000)"
+    )
+    if new_target != st.session_state.sales_target:
         st.session_state.sales_target = new_target
         st.rerun()
 
-    # Show target value as bold ₹X,XXX.00L
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown(f"""
-            <div style='text-align: center; font-size: 32px; font-weight: 700; color: red;'>
-                ₹{new_target:,.2f}L
+    # Enhanced horizontal progress bar with metrics
+    st.markdown(f"""
+        <div style='background: #f0f2f6; padding: 25px; border-radius: 12px; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>
+            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;'>
+                <div>
+                    <h3 style='margin: 0; color: #2ecc71; font-size: 1.2em; font-weight: 500;'>Closed Won</h3>
+                    <h2 style='margin: 8px 0; color: #2ecc71; font-size: 2.8em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{won_amount:,.2f}L</h2>
+                </div>
+                <div style='text-align: right;'>
+                    <h3 style='margin: 0; color: #e74c3c; font-size: 1.2em; font-weight: 500;'>Target</h3>
+                    <h2 style='margin: 8px 0; color: #e74c3c; font-size: 2.8em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>₹{new_target:,.2f}L</h2>
+                </div>
             </div>
-        """, unsafe_allow_html=True)
+            <div style='background: #e74c3c; height: 40px; border-radius: 20px; overflow: hidden; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);'>
+                <div style='background: #2ecc71; height: 100%; width: {min(100, achievement_pct)}%; transition: width 0.5s ease-in-out;'></div>
+                <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 600; font-size: 1.2em; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);'>
+                    {achievement_pct:.1f}% Complete
+                </div>
+            </div>
+            <div style='display: flex; justify-content: space-between; margin-top: 10px; color: #666; font-size: 1.1em; font-weight: 400;'>
+                <span>₹0L</span>
+                <span>₹{new_target:,.1f}L</span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
     # Calculate achievement after target is set
     won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
@@ -1062,35 +1075,22 @@ def show_sales_team():
 
     # Initialize target if not in session state
     if 'sales_target' not in st.session_state:
-        st.session_state.sales_target = 5000.0
+        st.session_state.sales_target = 0
 
     # Sales Target Header Section
     st.markdown("### 🎯 Annual Sales Target")
 
-    # Editable number input
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        new_target = st.number_input(
-            "Enter Target (in Lakhs)", 
-            value=float(st.session_state.get('sales_target', 5000.0)), 
-            format="%.2f",
-            label_visibility="collapsed",
-            key="sales_team_target_input"
-        )
-
-    # Save it to session state if changed
-    if new_target != st.session_state.get('sales_target', 0):
+    # Manual target input
+    new_target = st.number_input(
+        "Annual Sales Target (Lakhs)",
+        value=float(st.session_state.sales_target),
+        step=1.0,
+        format="%.2f",
+        help="Enter the annual sales target in Lakhs (1L = ₹100,000)"
+    )
+    if new_target != st.session_state.sales_target:
         st.session_state.sales_target = new_target
         st.rerun()
-
-    # Show target value as bold ₹X,XXX.00L
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown(f"""
-            <div style='text-align: center; font-size: 32px; font-weight: 700; color: red;'>
-                ₹{new_target:,.2f}L
-            </div>
-        """, unsafe_allow_html=True)
 
     # Calculate metrics once
     metrics = calculate_team_metrics(df)
