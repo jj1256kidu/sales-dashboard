@@ -6,12 +6,6 @@ import json
 import os
 import random
 
-# Initialize session state for authentication
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-if "username" not in st.session_state:
-    st.session_state.username = None
-
 # Load users from JSON file
 def load_users():
     try:
@@ -245,8 +239,8 @@ def show_login_page():
 
         if st.button("LOGIN", key="login_button"):
             if verify_password(username, password):
-                st.session_state.authenticated = True
-                st.session_state.username = username
+                st.session_state["authenticated"] = True
+                st.session_state["username"] = username
                 st.success("Login successful!")
                 st.rerun()
             else:
@@ -278,8 +272,10 @@ def get_current_user():
     return st.session_state.get("username") if is_authenticated() else None
 
 def logout():
-    st.session_state.authenticated = False
-    st.session_state.username = None
+    if "authenticated" in st.session_state:
+        del st.session_state["authenticated"]
+    if "username" in st.session_state:
+        del st.session_state["username"]
 
 def hash_password(password: str) -> str:
     """Hash a password using SHA-256"""
