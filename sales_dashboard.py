@@ -1,15 +1,15 @@
 import streamlit as st
-from auth import is_authenticated, get_current_user, show_login_page, logout
 
 # Set page config must be the first Streamlit command
 st.set_page_config(
     page_title="Sales Dashboard",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"  # Changed to collapsed for login page
 )
 
 # Import other libraries after page config
+from auth import is_authenticated, get_current_user, show_login_page, logout
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
