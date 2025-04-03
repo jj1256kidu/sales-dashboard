@@ -25,14 +25,27 @@ def log_debug_event(event_type, details):
             'details': details
         })
 
-# Page configuration with error handling
-try:
-    st.set_page_config(page_title="Futuristic Login", layout="wide", initial_sidebar_state="collapsed")
-    log_debug_event('config', 'Page configuration successful')
-except Exception as e:
-    st.error(f"Page configuration error: {str(e)}")
-    log_debug_event('error', f'Page configuration failed: {str(e)}')
-    st.session_state.last_error = str(e)
+# Page configuration
+st.set_page_config(
+    page_title="Futuristic Login",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# Hide Streamlit elements
+hide_streamlit_style = """
+<style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stApp {
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+    }
+</style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Debug mode toggle and information
 with st.sidebar:
@@ -107,10 +120,200 @@ particles_init = f"""
 # Title with reduced margin
 st.markdown("<h1 style='text-align:center; color:cyan; margin: 0 0 1rem 0;'>🚀 Welcome to the Futuristic Login Page</h1>", unsafe_allow_html=True)
 
-# Read and display the HTML file
-with open('login.html', 'r', encoding='utf-8') as file:
-    html_content = file.read()
-    components.html(html_content, height=800, width=None, scrolling=False)
+# Embed the login page
+components.html("""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Futuristic Login</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        html, body {
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background: #0f0c29;
+            margin: 0;
+            padding: 0;
+        }
+
+        #tsparticles {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .login-box {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
+        }
+
+        .login-box h2 {
+            text-align: center;
+            color: #00f0ff;
+            margin-bottom: 30px;
+            font-size: 26px;
+        }
+
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            color: #7efcff;
+            font-size: 14px;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            height: 45px;
+            padding: 0 15px 0 40px;
+            border: 1px solid #00f0ff;
+            background: transparent;
+            color: white;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: box-shadow 0.3s;
+        }
+
+        .input-wrapper input:focus {
+            box-shadow: 0 0 10px #00f0ff;
+        }
+
+        .login-box button {
+            width: 100%;
+            height: 48px;
+            background: linear-gradient(135deg, #00f0ff, #ff00e0);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .login-box button:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 15px #00f0ff;
+        }
+
+        .options {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #a0cbe8;
+            margin-top: 10px;
+        }
+
+        .options a {
+            color: #a0cbe8;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 480px) {
+            .login-box {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Particle Background -->
+    <div id="tsparticles"></div>
+
+    <!-- Login Form -->
+    <div class="container">
+        <form class="login-box">
+            <h2>Welcome Back</h2>
+            <div class="input-wrapper">
+                <i class="fas fa-user"></i>
+                <input type="text" placeholder="Username" required />
+            </div>
+            <div class="input-wrapper">
+                <i class="fas fa-lock"></i>
+                <input type="password" placeholder="Password" required />
+            </div>
+            <button type="submit">LOGIN</button>
+            <div class="options">
+                <label><input type="checkbox" checked /> Remember me</label>
+                <a href="#">Forgot password?</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        window.onload = function() {
+            tsParticles.load("tsparticles", {
+                fullScreen: { enable: false },
+                background: { color: "#0f0c29" },
+                particles: {
+                    number: { value: 100 },
+                    color: { value: ["#00f0ff", "#ff00e0", "#ffc400"] },
+                    shape: { type: ["circle", "square"] },
+                    opacity: { value: 0.7 },
+                    size: { value: 4 },
+                    move: {
+                        enable: true,
+                        speed: 1,
+                        direction: "none",
+                        random: false,
+                        straight: false,
+                        outModes: "bounce"
+                    }
+                },
+                interactivity: {
+                    events: {
+                        onHover: { enable: true, mode: "repulse" },
+                        onClick: { enable: true, mode: "push" }
+                    },
+                    modes: {
+                        repulse: { distance: 100 },
+                        push: { quantity: 4 }
+                    }
+                },
+                detectRetina: true
+            });
+        };
+    </script>
+</body>
+</html>
+""", height=1000, width=None, scrolling=False)
 
 # Enhanced debug controls
 if st.session_state.debug_mode:
