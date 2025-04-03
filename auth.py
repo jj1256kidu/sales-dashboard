@@ -6,6 +6,12 @@ import json
 import os
 import random
 
+# Initialize session state for authentication
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+if "username" not in st.session_state:
+    st.session_state["username"] = None
+
 # Load users from JSON file
 def load_users():
     try:
@@ -31,16 +37,13 @@ def verify_password(username, password):
     return False
 
 def show_login_page():
-    # Generate particles HTML
-    particles_html = ""
-    for i in range(30):
-        left = random.randint(0, 100)
-        delay = random.randint(0, 20)
-        duration = random.randint(15, 25)
-        particles_html += f'<div class="particle" style="left: {left}vw; animation-delay: {delay}s; animation-duration: {duration}s;"></div>'
-
+    # Hide sidebar and main menu
     st.markdown("""
         <style>
+            section[data-testid="stSidebar"] {display: none !important;}
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            
             /* Override Streamlit defaults */
             .stApp {
                 background: #0B0B1E !important;
@@ -49,22 +52,6 @@ def show_login_page():
             .block-container {
                 padding: 0 !important;
                 max-width: 100% !important;
-            }
-
-            section[data-testid="stSidebar"] {
-                display: none !important;
-            }
-
-            header[data-testid="stHeader"] {
-                display: none !important;
-            }
-
-            #MainMenu {
-                display: none !important;
-            }
-
-            footer {
-                display: none !important;
             }
 
             /* Custom styles for form elements */
@@ -214,9 +201,15 @@ def show_login_page():
             .particle:nth-child(3n+1) { background: #FF00FF; }
             .particle:nth-child(3n+2) { background: #FFD700; }
         </style>
-
-        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
     """, unsafe_allow_html=True)
+
+    # Generate particles HTML
+    particles_html = ""
+    for i in range(30):
+        left = random.randint(0, 100)
+        delay = random.randint(0, 20)
+        duration = random.randint(15, 25)
+        particles_html += f'<div class="particle" style="left: {left}vw; animation-delay: {delay}s; animation-duration: {duration}s;"></div>'
 
     # Create the main container with particles
     st.markdown(f"""
