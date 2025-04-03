@@ -36,7 +36,9 @@ def show_login_page():
     """Display the login page"""
     # Add required external resources
     st.markdown("""
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
     """, unsafe_allow_html=True)
     
     st.markdown("""
@@ -49,10 +51,10 @@ def show_login_page():
                 font-family: 'Orbitron', sans-serif !important;
             }
             
-            .stApp {
-                background: #0B0B1F !important;
+            html, body, .stApp {
                 height: 100vh;
                 overflow: hidden;
+                background: #0f0c29 !important;
             }
             
             .block-container {
@@ -66,41 +68,14 @@ def show_login_page():
                 padding: 0 !important;
             }
             
-            /* Stars background */
-            .stars {
+            /* Particle container */
+            #tsparticles {
                 position: fixed;
                 top: 0;
                 left: 0;
                 width: 100%;
                 height: 100%;
-                pointer-events: none;
                 z-index: 0;
-            }
-            
-            .star {
-                position: absolute;
-                width: 3px;
-                height: 3px;
-                background: #00f0ff;
-                border-radius: 50%;
-            }
-            
-            .star:nth-child(2n) {
-                background: #ff00e0;
-                width: 2px;
-                height: 2px;
-            }
-            
-            .star:nth-child(3n) {
-                background: #ffc400;
-                width: 2px;
-                height: 2px;
-            }
-            
-            .star:nth-child(4n) {
-                background: #00f0ff;
-                width: 1px;
-                height: 1px;
             }
             
             /* Container styles */
@@ -116,37 +91,35 @@ def show_login_page():
             
             /* Login box styles */
             .login-box {
-                background: rgba(2, 6, 23, 0.95);
+                background: rgba(0, 0, 0, 0.7);
                 border-radius: 20px;
-                padding: 40px;
+                padding: 40px 30px;
                 width: 100%;
                 max-width: 400px;
-                box-shadow: 0 0 40px rgba(0, 240, 255, 0.2);
-                border: 1px solid rgba(0, 240, 255, 0.1);
+                box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
             }
             
             .login-box h2 {
                 text-align: center;
                 color: #00f0ff;
-                margin-bottom: 40px;
-                font-size: 28px;
+                margin-bottom: 30px;
+                font-size: 26px;
                 font-weight: 700;
-                text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
             }
             
             /* Input field styles */
             .input-wrapper {
                 position: relative;
-                margin-bottom: 25px;
+                margin-bottom: 20px;
             }
             
             .input-icon {
                 position: absolute;
                 top: 50%;
-                left: 20px;
+                left: 15px;
                 transform: translateY(-50%);
-                color: #00f0ff;
-                font-size: 16px;
+                color: #7efcff;
+                font-size: 14px;
                 z-index: 2;
             }
             
@@ -155,102 +128,134 @@ def show_login_page():
             }
             
             .stTextInput > div > div {
-                background: rgba(0, 240, 255, 0.05) !important;
+                width: 100% !important;
+                height: 45px !important;
+                padding: 0 15px 0 40px !important;
                 border: 1px solid #00f0ff !important;
-                border-radius: 30px !important;
-                padding: 0 20px 0 45px !important;
-                height: 50px !important;
-                color: #00f0ff !important;
-                font-size: 16px !important;
-                transition: all 0.3s ease !important;
-                box-shadow: 0 0 10px rgba(0, 240, 255, 0.1) !important;
+                background: transparent !important;
+                color: white !important;
+                border-radius: 25px !important;
+                font-size: 14px !important;
+                transition: box-shadow 0.3s !important;
             }
             
             .stTextInput > div > div:focus {
-                box-shadow: 0 0 20px rgba(0, 240, 255, 0.2) !important;
-                border-color: #00f0ff !important;
-                background: rgba(0, 240, 255, 0.1) !important;
+                box-shadow: 0 0 10px #00f0ff !important;
+            }
+            
+            .stTextInput input {
+                color: white !important;
             }
             
             .stTextInput input::placeholder {
-                color: rgba(0, 240, 255, 0.5) !important;
-            }
-            
-            .stTextInput > label {
-                display: none !important;
+                color: #7efcff !important;
+                opacity: 0.7 !important;
             }
             
             /* Button styles */
             .stButton > button {
                 width: 100% !important;
-                height: 50px !important;
-                background: linear-gradient(90deg, #00f0ff, #ff00e0) !important;
+                height: 48px !important;
+                background: linear-gradient(135deg, #00f0ff, #ff00e0) !important;
                 color: white !important;
                 font-weight: bold !important;
-                font-size: 18px !important;
+                font-size: 16px !important;
                 border: none !important;
-                border-radius: 30px !important;
+                border-radius: 25px !important;
                 cursor: pointer !important;
                 transition: all 0.3s ease !important;
-                margin: 10px 0 !important;
-                text-shadow: 0 0 10px rgba(255, 255, 255, 0.5) !important;
-                box-shadow: 0 0 20px rgba(0, 240, 255, 0.3) !important;
+                margin: 0 !important;
             }
             
             .stButton > button:hover {
-                transform: translateY(-2px) !important;
-                box-shadow: 0 0 30px rgba(0, 240, 255, 0.5) !important;
+                transform: scale(1.03) !important;
+                box-shadow: 0 0 15px #00f0ff !important;
             }
             
             /* Options styles */
             .options {
                 display: flex;
                 justify-content: space-between;
-                align-items: center;
-                margin-top: 20px;
-                padding: 0 10px;
+                font-size: 12px;
+                color: #a0cbe8;
+                margin-top: 15px;
             }
             
-            .remember-me {
+            .options label {
                 display: flex;
                 align-items: center;
-                gap: 8px;
-                color: #00f0ff;
-                font-size: 14px;
+                gap: 5px;
+                cursor: pointer;
             }
             
-            .remember-me input[type="checkbox"] {
-                width: 16px;
-                height: 16px;
-                accent-color: #00f0ff;
+            .options a {
+                color: #a0cbe8;
+                text-decoration: underline;
             }
             
-            .forgot-password {
-                color: #00f0ff;
-                font-size: 14px;
-                text-decoration: none;
-                transition: all 0.3s ease;
+            /* Error message */
+            .stAlert {
+                background: rgba(255, 0, 224, 0.1) !important;
+                border: 1px solid rgba(255, 0, 224, 0.2) !important;
+                color: #ff00e0 !important;
+                padding: 0.75rem !important;
+                border-radius: 12px !important;
+                margin: 1rem 0 !important;
             }
             
-            .forgot-password:hover {
-                text-shadow: 0 0 10px #00f0ff;
+            .stAlert > div {
+                padding: 0 !important;
             }
 
             /* Hide Streamlit elements */
             #MainMenu, footer, header {
                 display: none !important;
             }
+            
+            /* Mobile responsiveness */
+            @media (max-width: 480px) {
+                .login-box {
+                    padding: 30px 20px;
+                }
+            }
         </style>
         
-        <div class="stars">
-            ${Array(100).fill().map((_, i) => `
-                <div class="star" style="
-                    left: ${Math.random() * 100}%;
-                    top: ${Math.random() * 100}%;
-                    opacity: ${0.3 + Math.random() * 0.7};
-                "></div>
-            `).join('')}
-        </div>
+        <!-- Particle system -->
+        <div id="tsparticles"></div>
+        <script>
+            if (typeof tsParticles !== 'undefined') {
+                tsParticles.load("tsparticles", {
+                    fullScreen: { enable: false },
+                    background: { color: "#0f0c29" },
+                    particles: {
+                        number: { value: 100 },
+                        color: { value: ["#00f0ff", "#ff00e0", "#ffc400"] },
+                        shape: { type: ["circle", "square"] },
+                        opacity: { value: 0.7 },
+                        size: { value: 4 },
+                        move: {
+                            enable: true,
+                            speed: 1,
+                            direction: "none",
+                            random: false,
+                            straight: false,
+                            outModes: "bounce"
+                        }
+                    },
+                    interactivity: {
+                        events: {
+                            onHover: { enable: true, mode: "repulse" },
+                            onClick: { enable: true, mode: "push" }
+                        },
+                        modes: {
+                            repulse: { distance: 100 },
+                            push: { quantity: 4 }
+                        }
+                    },
+                    detectRetina: true
+                });
+            }
+        </script>
         
         <div class="container">
             <div class="login-box">
@@ -259,11 +264,11 @@ def show_login_page():
 
     with st.form("login_form"):
         st.markdown('<div class="input-wrapper"><i class="fas fa-user input-icon"></i>', unsafe_allow_html=True)
-        username = st.text_input("", placeholder="Username")
+        username = st.text_input("", placeholder="Username", key="username")
         st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="input-wrapper"><i class="fas fa-lock input-icon"></i>', unsafe_allow_html=True)
-        password = st.text_input("", type="password", placeholder="Password")
+        password = st.text_input("", type="password", placeholder="Password", key="password")
         st.markdown('</div>', unsafe_allow_html=True)
         
         submit = st.form_submit_button("LOGIN")
@@ -272,27 +277,12 @@ def show_login_page():
             if login(username, password):
                 st.rerun()
             else:
-                st.markdown("""
-                    <div class="error-message">
-                        ⚠️ Invalid username or password
-                    </div>
-                    <div class="credentials-info">
-                        <p><strong>Available Accounts</strong></p>
-                        <p>
-                            <code>admin</code> / <code>admin123</code>
-                            <br>
-                            <code>guest</code> / <code>guest123</code>
-                        </p>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.error("Invalid username or password")
 
         st.markdown("""
             <div class="options">
-                <label class="remember-me">
-                    <input type="checkbox" checked />
-                    Remember me
-                </label>
-                <a href="#" class="forgot-password">Forgot password?</a>
+                <label><input type="checkbox" checked /> Remember me</label>
+                <a href="#">Forgot password?</a>
             </div>
         """, unsafe_allow_html=True)
 
