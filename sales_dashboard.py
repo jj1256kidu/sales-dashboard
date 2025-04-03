@@ -1,4 +1,13 @@
 import streamlit as st
+
+# Set page config must be the first Streamlit command
+st.set_page_config(
+    page_title="Sales Dashboard",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -8,14 +17,6 @@ import io
 from functools import lru_cache
 import hashlib
 from auth import is_authenticated, get_current_user, show_login_page, logout
-
-# Set page config must be the first Streamlit command
-st.set_page_config(
-    page_title="Sales Dashboard",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Initialize session state with persistence
 if "persistent_state" not in st.session_state:
