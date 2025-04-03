@@ -6,37 +6,63 @@ from datetime import datetime, timedelta
 import numpy as np
 
 def show_login_page():
-    """Display the login page with neon-styled authentication"""
-    # Custom CSS for login page
+    """Display the login page with neon-styled authentication and particles"""
+    # Custom CSS and JS for login page with particles
     st.markdown("""
         <style>
-            /* Background animation */
+            /* Existing styles */
             @keyframes moveBackground {
                 0% { background-position: 0% 0%; }
                 100% { background-position: 100% 100%; }
             }
             
-            /* Neon glow animation */
             @keyframes neonGlow {
                 0% { box-shadow: 0 0 5px #0ff, 0 0 10px #0ff, 0 0 15px #0ff; }
                 50% { box-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff; }
                 100% { box-shadow: 0 0 5px #0ff, 0 0 10px #0ff, 0 0 15px #0ff; }
             }
             
-            /* Button animation */
             @keyframes buttonGlow {
                 0% { background-position: 0% 50%; }
                 50% { background-position: 100% 50%; }
                 100% { background-position: 0% 50%; }
             }
 
+            /* Particle animation */
+            @keyframes float-up {
+                0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+                50% { opacity: 0.5; }
+                100% { transform: translateY(-1000px) rotate(720deg); opacity: 0; }
+            }
+
             /* Main container */
             .main {
                 background-color: #0a0a2e;
                 min-height: 100vh;
-                display: flex;
-                justify-content: center;
-                align-items: center;
+                position: relative;
+                overflow: hidden;
+            }
+
+            /* Particles container */
+            .particles-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 0;
+            }
+
+            /* Individual particle */
+            .particle {
+                position: absolute;
+                width: 4px;
+                height: 4px;
+                background: #0ff;
+                border-radius: 50%;
+                pointer-events: none;
+                animation: float-up 10s infinite linear;
             }
 
             /* Login container */
@@ -50,6 +76,8 @@ def show_login_page():
                 box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
                 backdrop-filter: blur(10px);
                 animation: neonGlow 2s infinite;
+                position: relative;
+                z-index: 1;
             }
 
             /* Login header */
@@ -140,25 +168,35 @@ def show_login_page():
                 font-size: 0.9em;
                 text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
             }
-
-            /* Background dots */
-            .background-dots {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: radial-gradient(circle, #0ff 1px, transparent 1px),
-                            radial-gradient(circle, #ff00ff 1px, transparent 1px),
-                            radial-gradient(circle, #ffff00 1px, transparent 1px);
-                background-size: 50px 50px;
-                background-position: 0 0, 25px 25px, 12px 12px;
-                opacity: 0.1;
-                z-index: -1;
-                animation: moveBackground 20s linear infinite;
-            }
         </style>
-        <div class="background-dots"></div>
+
+        <script>
+            function createParticle() {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + 'vw';
+                particle.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                particle.style.opacity = Math.random();
+                document.querySelector('.particles-container').appendChild(particle);
+                
+                particle.addEventListener('animationend', () => {
+                    particle.remove();
+                });
+            }
+
+            function initParticles() {
+                const container = document.createElement('div');
+                container.className = 'particles-container';
+                document.body.appendChild(container);
+                
+                setInterval(createParticle, 100);
+            }
+
+            // Initialize particles when the page loads
+            window.addEventListener('load', initParticles);
+        </script>
+
+        <div class="particles-container"></div>
     """, unsafe_allow_html=True)
 
     # Login container
