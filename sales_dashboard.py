@@ -1,4 +1,5 @@
 import streamlit as st
+from auth import is_authenticated, get_current_user, show_login_page, logout
 
 # Set page config must be the first Streamlit command
 st.set_page_config(
@@ -17,7 +18,6 @@ import numpy as np
 import io
 from functools import lru_cache
 import hashlib
-from auth import is_authenticated, get_current_user, show_login_page, logout, init_session_state
 
 # Initialize session state with persistence
 if "persistent_state" not in st.session_state:
