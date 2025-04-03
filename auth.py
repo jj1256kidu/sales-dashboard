@@ -6,11 +6,76 @@ import json
 import os
 import random
 
-# Initialize session state for authentication
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
-if "username" not in st.session_state:
-    st.session_state["username"] = None
+def init_session_state():
+    """Initialize session state variables"""
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+    if "df" not in st.session_state:
+        st.session_state.df = None
+    if "sales_target" not in st.session_state:
+        st.session_state.sales_target = 0.0
+
+def check_password():
+    """Check if the user has entered the correct password"""
+    st.markdown("""
+        <div style='
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        '>
+            <h1 style='
+                color: white;
+                margin: 0;
+                text-align: center;
+                font-size: 2.2em;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            '>Sales Dashboard Login</h1>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+        <style>
+        .stTextInput > div > div > input {
+            background-color: white;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 1.1em;
+            border: 2px solid #e0e0e0;
+            transition: border-color 0.3s ease;
+        }
+        .stTextInput > div > div > input:focus {
+            border-color: #2a5298;
+            box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.2);
+        }
+        .stButton > button {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 10px;
+            transition: transform 0.2s ease;
+        }
+        .stButton > button:hover {
+            transform: translateY(-2px);
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    password = st.text_input("Password", type="password")
+
+    if password == "admin123":  # Replace with your desired password
+        st.session_state.authenticated = True
+        st.rerun()
+    elif password:
+        st.error("Incorrect password. Please try again.")
 
 # Load users from JSON file
 def load_users():
