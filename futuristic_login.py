@@ -3,13 +3,15 @@ import streamlit.components.v1 as components
 import time
 import json
 import pandas as pd
+from particle_config import get_theme_config
 
-# Initialize session state for debugging
+# Initialize session state for debugging and theme
 if 'debug_mode' not in st.session_state:
     st.session_state.debug_mode = False
     st.session_state.login_attempts = 0
     st.session_state.debug_log = []
     st.session_state.last_error = None
+    st.session_state.theme = "neon"
     st.session_state.performance_metrics = {
         'page_load_time': time.time(),
         'login_attempts_timing': []
@@ -72,11 +74,41 @@ with st.sidebar:
                 "application/json"
             )
 
+# Theme selector in sidebar
+with st.sidebar:
+    st.session_state.theme = st.selectbox(
+        "Select Theme",
+        ["Neon", "Cyber", "Matrix"],
+        index=["Neon", "Cyber", "Matrix"].index(st.session_state.theme.capitalize())
+    )
+
+# Get particle configuration based on selected theme
+particle_config = get_theme_config(st.session_state.theme)
+
+# Update the particle initialization in the JavaScript
+particles_init = f"""
+    try {{
+      tsParticles.load("tsparticles", {json.dumps(particle_config)}).then(() => {{
+        logToDebug('Particles initialized successfully', 'system');
+      }}).catch(error => {{
+        errorCount++;
+        console.error('Particles initialization error:', error);
+        logToDebug(`Particles error: ${{error.message}}`, 'error');
+        document.getElementById('errors').textContent = `Particle Init: ${{error.message}}`;
+      }});
+    }} catch (error) {{
+      errorCount++;
+      console.error('Critical error:', error);
+      logToDebug(`Critical error: ${{error.message}}`, 'error');
+      document.getElementById('errors').textContent = `Critical: ${{error.message}}`;
+    }}
+"""
+
 # Title
 st.markdown("<h1 style='text-align:center; color:cyan;'>🚀 Welcome to the Futuristic Login Page</h1>", unsafe_allow_html=True)
 
-# Embed HTML with enhanced debugging
-components.html("""
+# Embed HTML with theme-based styling
+components.html(f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -87,28 +119,27 @@ components.html("""
   <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-    * {
+    * {{
       margin: 0; padding: 0; box-sizing: border-box;
       font-family: 'Orbitron', sans-serif;
-    }
-    html, body {
+    }}
+    html, body {{
       height: 100vh;
       width: 100vw;
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: #0f0c29;
-    }
-    #tsparticles {
+      background: {particle_config["background"]["color"]};
+    }}
+    #tsparticles {{
       position: absolute;
       width: 100%;
       height: 100%;
       top: 0;
       left: 0;
       z-index: 0;
-      pointer-events: auto;
-    }
-    .login-box {
+    }}
+    .login-box {{
       position: absolute;
       z-index: 2;
       left: 50%;
@@ -120,49 +151,57 @@ components.html("""
       width: 90%;
       max-width: 400px;
       color: white;
-      box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
+      box-shadow: 0 0 25px {particle_config["particles"]["color"]["value"][0]}40;
       backdrop-filter: blur(10px);
-    }
-    .login-box h2 {
+    }}
+    .login-box h2 {{
       text-align: center;
-      color: #00f0ff;
+      color: {particle_config["particles"]["color"]["value"][0]};
       margin-bottom: 30px;
-    }
-    .input-wrapper {
+    }}
+    .input-wrapper {{
       position: relative;
       margin-bottom: 20px;
-    }
-    .input-wrapper i {
+    }}
+    .input-wrapper i {{
       position: absolute;
       top: 50%;
       left: 15px;
       transform: translateY(-50%);
-      color: #7efcff;
-    }
-    .input-wrapper input {
+      color: {particle_config["particles"]["color"]["value"][0]};
+    }}
+    .input-wrapper input {{
       width: 100%;
       height: 45px;
       padding: 0 15px 0 40px;
-      border: 1px solid #00f0ff;
+      border: 1px solid {particle_config["particles"]["color"]["value"][0]};
       background: transparent;
       color: white;
       border-radius: 25px;
       font-size: 14px;
       outline: none;
-    }
-    .login-box button {
+    }}
+    .login-box button {{
       width: 100%;
       height: 48px;
-      background: linear-gradient(135deg, #00f0ff, #ff00e0);
+      background: linear-gradient(135deg, 
+        {particle_config["particles"]["color"]["value"][0]}, 
+        {particle_config["particles"]["color"]["value"][1]}
+      );
       color: white;
       font-weight: bold;
       font-size: 16px;
       border: none;
       border-radius: 25px;
       cursor: pointer;
-    }
+      transition: all 0.3s ease;
+    }}
+    .login-box button:hover {{
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px {particle_config["particles"]["color"]["value"][0]}40;
+    }}
     /* Enhanced debug styles */
-    .debug-info {
+    .debug-info {{
       position: fixed;
       bottom: 10px;
       right: 10px;
@@ -176,27 +215,27 @@ components.html("""
       border: 1px solid #00f0ff;
       box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
       max-width: 300px;
-    }
-    .debug-info.show {
+    }}
+    .debug-info.show {{
       display: block;
-    }
-    .debug-section {
+    }}
+    .debug-section {{
       margin-bottom: 10px;
       padding-bottom: 5px;
       border-bottom: 1px solid rgba(0, 255, 255, 0.2);
-    }
-    .debug-title {
+    }}
+    .debug-title {{
       color: #ff00e0;
       font-weight: bold;
       margin-bottom: 5px;
-    }
-    .debug-value {
+    }}
+    .debug-value {{
       margin-left: 10px;
       word-break: break-all;
-    }
-    .debug-error {
+    }}
+    .debug-error {{
       color: #ff3366;
-    }
+    }}
   </style>
 </head>
 <body>
@@ -309,155 +348,8 @@ components.html("""
       }
     }
 
-    // Enhanced particle initialization
-    try {
-      tsParticles.load("tsparticles", {
-        fullScreen: {
-          enable: true,
-          zIndex: 1
-        },
-        fpsLimit: 60,
-        particles: {
-          number: {
-            value: 80,
-            density: {
-              enable: true,
-              value_area: 1000
-            }
-          },
-          color: {
-            value: ["#00f0ff", "#ff00e0", "#00ff00"],
-            animation: {
-              enable: true,
-              speed: 20,
-              sync: false
-            }
-          },
-          shape: {
-            type: ["circle", "triangle", "star"],
-            options: {
-              star: {
-                sides: 5
-              }
-            }
-          },
-          opacity: {
-            value: 0.8,
-            random: false,
-            animation: {
-              enable: true,
-              speed: 1,
-              minimumValue: 0.4,
-              sync: false
-            }
-          },
-          size: {
-            value: 8,
-            random: true,
-            animation: {
-              enable: true,
-              speed: 2,
-              minimumValue: 4,
-              sync: false
-            }
-          },
-          links: {
-            enable: true,
-            distance: 150,
-            color: "#00f0ff",
-            opacity: 0.5,
-            width: 2,
-            triangles: {
-              enable: true,
-              opacity: 0.2
-            }
-          },
-          move: {
-            enable: true,
-            speed: 3,
-            direction: "none",
-            random: true,
-            straight: false,
-            outModes: {
-              default: "bounce"
-            },
-            attract: {
-              enable: true,
-              rotateX: 600,
-              rotateY: 1200
-            }
-          },
-          rotate: {
-            random: true,
-            direction: "random",
-            animation: {
-              enable: true,
-              speed: 5,
-              sync: false
-            }
-          },
-          glow: {
-            enable: true,
-            color: "#00f0ff",
-            blur: 10
-          }
-        },
-        interactivity: {
-          detectsOn: "canvas",
-          events: {
-            onHover: {
-              enable: true,
-              mode: ["grab", "bubble"],
-              parallax: {
-                enable: true,
-                force: 60,
-                smooth: 10
-              }
-            },
-            onClick: {
-              enable: true,
-              mode: "push"
-            },
-            resize: true
-          },
-          modes: {
-            grab: {
-              distance: 200,
-              links: {
-                opacity: 1,
-                color: "#ff00e0"
-              }
-            },
-            bubble: {
-              distance: 200,
-              size: 15,
-              duration: 2,
-              opacity: 0.8,
-              color: "#00f0ff"
-            },
-            push: {
-              quantity: 6
-            }
-          }
-        },
-        background: {
-          color: "#0f0c29"
-        },
-        detectRetina: true
-      }).then(() => {
-        logToDebug('Particles initialized successfully', 'system');
-      }).catch(error => {
-        errorCount++;
-        console.error('Particles initialization error:', error);
-        logToDebug(`Particles error: ${error.message}`, 'error');
-        document.getElementById('errors').textContent = `Particle Init: ${error.message}`;
-      });
-    } catch (error) {
-      errorCount++;
-      console.error('Critical error:', error);
-      logToDebug(`Critical error: ${error.message}`, 'error');
-      document.getElementById('errors').textContent = `Critical: ${error.message}`;
-    }
+    // Initialize particles with theme configuration
+    {particles_init}
 
     // Initialize debug mode
     window.debugMode = """ + str(st.session_state.debug_mode).lower() + """;
