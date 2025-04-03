@@ -6,10 +6,10 @@ from datetime import datetime
 import numpy as np
 import io
 from functools import lru_cache
-from auth import is_authenticated, get_current_user, show_login_page, logout
 import hashlib
+from auth import is_authenticated, get_current_user, show_login_page, logout
 
-# Set page config
+# Set page config must be the first Streamlit command
 st.set_page_config(
     page_title="Sales Dashboard",
     page_icon="📊",
@@ -1422,7 +1422,7 @@ def main():
     
     # Add logout button in sidebar
     with st.sidebar:
-        st.write(f"Welcome, {current_user['username']}")
+        st.write(f"Welcome, {current_user}")  # current_user is already the username string
         if st.button("Logout"):
             logout()
             st.rerun()
