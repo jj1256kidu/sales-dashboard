@@ -1,6 +1,7 @@
 import streamlit as st
 from typing import Optional
 import random
+import time
 
 # Set page config at the very start
 st.set_page_config(
@@ -10,6 +11,16 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Initialize session state
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "username" not in st.session_state:
+    st.session_state.username = None
+if "login_attempts" not in st.session_state:
+    st.session_state.login_attempts = 0
+if "last_attempt_time" not in st.session_state:
+    st.session_state.last_attempt_time = 0
+
 # Simple user credentials
 USERS = {
     "admin": "admin123",
@@ -17,17 +28,33 @@ USERS = {
 }
 
 def login(username: str, password: str) -> bool:
+    """Authenticate user and set session state"""
+    current_time = time.time()
+    
+    # Check for brute force protection
+    if st.session_state.login_attempts >= 3:
+        if current_time - st.session_state.last_attempt_time < 30:  # 30 second cooldown
+            st.error("Too many failed attempts. Please wait 30 seconds.")
+            return False
+        else:
+            st.session_state.login_attempts = 0
+    
     if username in USERS and password == USERS[username]:
-        st.session_state["authenticated"] = True
-        st.session_state["username"] = username
+        st.session_state.authenticated = True
+        st.session_state.username = username
+        st.session_state.login_attempts = 0
         return True
+    
+    st.session_state.login_attempts += 1
+    st.session_state.last_attempt_time = current_time
     return False
 
 def logout():
-    """Log out the current user"""
-    st.session_state["authenticated"] = False
-    st.session_state["username"] = None
+    """Log out the current user and clear session state"""
+    st.session_state.authenticated = False
+    st.session_state.username = None
     st.session_state.clear()
+    st.rerun()
 
 def is_authenticated() -> bool:
     """Check if the user is authenticated"""
@@ -396,13 +423,13 @@ def show_login_page():
         </style>
         
         <div class="particles">
-            ${Array(50).fill().map((_, i) => `
+            """ + "".join([f"""
                 <div class="particle" style="
-                    left: ${Math.random() * 100}vw;
-                    top: ${Math.random() * 100}vh;
-                    animation-delay: -${Math.random() * 8}s;
+                    left: {random.random() * 100}vw;
+                    top: {random.random() * 100}vh;
+                    animation-delay: -{random.random() * 8}s;
                 "></div>
-            `).join('')}
+            """ for _ in range(50)]) + """
         </div>
         
         <div class="container">
@@ -410,13 +437,14 @@ def show_login_page():
                 <h2>Welcome Back</h2>
     """, unsafe_allow_html=True)
 
-    with st.form("login_form"):
+    with st.form("login_form", clear_on_submit=True):
         st.markdown('<div class="input-wrapper"><i class="fas fa-user"></i>', unsafe_allow_html=True)
         username = st.text_input(
             "Username",
             placeholder="Username",
             key="username",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            max_chars=20
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
@@ -426,14 +454,17 @@ def show_login_page():
             type="password",
             placeholder="Password",
             key="password",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            max_chars=20
         )
         st.markdown('</div>', unsafe_allow_html=True)
         
         submit = st.form_submit_button("LOGIN")
         
         if submit:
-            if login(username, password):
+            if not username or not password:
+                st.error("Please enter both username and password")
+            elif login(username, password):
                 st.rerun()
             else:
                 st.error("Invalid username or password")
