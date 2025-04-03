@@ -1,8 +1,13 @@
 import streamlit as st
 from typing import Optional
 
-# Set page config at the very start
-st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+# Set page config at the very start - MUST be the first Streamlit command
+st.set_page_config(
+    page_title="Sales Dashboard Login",
+    page_icon="🔒",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
 
 # Simple user credentials without hashing for now
 USERS = {
@@ -264,11 +269,22 @@ def show_login_page():
 
     with st.form("login_form"):
         st.markdown('<div class="input-wrapper"><i class="fas fa-user input-icon"></i>', unsafe_allow_html=True)
-        username = st.text_input("", placeholder="Username", key="username")
+        username = st.text_input(
+            "Username",  # Non-empty label
+            placeholder="Username",
+            key="username",
+            label_visibility="collapsed"  # Hide the label but keep it for accessibility
+        )
         st.markdown('</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="input-wrapper"><i class="fas fa-lock input-icon"></i>', unsafe_allow_html=True)
-        password = st.text_input("", type="password", placeholder="Password", key="password")
+        password = st.text_input(
+            "Password",  # Non-empty label
+            type="password",
+            placeholder="Password",
+            key="password",
+            label_visibility="collapsed"  # Hide the label but keep it for accessibility
+        )
         st.markdown('</div>', unsafe_allow_html=True)
         
         submit = st.form_submit_button("LOGIN")
