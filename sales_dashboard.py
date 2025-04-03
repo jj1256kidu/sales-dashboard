@@ -256,6 +256,66 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         color: white !important;
     }
+
+    /* Filter section styling */
+    .filter-section {
+        background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(108, 99, 255, 0.1) 100%);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .filter-section h3 {
+        color: white;
+        margin: 0 0 1rem 0;
+        font-size: 1.2em;
+        font-weight: 600;
+    }
+
+    /* Team filters section */
+    .team-filters {
+        background: linear-gradient(to right, #f8f9fa, #e9ecef);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+
+    .team-filters h4 {
+        color: #2a5298;
+        margin: 0 0 1rem 0;
+        font-size: 1.1em;
+        font-weight: 600;
+    }
+
+    /* Performance metrics section */
+    .performance-metrics {
+        margin: 2rem 0;
+    }
+
+    .performance-metrics h3 {
+        color: #2a5298;
+        margin: 0 0 1.5rem 0;
+        font-size: 1.4em;
+        font-weight: 600;
+    }
+
+    /* Team member performance section */
+    .team-member-performance {
+        background: linear-gradient(to right, #f8f9fa, #e9ecef);
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+    }
+
+    .team-member-performance h3 {
+        color: #2a5298;
+        margin: 0;
+        font-size: 1.4em;
+        font-weight: 600;
+        font-family: "Segoe UI", sans-serif;
+    }
 </style>
 """, unsafe_allow_html=True)
 
