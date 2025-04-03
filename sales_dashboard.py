@@ -101,6 +101,49 @@ st.markdown("""
         line-height: 1.6;
     }
 
+    /* All text elements */
+    div:not(.custom-header):not(.section-header):not(.metric-card) {
+        color: var(--text-color) !important;
+    }
+
+    /* Metric Cards */
+    .metric-card {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        padding: 1.5rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        height: 100%;
+        transition: transform 0.2s ease-in-out;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .metric-label {
+        color: white !important;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .metric-value {
+        color: white !important;
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .metric-sublabel {
+        color: rgba(255, 255, 255, 0.9) !important;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
     /* Improve dropdown and select visibility */
     .stSelectbox [data-baseweb="select"] {
         background-color: white !important;
@@ -122,10 +165,13 @@ st.markdown("""
         background-color: white !important;
         color: var(--text-color) !important;
         font-weight: 500 !important;
+        border: 1px solid var(--border-color) !important;
     }
 
     /* Improve label visibility */
-    .stSelectbox label, .stTextInput label {
+    .stSelectbox label, 
+    .stTextInput label,
+    .stNumberInput label {
         color: var(--text-color) !important;
         font-weight: 600 !important;
         font-size: 1rem !important;
@@ -144,163 +190,41 @@ st.markdown("""
         font-weight: 600 !important;
     }
 
-    /* Dropdown menu items */
-    [data-baseweb="menu"] {
-        background-color: white !important;
-    }
-
-    [data-baseweb="menu"] div {
-        color: var(--text-color) !important;
-    }
-
-    /* Selected option in dropdowns */
-    [data-baseweb="selected-option"] {
-        color: var(--text-color) !important;
-        background-color: rgba(74, 144, 226, 0.1) !important;
-    }
-
-    /* Hover state for dropdown items */
-    [data-baseweb="menu"] div:hover {
-        background-color: rgba(74, 144, 226, 0.1) !important;
-        color: var(--text-color) !important;
-    }
-
-    /* Sidebar improvements */
-    .css-1d391kg {
-        background: var(--primary-color) !important;
-    }
-
-    .css-1d391kg .stRadio label {
-        color: white !important;
-        font-weight: 500 !important;
-    }
-
-    /* Streamlit Select boxes and Dropdowns */
-    .stSelectbox > div > div,
-    .stMultiSelect > div > div {
-        background-color: white !important;
-        color: var(--text-color) !important;
-        font-weight: 500 !important;
-        text-shadow: none !important;
-    }
-
-    /* Dropdown options */
-    .stSelectbox > div > div > div > div {
-        color: var(--text-color) !important;
-        font-weight: 500 !important;
-    }
-
-    /* Input fields */
-    .stTextInput > div > div > input {
-        color: var(--text-color) !important;
-        font-weight: 500 !important;
-        background-color: white !important;
-    }
-
-    /* Labels for inputs and dropdowns */
-    .stSelectbox label,
-    .stTextInput label,
-    .stMultiSelect label {
+    /* Headers in white sections */
+    .white-section h1, 
+    .white-section h2, 
+    .white-section h3, 
+    .white-section h4 {
         color: var(--text-color) !important;
         font-weight: 600 !important;
-        font-size: 1rem !important;
     }
 
-    /* Radio buttons */
-    .stRadio > div {
+    /* Data display elements */
+    .dataframe td,
+    .stDataFrame td {
         color: var(--text-color) !important;
         font-weight: 500 !important;
     }
 
-    /* Buttons */
-    .stButton > button {
-        color: var(--text-color) !important;
-        font-weight: 600 !important;
-        background-color: white !important;
-        border: 2px solid var(--border-color) !important;
-    }
-
-    /* Dataframe */
-    .dataframe {
-        color: var(--text-color) !important;
-    }
-
-    .dataframe th {
+    /* Table headers */
+    .dataframe th,
+    .stDataFrame th {
         background: var(--primary-color) !important;
         color: white !important;
         font-weight: 600 !important;
     }
 
-    .dataframe td {
-        color: var(--text-color) !important;
-        font-weight: 500 !important;
-    }
-
-    /* Metric labels */
-    .metric-label {
-        color: var(--text-color) !important;
-        font-weight: 600 !important;
-        text-shadow: none !important;
-    }
-
-    /* Tabs */
-    .stTabs [data-baseweb="tab"] {
-        color: var(--text-color) !important;
-        font-weight: 600 !important;
-    }
-
-    /* Markdown text */
-    .stMarkdown {
-        color: var(--text-color) !important;
-    }
-
-    /* Headers */
-    h1, h2, h3, h4, h5, h6 {
-        color: var(--text-color) !important;
-        font-weight: 600 !important;
-    }
-
-    /* Specific text elements */
-    .element-container, .stMarkdown, .stText {
-        color: var(--text-color) !important;
-    }
-
-    /* Placeholder text */
-    ::placeholder {
-        color: var(--text-muted) !important;
-        opacity: 1 !important;
-    }
-
-    /* Dropdown arrows and icons */
-    [data-baseweb="select"] svg {
-        color: var(--text-color) !important;
-    }
-
-    /* Hover states for interactive elements */
-    .stSelectbox > div > div:hover,
-    .stMultiSelect > div > div:hover,
-    .stTextInput > div > div > input:hover {
-        border-color: var(--primary-color) !important;
-    }
-
-    /* Focus states */
-    .stSelectbox > div > div:focus-within,
-    .stMultiSelect > div > div:focus-within,
-    .stTextInput > div > div > input:focus {
-        border-color: var(--primary-color) !important;
-        box-shadow: 0 0 0 2px rgba(30, 60, 114, 0.2) !important;
-    }
-
-    /* Selected options in dropdowns */
-    [data-baseweb="select"] [data-baseweb="selected-option"] {
-        background-color: rgba(74, 144, 226, 0.1) !important;
-        color: var(--text-color) !important;
+    /* Custom header text (white) */
+    .custom-header h1,
+    .custom-header p,
+    .section-header h2 {
+        color: white !important;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
     }
 
     /* Hide Streamlit branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -524,17 +448,66 @@ def show_overview():
 
     st.markdown(
         f"""
-        <div style='margin-top: 30px; padding: 20px; background: #f0f2f6; border-radius: 12px;'>
-            <h3 style='margin: 0; color: #2ecc71; font-size: 1.2em; font-weight: 500;'>Closed Won</h3>
-            <h2 style='margin: 5px 0; color: #2ecc71; font-size: 2.8em; font-weight: 700; text-shadow: 1px 1px 2px rgba(0,0,0,0.2);'>
-                ₹{won_amount_lacs:,.2f}L
-            </h2>
-            <div style='text-align: right; margin-bottom: 10px;'>
-                <span style='color: #e74c3c; font-size: 1em; font-weight: 500;'>Target: ₹{st.session_state.sales_target:,.0f}L</span>
+        <div style='
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin: 20px 0;
+        '>
+            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;'>
+                <div>
+                    <h3 style='
+                        color: white;
+                        margin: 0;
+                        font-size: 1.8em;
+                        font-weight: 700;
+                        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+                    '>Closed Won</h3>
+                    <div style='
+                        color: white;
+                        font-size: 2.5em;
+                        font-weight: 800;
+                        margin-top: 5px;
+                        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+                    '>₹{int(won_amount_lacs):,}L</div>
+                </div>
+                <div style='
+                    color: rgba(255, 255, 255, 0.9);
+                    font-size: 1.2em;
+                    font-weight: 600;
+                    text-align: right;
+                    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+                '>
+                    Target: ₹{int(st.session_state.sales_target):,}L
+                </div>
             </div>
-            <div style='background: #e74c3c; height: 40px; border-radius: 20px; overflow: hidden; position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);'>
-                <div style='background: #2ecc71; height: 100%; width: {min(achievement_pct, 100)}%; transition: width 0.5s ease-in-out;'></div>
-                <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-weight: 600; font-size: 1.2em; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);'>
+            <div style='
+                background: rgba(255, 255, 255, 0.15);
+                height: 40px;
+                border-radius: 20px;
+                overflow: hidden;
+                position: relative;
+                box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            '>
+                <div style='
+                    background: linear-gradient(90deg, #2ecc71, #27ae60);
+                    height: 100%;
+                    width: {min(achievement_pct, 100)}%;
+                    transition: width 0.5s ease-in-out;
+                    box-shadow: 2px 0 4px rgba(0,0,0,0.1);
+                '></div>
+                <div style='
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    color: white;
+                    font-weight: 700;
+                    font-size: 1.2em;
+                    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+                    z-index: 1;
+                '>
                     {int(achievement_pct)}% Complete
                 </div>
             </div>
@@ -542,8 +515,6 @@ def show_overview():
         """,
         unsafe_allow_html=True
     )
-
-    # ---- The rest of your existing Overview code remains below ----
 
     # II. Practice
     st.markdown("""
@@ -1075,39 +1046,39 @@ def show_sales_team():
     
     with col1:
         st.markdown(f"""
-            <div style='{metric_style.format(gradient="#2193b0 0%, #6dd5ed 100%")}'>
-                <div style='{label_style}'>Pipeline Value</div>
-                <div style='{metric_text_style}'>₹{int(total_pipeline)}L</div>
-                <div style='{sublabel_style}'>Active opportunities</div>
+            <div class="metric-card">
+                <div class="metric-label">Pipeline Value</div>
+                <div class="metric-value">₹{int(total_pipeline)}L</div>
+                <div class="metric-sublabel">Active opportunities</div>
             </div>
         """, unsafe_allow_html=True)
     
     with col2:
         st.markdown(f"""
-            <div style='{metric_style.format(gradient="#11998e 0%, #38ef7d 100%")}'>
-                <div style='{label_style}'>Closed Won</div>
-                <div style='{metric_text_style}'>₹{int(total_closed)}L</div>
-                <div style='{sublabel_style}'>Won opportunities</div>
+            <div class="metric-card">
+                <div class="metric-label">Closed Won</div>
+                <div class="metric-value">₹{int(total_closed)}L</div>
+                <div class="metric-sublabel">Won opportunities</div>
             </div>
         """, unsafe_allow_html=True)
     
     with col3:
         win_rate = round((total_closed_deals / (total_closed_deals + total_pipeline_deals) * 100), 1) if (total_closed_deals + total_pipeline_deals) > 0 else 0
         st.markdown(f"""
-            <div style='{metric_style.format(gradient="#4e54c8 0%, #8f94fb 100%")}'>
-                <div style='{label_style}'>Win Rate</div>
-                <div style='{metric_text_style}'>{int(win_rate)}%</div>
-                <div style='{sublabel_style}'>{int(total_closed_deals)} won</div>
+            <div class="metric-card">
+                <div class="metric-label">Win Rate</div>
+                <div class="metric-value">{int(win_rate)}%</div>
+                <div class="metric-sublabel">{int(total_closed_deals)} won</div>
             </div>
         """, unsafe_allow_html=True)
     
     with col4:
         avg_deal_size = round(total_closed / total_closed_deals, 1) if total_closed_deals > 0 else 0
         st.markdown(f"""
-            <div style='{metric_style.format(gradient="#f12711 0%, #f5af19 100%")}'>
-                <div style='{label_style}'>Avg Deal Size</div>
-                <div style='{metric_text_style}'>₹{int(avg_deal_size)}L</div>
-                <div style='{sublabel_style}'>Per won deal</div>
+            <div class="metric-card">
+                <div class="metric-label">Avg Deal Size</div>
+                <div class="metric-value">₹{int(avg_deal_size)}L</div>
+                <div class="metric-sublabel">Per won deal</div>
             </div>
         """, unsafe_allow_html=True)
 
