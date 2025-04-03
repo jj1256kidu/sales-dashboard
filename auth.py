@@ -1,6 +1,6 @@
 import streamlit as st
-import streamlit.components.v1 as components
 from typing import Optional
+import random
 import time
 
 # Initialize session state
@@ -56,305 +56,224 @@ def get_current_user() -> Optional[str]:
     """Get the current user's username"""
     return st.session_state.get("username")
 
-# Cache the CSS to prevent recomputation
-@st.cache_data
-def get_css():
-    return """
+def show_login_page():
+    # Add base styles first
+    st.markdown("""
         <style>
-            #MainMenu, footer, header { display: none !important; }
+            /* Reset and base styles */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            
+            .stApp {
+                background: linear-gradient(45deg, #0f0c29, #302b63, #24243e) !important;
+            }
+            
+            section[data-testid="stSidebar"] {
+                display: none !important;
+            }
+            
+            .block-container {
+                max-width: 100% !important;
+                padding-top: 0 !important;
+                padding-bottom: 0 !important;
+            }
+            
+            [data-testid="stForm"] {
+                background: transparent !important;
+                border: none !important;
+                padding: 0 !important;
+                max-width: 400px !important;
+                margin: 0 auto !important;
+            }
+            
+            /* Main container */
+            .login-container {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                padding: 20px;
+                position: relative;
+                z-index: 2;
+            }
+            
+            /* Login box */
+            .login-box {
+                background: rgba(0, 0, 0, 0.7);
+                border-radius: 20px;
+                padding: 40px 30px;
+                width: 100%;
+                max-width: 400px;
+                box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(0, 240, 255, 0.1);
+            }
+            
+            .login-box h2 {
+                text-align: center;
+                color: #00f0ff;
+                margin-bottom: 30px;
+                font-size: 26px;
+                font-weight: 700;
+                font-family: 'Orbitron', sans-serif;
+                text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            }
+            
+            /* Input styling */
+            .input-wrapper {
+                position: relative;
+                margin-bottom: 20px;
+            }
+            
+            .input-wrapper i {
+                position: absolute;
+                top: 50%;
+                left: 15px;
+                transform: translateY(-50%);
+                color: #7efcff;
+                font-size: 14px;
+                z-index: 3;
+            }
+            
+            .stTextInput > div {
+                margin: 0 !important;
+            }
+            
+            .stTextInput > div > div {
+                width: 100% !important;
+                height: 45px !important;
+                padding: 0 15px 0 40px !important;
+                border: 1px solid rgba(0, 240, 255, 0.3) !important;
+                background: rgba(0, 0, 0, 0.3) !important;
+                color: white !important;
+                border-radius: 25px !important;
+                font-size: 14px !important;
+            }
+            
+            .stTextInput input {
+                color: white !important;
+                font-family: 'Orbitron', sans-serif !important;
+            }
+            
+            .stTextInput input::placeholder {
+                color: rgba(126, 252, 255, 0.7) !important;
+                font-family: 'Orbitron', sans-serif !important;
+            }
+            
+            /* Button styling */
+            .stButton > button {
+                width: 100% !important;
+                height: 48px !important;
+                background: linear-gradient(135deg, #00f0ff, #ff00e0) !important;
+                color: white !important;
+                font-weight: bold !important;
+                font-size: 16px !important;
+                border: none !important;
+                border-radius: 25px !important;
+                cursor: pointer !important;
+                margin-top: 10px !important;
+                font-family: 'Orbitron', sans-serif !important;
+            }
+            
+            /* Options styling */
+            .options {
+                display: flex;
+                justify-content: space-between;
+                font-size: 12px;
+                color: #a0cbe8;
+                margin-top: 15px;
+            }
+            
+            .options label {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                cursor: pointer;
+            }
+            
+            .options input[type="checkbox"] {
+                cursor: pointer;
+                accent-color: #00f0ff;
+            }
+            
+            .options a {
+                color: #a0cbe8;
+                text-decoration: none;
+            }
+            
+            /* Error message */
             [data-testid="stAlert"] {
-                position: fixed !important;
-                top: 20px !important;
-                left: 50% !important;
-                transform: translateX(-50%) !important;
-                z-index: 9999 !important;
                 background: rgba(255, 0, 224, 0.1) !important;
                 border: 1px solid rgba(255, 0, 224, 0.2) !important;
                 color: #ff00e0 !important;
                 padding: 0.75rem !important;
                 border-radius: 12px !important;
-                backdrop-filter: blur(10px) !important;
-                box-shadow: 0 0 15px rgba(255, 0, 224, 0.2) !important;
-                min-width: 300px !important;
-                text-align: center !important;
+                margin: 1rem 0 !important;
+                font-family: 'Orbitron', sans-serif !important;
             }
-            .stForm {
-                background: transparent !important;
-                border: none !important;
-                padding: 0 !important;
+            
+            /* Hide Streamlit elements */
+            #MainMenu, footer, header {
+                display: none !important;
             }
-            .stButton > button { display: none !important; }
         </style>
-    """
+    """, unsafe_allow_html=True)
+    
+    # Add required external resources
+    st.markdown("""
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    """, unsafe_allow_html=True)
+    
+    # Main container
+    st.markdown("""
+        <div class="login-container">
+            <div class="login-box">
+                <h2>Welcome Back</h2>
+    """, unsafe_allow_html=True)
 
-# Cache the HTML template to prevent recomputation
-@st.cache_data
-def get_html_template():
-    return """
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
-    <style>
-    body {
-        margin: 0;
-        padding: 0;
-        overflow: hidden;
-        font-family: 'Orbitron', sans-serif;
-        background-color: #0f0f25;
-        color: #00f0ff;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-    }
+    # Login form
+    with st.form("login_form", clear_on_submit=True):
+        st.markdown('<div class="input-wrapper"><i class="fas fa-user"></i>', unsafe_allow_html=True)
+        username = st.text_input(
+            "Username",
+            placeholder="Username",
+            key="username",
+            label_visibility="collapsed"
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        st.markdown('<div class="input-wrapper"><i class="fas fa-lock"></i>', unsafe_allow_html=True)
+        password = st.text_input(
+            "Password",
+            type="password",
+            placeholder="Password",
+            key="password",
+            label_visibility="collapsed"
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        submit = st.form_submit_button("LOGIN")
+        
+        if submit:
+            if not username or not password:
+                st.error("Please enter both username and password")
+            elif login(username, password):
+                st.rerun()
+            else:
+                st.error("Invalid username or password")
 
-    canvas {
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 0;
-        width: 100%;
-        height: 100%;
-    }
-
-    .login-container {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(17, 17, 17, 0.9);
-        padding: 40px;
-        border-radius: 20px;
-        box-shadow: 0 0 30px rgba(0, 255, 255, 0.67);
-        text-align: center;
-        width: 350px;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        z-index: 1;
-    }
-
-    .login-container h2 {
-        font-size: 28px;
-        margin-bottom: 30px;
-        color: #00ffff;
-        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-    }
-
-    .input-box {
-        display: flex;
-        align-items: center;
-        background-color: rgba(26, 26, 46, 0.8);
-        border-radius: 30px;
-        padding: 12px 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 0 15px rgba(0, 255, 255, 0.27);
-        transition: all 0.3s ease;
-    }
-
-    .input-box:focus-within {
-        box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-        background-color: rgba(26, 26, 46, 0.9);
-    }
-
-    .input-box input {
-        flex: 1;
-        border: none;
-        background: transparent;
-        outline: none;
-        color: #fff;
-        font-size: 14px;
-        margin-left: 10px;
-        font-family: 'Orbitron', sans-serif;
-    }
-
-    .input-box input::placeholder {
-        color: rgba(204, 204, 204, 0.7);
-    }
-
-    .icon {
-        font-size: 16px;
-        color: #00ffff;
-        width: 20px;
-        text-align: center;
-    }
-
-    .login-btn {
-        background: linear-gradient(135deg, #00f0ff, #ff00ff);
-        border: none;
-        color: white;
-        padding: 12px 40px;
-        border-radius: 30px;
-        font-size: 16px;
-        cursor: pointer;
-        margin-top: 15px;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
-        font-family: 'Orbitron', sans-serif;
-        letter-spacing: 1px;
-        width: 100%;
-    }
-
-    .login-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 0 25px rgba(0, 255, 255, 0.7);
-        background: linear-gradient(135deg, #ff00ff, #00f0ff);
-    }
-
-    .login-btn:active {
-        transform: translateY(1px);
-    }
-
-    .options {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
-        color: rgba(204, 204, 204, 0.8);
-        font-size: 12px;
-    }
-
-    .options label {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        cursor: pointer;
-    }
-
-    .options input[type="checkbox"] {
-        cursor: pointer;
-        accent-color: #00ffff;
-    }
-
-    .options a {
-        color: rgba(204, 204, 204, 0.8);
-        text-decoration: none;
-        transition: color 0.3s ease, text-shadow 0.3s ease;
-    }
-
-    .options a:hover {
-        color: #00ffff;
-        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
-    }
-    </style>
-
-    <canvas id="particles"></canvas>
-
-    <div class="login-container">
-        <h2>Welcome Back</h2>
-        <form id="loginForm">
-            <div class="input-box">
-                <span class="icon">👤</span>
-                <input type="text" id="username" placeholder="Username" required />
-            </div>
-            <div class="input-box">
-                <span class="icon">🔒</span>
-                <input type="password" id="password" placeholder="Password" required />
-            </div>
-            <button type="submit" class="login-btn">LOGIN</button>
+        st.markdown("""
             <div class="options">
                 <label><input type="checkbox" checked /> Remember me</label>
                 <a href="#">Forgot password?</a>
             </div>
-        </form>
-    </div>
+        """, unsafe_allow_html=True)
 
-    <script>
-    (function() {
-        // Canvas setup and particle animation
-        const canvas = document.getElementById("particles");
-        const ctx = canvas.getContext("2d");
-
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-
-        let particles = [];
-        const colors = ["#ff00ff", "#00ffff", "#ffaa00", "#ffffff"];
-
-        function createParticles() {
-            particles = [];
-            const particleCount = Math.min(100, Math.floor((canvas.width * canvas.height) / 20000));
-            
-            for (let i = 0; i < particleCount; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    radius: Math.random() * 2 + 1,
-                    dx: (Math.random() - 0.5) * 0.5,
-                    dy: (Math.random() - 0.5) * 0.5,
-                    color: colors[Math.floor(Math.random() * colors.length)],
-                    alpha: Math.random() * 0.5 + 0.5
-                });
-            }
-        }
-        createParticles();
-        window.addEventListener('resize', createParticles);
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            ctx.globalCompositeOperation = 'lighter';
-            for (let p of particles) {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
-                ctx.fill();
-
-                p.x += p.dx;
-                p.y += p.dy;
-
-                // Wrap particles around screen edges
-                if (p.x < 0) p.x = canvas.width;
-                if (p.x > canvas.width) p.x = 0;
-                if (p.y < 0) p.y = canvas.height;
-                if (p.y > canvas.height) p.y = 0;
-
-                // Subtle alpha animation
-                p.alpha += (Math.random() - 0.5) * 0.01;
-                p.alpha = Math.max(0.3, Math.min(0.8, p.alpha));
-            }
-            ctx.globalCompositeOperation = 'source-over';
-            
-            requestAnimationFrame(draw);
-        }
-        draw();
-
-        // Form handling
-        const form = document.getElementById('loginForm');
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const parent = window.parent;
-            const usernameInput = parent.document.querySelector('input[aria-label="Username"]');
-            const passwordInput = parent.document.querySelector('input[aria-label="Password"]');
-            const submitButton = parent.document.querySelector('button[type="submit"]');
-            if (usernameInput && passwordInput && submitButton) {
-                usernameInput.value = username;
-                passwordInput.value = password;
-                submitButton.click();
-            }
-        });
-    })();
-    </script>
-    """
-
-def show_login_page():
-    # Add custom CSS
-    st.markdown(get_css(), unsafe_allow_html=True)
-    
-    # Create form for handling submission
-    with st.form("login_form", clear_on_submit=True):
-        username = st.text_input("Username", key="username", label_visibility="collapsed")
-        password = st.text_input("Password", type="password", key="password", label_visibility="collapsed")
-        submitted = st.form_submit_button("Submit", type="primary")
-    
-    # Render the HTML
-    components.html(get_html_template(), height=650, scrolling=False)
-    
-    # Handle form submission
-    if submitted:
-        if not username or not password:
-            st.error("Please enter both username and password")
-        elif login(username, password):
-            st.rerun()
-        else:
-            st.error("Invalid username or password") 
+    st.markdown("""
+            </div>
+        </div>
+    """, unsafe_allow_html=True) 
