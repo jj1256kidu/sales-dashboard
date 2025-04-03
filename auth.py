@@ -1,11 +1,12 @@
 import streamlit as st
+
+# Set page config must be the first Streamlit command
+st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+
 import hashlib
 from typing import Optional, Dict, Any
 import json
 import os
-
-# Set page config
-st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 
 # Initialize session state for authentication
 if "authenticated" not in st.session_state:
@@ -45,6 +46,15 @@ def logout():
 
 def show_login_page():
     """Show the login page with cyberpunk design"""
+    # Generate particles HTML
+    particles_html = ""
+    for i in range(30):
+        import random
+        left = random.randint(0, 100)
+        delay = random.randint(0, 20)
+        duration = random.randint(15, 25)
+        particles_html += f'<div class="particle" style="left: {left}vw; animation-delay: {delay}s; animation-duration: {duration}s;"></div>'
+
     st.markdown("""
         <style>
             /* Override Streamlit defaults */
@@ -183,6 +193,16 @@ def show_login_page():
             }
 
             /* Particles */
+            .particles {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 0;
+                pointer-events: none;
+            }
+
             .particle {
                 position: fixed;
                 width: 5px;
@@ -215,13 +235,7 @@ def show_login_page():
 
         <div class="main">
             <div class="particles">
-                ${Array(30).fill().map((_, i) => `
-                    <div class="particle" style="
-                        left: ${Math.random() * 100}vw;
-                        animation-delay: ${Math.random() * 20}s;
-                        animation-duration: ${15 + Math.random() * 10}s;
-                    "></div>
-                `).join('')}
+    """ + particles_html + """
             </div>
             <div class="container">
                 <div class="login-box">
@@ -232,8 +246,8 @@ def show_login_page():
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        username = st.text_input("", placeholder="Username", key="login_username")
-        password = st.text_input("", placeholder="Password", type="password", key="login_password")
+        username = st.text_input("Username", value="", placeholder="Username", key="login_username", label_visibility="collapsed")
+        password = st.text_input("Password", value="", placeholder="Password", type="password", key="login_password", label_visibility="collapsed")
 
         if st.button("LOGIN", key="login_button"):
             if authenticate(username, password):
