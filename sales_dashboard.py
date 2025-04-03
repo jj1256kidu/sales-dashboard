@@ -76,258 +76,185 @@ def format_number(x):
 # Custom CSS for modern styling
 st.markdown("""
 <style>
-    /* Modern theme colors */
+    /* Modern dark theme colors */
     :root {
         --primary-color: #4A90E2;
-        --background-color: #1E1E1E;
-        --secondary-background-color: #252526;
+        --background-color: #0B0B1E;
+        --secondary-background-color: #1E1E2F;
         --text-color: #FFFFFF;
+        --accent-color: #6C63FF;
         --font-family: 'Segoe UI', sans-serif;
     }
 
-    /* Main container styling */
-    .main {
-        background-color: var(--background-color);
+    /* Main container and background */
+    .stApp {
+        background: var(--background-color) !important;
         color: var(--text-color);
         font-family: var(--font-family);
     }
 
-    /* Card styling */
-    .stCard {
-        background-color: var(--secondary-background-color);
-        border-radius: 10px;
-        padding: 15px;
-        margin: 30px 0;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+    /* Sidebar styling */
+    [data-testid="stSidebar"] {
+        background-color: var(--secondary-background-color) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Number formatting */
-    .big-number {
-        font-size: 2.8em;
-        font-weight: 700;
-        color: #2ecc71;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-        letter-spacing: -1px;
+    [data-testid="stSidebar"] .block-container {
+        padding: 2rem 1rem !important;
     }
 
-    .metric-value {
-        font-size: 2em;
-        font-weight: 600;
-        color: #4A90E2;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    /* Custom header */
+    .custom-header {
+        background: linear-gradient(135deg, #4A90E2 0%, #6C63FF 100%);
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     }
 
-    .metric-label {
-        font-size: 1.2em;
-        color: #333;
-        margin-bottom: 5px;
-        font-weight: 500;
-    }
-
-    /* Section headers */
-    .section-header {
-        font-size: 1.8em;
-        font-weight: 700;
-        color: #2c3e50;
-        margin: 30px 0;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-    }
-
-    /* Chart text styling */
-    .js-plotly-plot .plotly .main-svg {
-        font-size: 14px;
-        font-weight: 500;
-    }
-
-    /* Table styling */
-    .dataframe {
-        font-size: 1.2em;
-        background-color: white;
-        border-radius: 8px;
-        padding: 15px;
-    }
-
-    .dataframe th {
-        background-color: #4A90E2;
+    .custom-header h1 {
         color: white;
+        font-size: 2.5em;
         font-weight: 700;
-        padding: 15px;
-        font-size: 1.1em;
+        text-align: center;
+        margin: 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
     }
 
-    .dataframe td {
-        padding: 12px;
-        border-bottom: 1px solid #eee;
-        font-weight: 500;
+    .custom-header p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.2em;
+        text-align: center;
+        margin: 10px 0 0 0;
     }
 
-    /* Upload container styling */
+    /* Upload container */
     .upload-container {
-        background-color: rgba(74, 144, 226, 0.1);
-        border-radius: 10px;
-        padding: 30px;
-        margin: 20px 0;
-        border: 2px dashed rgba(74, 144, 226, 0.3);
+        background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(108, 99, 255, 0.1) 100%);
+        border-radius: 15px;
+        padding: 3rem;
+        margin: 2rem 0;
+        border: 2px dashed rgba(255, 255, 255, 0.2);
         text-align: center;
     }
 
+    /* Info box */
+    .info-box {
+        background: rgba(74, 144, 226, 0.1);
+        border-left: 4px solid var(--accent-color);
+        padding: 1.5rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        color: var(--text-color);
+    }
+
+    .info-box h4 {
+        color: var(--accent-color);
+        margin: 0 0 1rem 0;
+        font-size: 1.2em;
+    }
+
+    .info-box ul {
+        margin: 0;
+        padding-left: 1.5rem;
+        color: rgba(255, 255, 255, 0.8);
+    }
+
     /* Button styling */
-    .stButton>button {
-        background-color: var(--primary-color);
+    .stButton > button {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
         color: white;
-        border-radius: 5px;
-        padding: 10px 20px;
         border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
         transition: all 0.3s ease;
     }
 
-    .stButton>button:hover {
-        background-color: #357ABD;
+    .stButton > button:hover {
         transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    /* File uploader */
+    [data-testid="stFileUploader"] {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 2rem;
+    }
+
+    /* Dataframe styling */
+    .dataframe {
+        background: var(--secondary-background-color);
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dataframe th {
+        background: rgba(74, 144, 226, 0.2);
+        color: white;
+        padding: 1rem;
+    }
+
+    .dataframe td {
+        color: rgba(255, 255, 255, 0.8);
+        padding: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Radio buttons in sidebar */
+    [data-testid="stSidebar"] .stRadio > label {
+        color: white !important;
+        font-weight: 500;
+    }
+
+    [data-testid="stSidebar"] .stRadio > div {
+        gap: 0.75rem;
     }
 
     /* Hide Streamlit branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
 
-    /* Custom header */
-    .custom-header {
-        background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%);
-        padding: 20px;
-        border-radius: 10px;
-        margin-bottom: 20px;
-        color: white;
-        text-align: center;
-    }
-
-    /* Info box */
-    .info-box {
-        background-color: rgba(74, 144, 226, 0.1);
-        border-left: 4px solid #4A90E2;
-        padding: 15px;
-        border-radius: 4px;
-        margin: 10px 0;
-    }
-
-    /* Container styling */
-    .container {
-        margin: 30px 0;
-        padding: 15px;
-    }
-
-    /* Graph container */
-    .graph-container {
-        margin: 30px 0;
-        padding: 15px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    /* Metric container */
+    /* Metrics and KPIs */
     .metric-container {
-        margin: 30px 0;
-        padding: 15px;
-        background: #f8f9fa;
+        background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(108, 99, 255, 0.1) 100%);
         border-radius: 10px;
+        padding: 1.5rem;
+        margin: 1rem 0;
     }
 
-    /* Section divider */
-    .section-divider {
-        margin: 30px 0;
-        border-top: 1px solid #eee;
-    }
-
-    /* Custom styling for number input */
-    [data-testid="stNumberInput"] {
-        position: relative;
-        background: transparent !important;
-    }
-    [data-testid="stNumberInput"] > div > div > input {
-        color: white !important;
-        font-size: 1.8em !important;
-        font-weight: 800 !important;
-        text-align: center !important;
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-    }
-    /* Hide the increment/decrement buttons */
-    [data-testid="stNumberInput"] > div > div > div {
-        display: none !important;
-    }
-    /* Container styling */
-    div[data-testid="column"] > div > div > div > div > div {
-        background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        text-align: center;
-    }
-
-    /* Hide increment buttons */
-    [data-testid="stNumberInput"] input[type="number"] {
-        -moz-appearance: textfield;
-    }
-    [data-testid="stNumberInput"] input[type="number"]::-webkit-outer-spin-button,
-    [data-testid="stNumberInput"] input[type="number"]::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    
-    /* Style the input field */
-    [data-testid="stNumberInput"] {
-        background: transparent;
-    }
-    
-    /* Style the display value */
-    .target-value {
-        font-family: 'Segoe UI', sans-serif;
+    .metric-value {
         font-size: 2.5em;
-        font-weight: 800;
-        color: #FF6B6B;
-        text-align: center;
-        padding: 20px;
-        margin: 10px 0;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        font-weight: 700;
+        color: var(--accent-color);
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
     }
 
-    /* Override Streamlit defaults */
-    .stApp {
-        background: #0B0B1E !important;
+    .metric-label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1.1em;
+        margin-bottom: 0.5rem;
     }
 
-    .block-container {
-        padding: 0 !important;
-        max-width: 100% !important;
+    /* Charts and graphs */
+    .js-plotly-plot {
+        background: var(--secondary-background-color);
+        border-radius: 10px;
+        padding: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Remove this section that hides the sidebar */
-    /* section[data-testid="stSidebar"] {
-        display: none !important;
-    } */
-
-    /* Add new sidebar styling */
-    section[data-testid="stSidebar"] {
-        background-color: #f8f9fa !important;
-        padding: 1rem !important;
-        border-right: 1px solid #dee2e6 !important;
+    /* Inputs and selects */
+    .stSelectbox > div > div {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
 
-    section[data-testid="stSidebar"] .block-container {
-        padding: 1rem !important;
-    }
-
-    /* Style the radio buttons in sidebar */
-    [data-testid="stSidebar"] .stRadio > label {
-        font-size: 1.1em !important;
-        font-weight: 500 !important;
-        color: #2c3e50 !important;
-        padding: 0.5rem 0 !important;
-    }
-
-    [data-testid="stSidebar"] .stRadio > div {
-        gap: 1rem !important;
+    .stTextInput > div > div > input {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1426,10 +1353,20 @@ def show_detailed():
     
     st.dataframe(df, use_container_width=True)
 
-def show_sidebar():
-    """Show the sidebar with navigation and logout button"""
+def show_navigation():
+    """Show navigation sidebar with user info and logout"""
     with st.sidebar:
         st.title("Navigation")
+        
+        # Welcome message and user info
+        if st.session_state.authenticated:
+            st.markdown(f"""
+                <div style='padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin-bottom: 15px;'>
+                    <h3 style='color: white; margin: 0;'>Welcome, {st.session_state.username}</h3>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        # Navigation options
         selected = st.radio(
             "Select View",
             options=["Data Input", "Overview", "Sales Team", "Detailed Data"],
@@ -1437,35 +1374,84 @@ def show_sidebar():
         )
         st.session_state.current_view = selected.lower().replace(" ", "_")
         
-        # Add logout button
-        st.markdown("---")
+        # Logout button
         if st.button("Logout", key="logout_button"):
             logout()
             st.rerun()
 
+def show_filters():
+    """Show global filters for the dashboard"""
+    st.markdown("""
+        <div style='padding: 15px; background: linear-gradient(to right, rgba(74, 144, 226, 0.1), rgba(108, 99, 255, 0.1));
+                    border-radius: 10px; margin-bottom: 20px;'>
+            <h3 style='color: white; margin: 0;'>Filters</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    
+    with col1:
+        if 'Sales Owner' in st.session_state.df.columns:
+            team_members = ["All Team Members"] + sorted(st.session_state.df['Sales Owner'].dropna().unique().tolist())
+            st.selectbox("👤 Sales Owner", options=team_members, key="team_member_filter")
+    
+    with col2:
+        st.text_input("🔍 Search", placeholder="Search...", key="search_filter")
+    
+    with col3:
+        if 'Month' in st.session_state.df.columns:
+            months = ["All Months"] + sorted(st.session_state.df['Month'].dropna().unique().tolist())
+            st.selectbox("📅 Month", options=months, key="month_filter")
+    
+    with col4:
+        st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"], key="quarter_filter")
+    
+    with col5:
+        if 'Year' in st.session_state.df.columns:
+            years = ["All Years"] + sorted(st.session_state.df['Year'].dropna().unique().tolist())
+            st.selectbox("📅 Year", options=years, key="year_filter")
+    
+    with col6:
+        probability_options = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%", "Custom Range"]
+        prob_filter = st.selectbox("📈 Probability", options=probability_options, key="probability_filter")
+        
+        if prob_filter == "Custom Range":
+            col6a, col6b = st.columns(2)
+            with col6a:
+                st.text_input("Min %", value="0", key="min_prob")
+            with col6b:
+                st.text_input("Max %", value="100", key="max_prob")
+    
+    with col7:
+        status_options = ["All Status", "Committed for the Month", "Upsides for the Month"]
+        st.selectbox("🎯 Status", options=status_options, key="status_filter")
+    
+    with col8:
+        if 'KritiKal Focus Areas' in st.session_state.df.columns:
+            focus_areas = ["All Focus"] + sorted(st.session_state.df['KritiKal Focus Areas'].dropna().unique().tolist())
+            st.selectbox("🎯 Focus", options=focus_areas, key="focus_filter")
+
 def main():
-    # Check authentication first
+    """Main function to run the dashboard"""
+    # Check authentication
     if not is_authenticated():
         show_login_page()
         return
-
+    
     # Get current user
     current_user = get_current_user()
     if not current_user:
         show_login_page()
         return
-
-    # Set page title and header
-    st.title("Sales Dashboard")
     
-    # Add logout button in sidebar
-    with st.sidebar:
-        st.write(f"Welcome, {current_user}")  # current_user is already the username string
-        if st.button("Logout"):
-            logout()
-            st.rerun()
-
-    # Main content
+    # Show navigation
+    show_navigation()
+    
+    # Show filters if data is loaded
+    if st.session_state.df is not None:
+        show_filters()
+    
+    # Display current view
     if st.session_state.current_view == "data_input":
         show_data_input()
     elif st.session_state.current_view == "overview":
