@@ -1,6 +1,9 @@
 import streamlit as st
 from typing import Optional
 
+# Set page config at the very start
+st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+
 # Simple user credentials without hashing for now
 USERS = {
     "admin": "admin123",
@@ -31,8 +34,6 @@ def get_current_user() -> Optional[str]:
 
 def show_login_page():
     """Display the login page"""
-    st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
-    
     # Add required external resources
     st.markdown("""
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
