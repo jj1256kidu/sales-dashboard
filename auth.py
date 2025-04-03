@@ -31,41 +31,51 @@ def get_current_user() -> Optional[str]:
 
 def show_login_page():
     """Display the login page"""
+    st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+    
     st.markdown("""
         <style>
-            /* Modern animated background */
+            /* Reset and base styles */
             .stApp {
-                background: #13111C;
+                background: #13111C !important;
+            }
+            
+            .block-container {
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+            
+            [data-testid="stForm"] {
+                background: transparent !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+            
+            [data-testid="stVerticalBlock"] {
+                padding: 0 !important;
+                gap: 0 !important;
+            }
+            
+            /* Login container */
+            .login-wrapper {
+                display: flex;
                 min-height: 100vh;
-                margin: 0;
-                padding: 0;
-                display: flex;
-                align-items: stretch;
+                background: #13111C;
             }
             
-            /* Split screen container */
-            .split-container {
-                display: flex;
-                width: 100%;
-                height: 100vh;
-                margin: 0;
-                padding: 0;
-            }
-            
-            /* Left panel - Login form */
+            /* Left panel */
             .login-panel {
                 flex: 0 0 40%;
                 background: rgba(255, 255, 255, 0.02);
                 backdrop-filter: blur(10px);
-                padding: 3rem;
+                padding: 2rem;
                 display: flex;
-                flex-direction: column;
+                align-items: center;
                 justify-content: center;
                 position: relative;
-                overflow: hidden;
             }
             
-            /* Right panel - Welcome visual */
+            /* Right panel */
             .welcome-panel {
                 flex: 0 0 60%;
                 background: linear-gradient(135deg, #2A1E5C, #4A1E6D, #7A1E7C);
@@ -74,189 +84,156 @@ def show_login_page():
                 flex-direction: column;
                 justify-content: center;
                 position: relative;
-                overflow: hidden;
             }
             
-            /* Animated background elements */
-            .bg-element {
-                position: absolute;
-                border-radius: 50%;
-                filter: blur(80px);
-                opacity: 0.4;
-                animation: float 8s infinite ease-in-out;
+            /* Form styles */
+            .form-container {
+                width: 100%;
+                max-width: 320px;
+                margin: 0 auto;
+                background: rgba(255, 255, 255, 0.03);
+                padding: 2rem;
+                border-radius: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
             }
             
-            .bg-element-1 {
-                width: 300px;
-                height: 300px;
-                background: radial-gradient(circle, #FF3366, #FF338800);
-                top: -100px;
-                right: -100px;
-            }
-            
-            .bg-element-2 {
-                width: 400px;
-                height: 400px;
-                background: radial-gradient(circle, #3366FF, #3366FF00);
-                bottom: -150px;
-                left: -150px;
-                animation-delay: -4s;
-            }
-            
-            @keyframes float {
-                0%, 100% { transform: translateY(0) scale(1); }
-                50% { transform: translateY(-20px) scale(1.05); }
-            }
-            
-            /* Avatar/Logo */
+            /* Logo/Avatar */
             .avatar {
-                width: 80px;
-                height: 80px;
+                width: 64px;
+                height: 64px;
                 background: linear-gradient(45deg, #FF3366, #FF33FF);
                 border-radius: 50%;
-                margin: 0 auto 2rem;
+                margin: 0 auto 1.5rem;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 2rem;
-                color: white;
-                box-shadow: 0 8px 32px rgba(255, 51, 102, 0.3);
+                font-size: 1.8rem;
             }
             
-            /* Welcome text styles */
+            /* Input fields */
+            .stTextInput > div > div {
+                background: rgba(255, 255, 255, 0.05) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
+                border-radius: 8px !important;
+                padding: 0.6rem 1rem !important;
+                color: white !important;
+                transition: all 0.3s ease !important;
+                margin-bottom: 1rem !important;
+            }
+            
+            .stTextInput > div > div:focus {
+                border-color: #FF3366 !important;
+                box-shadow: 0 0 0 1px #FF3366 !important;
+            }
+            
+            .stTextInput > label {
+                color: rgba(255, 255, 255, 0.7) !important;
+                font-size: 0.9rem !important;
+                font-weight: 500 !important;
+                margin-bottom: 0.25rem !important;
+            }
+            
+            /* Button */
+            .stButton > button {
+                background: linear-gradient(45deg, #FF3366, #FF33FF) !important;
+                color: white !important;
+                border: none !important;
+                padding: 0.6rem !important;
+                border-radius: 8px !important;
+                font-weight: 600 !important;
+                font-size: 0.95rem !important;
+                width: 100% !important;
+                margin-top: 0.5rem !important;
+                transition: all 0.3s ease !important;
+            }
+            
+            .stButton > button:hover {
+                opacity: 0.9 !important;
+                transform: translateY(-1px) !important;
+            }
+            
+            /* Welcome text */
             .welcome-title {
-                color: #fff;
-                font-size: 3.5em;
+                color: white;
+                font-size: 2.8em;
                 font-weight: 700;
                 margin-bottom: 1rem;
-                line-height: 1.2;
-                position: relative;
             }
             
             .welcome-subtitle {
                 color: rgba(255, 255, 255, 0.7);
                 font-size: 1.1em;
                 line-height: 1.6;
-                max-width: 500px;
-            }
-            
-            /* Form container */
-            .form-container {
-                width: 100%;
-                max-width: 320px;
-                margin: 0 auto;
-            }
-            
-            /* Input fields */
-            .stTextInput > div > div {
-                background: rgba(255, 255, 255, 0.03) !important;
-                border: 1px solid rgba(255, 255, 255, 0.1) !important;
-                border-radius: 12px !important;
-                padding: 0.8rem 1rem !important;
-                color: white !important;
-                transition: all 0.3s ease !important;
-                margin-bottom: 1rem !important;
-            }
-            
-            .stTextInput > div > div:hover,
-            .stTextInput > div > div:focus {
-                border-color: #FF3366 !important;
-                background: rgba(255, 255, 255, 0.05) !important;
-                transform: translateY(-2px);
-            }
-            
-            .stTextInput > label {
-                color: rgba(255, 255, 255, 0.8) !important;
-                font-size: 0.9rem !important;
-                font-weight: 500 !important;
-                margin-bottom: 0.5rem !important;
-                text-align: left !important;
-            }
-            
-            /* Login button */
-            .stButton > button {
-                background: linear-gradient(45deg, #FF3366, #FF33FF) !important;
-                color: white !important;
-                border: none !important;
-                padding: 0.8rem !important;
-                border-radius: 12px !important;
-                font-weight: 600 !important;
-                font-size: 1rem !important;
-                letter-spacing: 0.5px !important;
-                width: 100% !important;
-                transition: all 0.3s ease !important;
-                margin-top: 1rem !important;
-                text-transform: uppercase !important;
-            }
-            
-            .stButton > button:hover {
-                transform: translateY(-2px) !important;
-                box-shadow: 0 8px 25px rgba(255, 51, 102, 0.4) !important;
+                max-width: 480px;
             }
             
             /* Error message */
             .error-message {
                 color: #FF3366;
-                text-align: left;
-                margin-top: 1rem;
-                padding: 1rem;
                 background: rgba(255, 51, 102, 0.1);
-                border-radius: 12px;
                 border: 1px solid rgba(255, 51, 102, 0.2);
+                padding: 0.75rem;
+                border-radius: 8px;
+                margin: 1rem 0;
                 font-size: 0.9rem;
             }
             
             /* Credentials info */
             .credentials-info {
-                margin-top: 1.5rem;
-                padding: 1rem;
                 background: rgba(255, 255, 255, 0.03);
-                border-radius: 12px;
                 border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 0.75rem;
+                border-radius: 8px;
+                margin-top: 1rem;
             }
             
             .credentials-info p {
                 color: rgba(255, 255, 255, 0.7);
-                font-size: 0.9rem;
-                margin: 0.5rem 0;
+                font-size: 0.85rem;
+                margin: 0.25rem 0;
             }
             
             .credentials-info code {
                 background: rgba(255, 255, 255, 0.1);
-                padding: 0.3rem 0.8rem;
-                border-radius: 8px;
-                color: #fff;
-                font-family: 'Courier New', monospace;
-                border: 1px solid rgba(255, 255, 255, 0.15);
-                display: inline-block;
-                margin: 0.2rem;
+                padding: 0.2rem 0.5rem;
+                border-radius: 4px;
                 font-size: 0.85rem;
+                margin: 0 0.2rem;
             }
 
-            /* Hide Streamlit branding */
+            /* Hide Streamlit elements */
             #MainMenu, footer, header {
-                visibility: hidden;
+                display: none !important;
             }
             
-            /* Responsive adjustments */
+            .stDeployButton {
+                display: none !important;
+            }
+            
+            /* Responsive design */
             @media (max-width: 768px) {
-                .split-container {
+                .login-wrapper {
                     flex-direction: column;
                 }
-                .login-panel, .welcome-panel {
-                    flex: 0 0 100%;
-                    padding: 2rem;
+                
+                .login-panel {
+                    flex: none;
+                    width: 100%;
+                    padding: 2rem 1rem;
                 }
+                
                 .welcome-panel {
                     display: none;
+                }
+                
+                .form-container {
+                    padding: 1.5rem;
                 }
             }
         </style>
         
-        <div class="split-container">
+        <div class="login-wrapper">
             <div class="login-panel">
-                <div class="bg-element bg-element-1"></div>
-                <div class="bg-element bg-element-2"></div>
                 <div class="form-container">
                     <div class="avatar">📊</div>
     """, unsafe_allow_html=True)
@@ -264,8 +241,7 @@ def show_login_page():
     with st.form("login_form"):
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-        
-        submit = st.form_submit_button("Login")
+        submit = st.form_submit_button("LOGIN")
 
         if submit:
             if login(username, password):
@@ -290,7 +266,7 @@ def show_login_page():
             </div>
             <div class="welcome-panel">
                 <h1 class="welcome-title">Welcome Back</h1>
-                <p class="welcome-subtitle">Access your sales dashboard to track performance, analyze trends, and make data-driven decisions that drive business growth.</p>
+                <p class="welcome-subtitle">Access your sales dashboard to track performance, analyze trends, and make data-driven decisions.</p>
             </div>
         </div>
     """, unsafe_allow_html=True) 
