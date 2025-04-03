@@ -76,17 +76,20 @@ def format_number(x):
 # Custom CSS for modern styling
 st.markdown("""
 <style>
-    /* Modern dark theme colors */
+    /* Modern corporate theme colors */
     :root {
-        --primary-color: #4A90E2;
-        --background-color: #0B0B1E;
-        --secondary-background-color: #1E1E2F;
-        --text-color: #FFFFFF;
-        --accent-color: #6C63FF;
-        --font-family: 'Segoe UI', sans-serif;
-        --card-background: rgba(255, 255, 255, 0.05);
-        --border-color: rgba(255, 255, 255, 0.1);
-        --shadow-color: rgba(0, 0, 0, 0.2);
+        --primary-color: #2563eb;
+        --secondary-color: #1e40af;
+        --accent-color: #3b82f6;
+        --background-color: #f8fafc;
+        --card-background: #ffffff;
+        --text-color: #1e293b;
+        --text-light: #64748b;
+        --border-color: #e2e8f0;
+        --shadow-color: rgba(0, 0, 0, 0.1);
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
         --input-max-width: 400px;
         --container-padding: 1rem;
         --section-spacing: 1.5rem;
@@ -103,32 +106,20 @@ st.markdown("""
         --font-size-small: 0.9rem;
     }
 
-    /* Responsive breakpoints */
-    @media (max-width: 768px) {
-        :root {
-            --container-padding: 0.5rem;
-            --section-spacing: 1rem;
-            --card-spacing: 0.8rem;
-            --font-size-title: 1.8rem;
-            --font-size-section: 1.3rem;
-            --font-size-metric: 1.5rem;
-        }
-    }
-
     /* Main container and background */
     .stApp {
         background: var(--background-color) !important;
         color: var(--text-color);
-        font-family: var(--font-family);
+        font-family: 'Inter', 'Segoe UI', sans-serif;
         line-height: 1.6;
         padding: var(--container-padding) !important;
     }
 
     /* Section Headers */
     .section-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-        padding: 1rem 1.5rem;
-        border-radius: 10px;
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
         margin-bottom: var(--section-spacing);
         box-shadow: 0 4px 6px var(--shadow-color);
     }
@@ -145,66 +136,75 @@ st.markdown("""
     /* Metric Cards Grid */
     .metric-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
         margin: var(--section-spacing) 0;
     }
 
     /* Metric Card */
     .metric-card {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-        padding: var(--card-spacing);
-        border-radius: 10px;
+        background: var(--card-background);
+        padding: 1.5rem;
+        border-radius: 12px;
         box-shadow: 0 4px 6px var(--shadow-color);
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 120px;
-        transition: transform 0.3s ease;
+        min-height: 140px;
+        transition: all 0.3s ease;
+        border: 1px solid var(--border-color);
     }
 
     .metric-card:hover {
         transform: translateY(-2px);
+        box-shadow: 0 8px 12px var(--shadow-color);
     }
 
     .metric-label {
-        color: rgba(255, 255, 255, 0.9);
+        color: var(--text-light);
         font-size: var(--font-size-label);
         font-weight: 600;
         margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     .metric-value {
-        color: white;
+        color: var(--text-color);
         font-size: var(--font-size-metric);
         font-weight: 700;
         margin: 0.5rem 0;
+        line-height: 1.2;
     }
 
     .metric-sublabel {
-        color: rgba(255, 255, 255, 0.8);
+        color: var(--text-light);
         font-size: var(--font-size-small);
         margin-top: 0.5rem;
     }
 
     /* Filter Section */
     .filter-section {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
-        padding: 1rem;
+        background: var(--card-background);
+        border-radius: 12px;
+        padding: 1.5rem;
         margin-bottom: var(--section-spacing);
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 1rem;
         align-items: center;
+        box-shadow: 0 2px 4px var(--shadow-color);
+        border: 1px solid var(--border-color);
     }
 
     .filter-section h4 {
-        color: white;
+        color: var(--text-color);
         margin: 0;
         font-size: var(--font-size-label);
         font-weight: 600;
         grid-column: 1 / -1;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
     /* Input fields and form elements */
@@ -214,58 +214,78 @@ st.markdown("""
         background: var(--card-background) !important;
         border: 1px solid var(--border-color) !important;
         border-radius: 8px;
-        padding: 0.5rem;
-        color: white !important;
+        padding: 0.75rem;
+        color: var(--text-color) !important;
         transition: all 0.3s ease;
-        height: 40px;
+        height: 44px;
+        font-size: var(--font-size-text);
+    }
+
+    .stTextInput > div > div > input:focus,
+    .stSelectbox > div > div:focus-within {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
 
     /* Performance Metrics Section */
     .performance-metrics {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
         margin: var(--section-spacing) 0;
     }
 
     .performance-card {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-        padding: var(--card-spacing);
-        border-radius: 10px;
+        background: var(--card-background);
+        padding: 1.5rem;
+        border-radius: 12px;
         box-shadow: 0 4px 6px var(--shadow-color);
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         text-align: center;
-        min-height: 100px;
+        min-height: 120px;
+        border: 1px solid var(--border-color);
+        transition: all 0.3s ease;
+    }
+
+    .performance-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 12px var(--shadow-color);
     }
 
     /* Team Member Performance Section */
     .team-performance {
         margin-top: var(--section-spacing);
+        background: var(--card-background);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px var(--shadow-color);
+        border: 1px solid var(--border-color);
     }
 
     .team-performance h3 {
-        color: white;
+        color: var(--text-color);
         font-size: var(--font-size-section);
         font-weight: 600;
-        margin-bottom: 1rem;
-        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
         border-bottom: 2px solid var(--border-color);
     }
 
     /* Dataframe Styling */
     .dataframe {
-        background: var(--secondary-background-color);
-        border-radius: 10px;
+        background: var(--card-background);
+        border-radius: 12px;
         border: 1px solid var(--border-color);
         box-shadow: 0 4px 6px var(--shadow-color);
         margin: var(--section-spacing) 0;
+        overflow: hidden;
     }
 
     .dataframe th {
-        background: rgba(74, 144, 226, 0.2);
+        background: var(--primary-color);
         color: white;
         padding: 1rem;
         font-weight: 600;
@@ -273,9 +293,14 @@ st.markdown("""
     }
 
     .dataframe td {
-        color: rgba(255, 255, 255, 0.9);
-        padding: 0.8rem;
+        color: var(--text-color);
+        padding: 1rem;
         font-size: var(--font-size-text);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .dataframe tr:hover {
+        background-color: rgba(37, 99, 235, 0.05);
     }
 
     /* Hide Streamlit branding */
