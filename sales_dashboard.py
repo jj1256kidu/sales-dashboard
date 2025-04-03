@@ -83,8 +83,9 @@ st.markdown("""
         --accent-color: #4A90E2;
         --background-color: #f0f2f6;
         --card-background: #ffffff;
-        --text-color: #2c3e50;
-        --text-light: #7f8c8d;
+        --text-color: #1a1a1a;
+        --text-light: #4a4a4a;
+        --text-muted: #666666;
         --border-color: #e0e0e0;
         --shadow-color: rgba(0, 0, 0, 0.1);
         --success-color: #2ecc71;
@@ -205,6 +206,18 @@ st.markdown("""
         border: 1px solid var(--border-color);
     }
 
+    .filter-section h4 {
+        color: var(--text-color);
+        margin: 0;
+        font-size: 1.2rem;
+        font-weight: 600;
+        grid-column: 1 / -1;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
     /* Input fields */
     .stTextInput > div > div > input,
     .stSelectbox > div > div {
@@ -223,6 +236,16 @@ st.markdown("""
     .stSelectbox > div > div:focus-within {
         border-color: var(--primary-color) !important;
         box-shadow: 0 0 0 4px rgba(30, 60, 114, 0.1);
+    }
+
+    /* Labels and text */
+    .stLabel {
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+    }
+
+    .stMarkdown {
+        color: var(--text-color) !important;
     }
 
     /* Dataframe Styling */
@@ -252,6 +275,41 @@ st.markdown("""
 
     .dataframe tr:hover {
         background-color: rgba(30, 60, 114, 0.05);
+    }
+
+    /* Info boxes and containers */
+    .info-box {
+        background: var(--card-background);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px var(--shadow-color);
+        border: 1px solid var(--border-color);
+    }
+
+    .info-box h4 {
+        color: var(--text-color);
+        margin-bottom: 1rem;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    .info-box ul {
+        color: var(--text-light);
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+
+    .info-box li {
+        margin-bottom: 0.5rem;
+    }
+
+    /* Navigation */
+    .css-1d391kg {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    }
+
+    .css-1d391kg h1 {
+        color: white;
     }
 
     /* Hide Streamlit branding */
