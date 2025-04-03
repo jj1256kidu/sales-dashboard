@@ -89,36 +89,29 @@ st.markdown("""
         --shadow-color: rgba(0, 0, 0, 0.2);
         --input-max-width: 400px;
         --container-padding: 1rem;
+        --section-spacing: 1.5rem;
+        --card-spacing: 1rem;
+    }
+
+    /* Typography Scale */
+    :root {
+        --font-size-title: 2rem;
+        --font-size-section: 1.5rem;
+        --font-size-metric: 1.8rem;
+        --font-size-label: 1.1rem;
+        --font-size-text: 1rem;
+        --font-size-small: 0.9rem;
     }
 
     /* Responsive breakpoints */
     @media (max-width: 768px) {
         :root {
             --container-padding: 0.5rem;
-        }
-        
-        .stApp {
-            padding: var(--container-padding) !important;
-        }
-        
-        [data-testid="stSidebar"] {
-            padding: 1rem !important;
-        }
-        
-        .custom-header {
-            padding: 1.5rem;
-        }
-        
-        .custom-header h1 {
-            font-size: 2em;
-        }
-        
-        .metric-container {
-            padding: 1rem;
-        }
-        
-        .metric-value {
-            font-size: 2em;
+            --section-spacing: 1rem;
+            --card-spacing: 0.8rem;
+            --font-size-title: 1.8rem;
+            --font-size-section: 1.3rem;
+            --font-size-metric: 1.5rem;
         }
     }
 
@@ -131,188 +124,158 @@ st.markdown("""
         padding: var(--container-padding) !important;
     }
 
-    /* Sidebar styling */
-    [data-testid="stSidebar"] {
-        background-color: var(--secondary-background-color) !important;
-        border-right: 1px solid var(--border-color);
-        padding: 2rem 1rem !important;
-        transition: all 0.3s ease;
-    }
-
-    [data-testid="stSidebar"] .block-container {
-        padding: 0 !important;
-    }
-
-    /* Custom header with animation */
-    .custom-header {
+    /* Section Headers */
+    .section-header {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-        padding: 2.5rem;
-        border-radius: 15px;
-        margin-bottom: 2.5rem;
-        box-shadow: 0 4px 15px var(--shadow-color);
-        transform: translateY(0);
-        transition: all 0.3s ease;
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        margin-bottom: var(--section-spacing);
+        box-shadow: 0 4px 6px var(--shadow-color);
     }
 
-    .custom-header:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px var(--shadow-color);
-    }
-
-    .custom-header h1 {
+    .section-header h2 {
         color: white;
-        font-size: 2.8em;
+        margin: 0;
+        font-size: var(--font-size-title);
         font-weight: 700;
         text-align: center;
-        margin: 0;
-        text-shadow: 2px 2px 4px var(--shadow-color);
         letter-spacing: 0.5px;
-        animation: glow 2s ease-in-out infinite alternate;
     }
 
-    @keyframes glow {
-        from {
-            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--accent-color);
-        }
-        to {
-            text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px var(--accent-color);
-        }
+    /* Metric Cards Grid */
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: var(--section-spacing) 0;
+    }
+
+    /* Metric Card */
+    .metric-card {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        padding: var(--card-spacing);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px var(--shadow-color);
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        min-height: 120px;
+        transition: transform 0.3s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .metric-label {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: var(--font-size-label);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .metric-value {
+        color: white;
+        font-size: var(--font-size-metric);
+        font-weight: 700;
+        margin: 0.5rem 0;
+    }
+
+    .metric-sublabel {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: var(--font-size-small);
+        margin-top: 0.5rem;
+    }
+
+    /* Filter Section */
+    .filter-section {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: var(--section-spacing);
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .filter-section h4 {
+        color: white;
+        margin: 0;
+        font-size: var(--font-size-label);
+        font-weight: 600;
+        grid-column: 1 / -1;
     }
 
     /* Input fields and form elements */
     .stTextInput > div > div > input,
     .stSelectbox > div > div {
-        max-width: var(--input-max-width) !important;
-        margin: 0 auto !important;
+        max-width: 100% !important;
         background: var(--card-background) !important;
         border: 1px solid var(--border-color) !important;
         border-radius: 8px;
-        padding: 0.8rem;
+        padding: 0.5rem;
         color: white !important;
         transition: all 0.3s ease;
+        height: 40px;
     }
 
-    .stTextInput > div > div > input:focus,
-    .stSelectbox > div > div:focus-within {
-        border-color: var(--accent-color) !important;
-        box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
-    }
-
-    /* Welcome message with depth */
-    .welcome-message {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin-bottom: 1.5rem;
-        backdrop-filter: blur(10px);
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 6px var(--shadow-color);
-        transform: translateY(0);
-        transition: all 0.3s ease;
-    }
-
-    .welcome-message:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 8px 15px var(--shadow-color);
-    }
-
-    .welcome-message h3 {
-        color: white;
-        margin: 0;
-        font-size: 1.3em;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-        text-shadow: 1px 1px 2px var(--shadow-color);
-    }
-
-    /* Checkbox styling */
-    .stCheckbox > label {
-        margin-left: 0.5rem !important;
-        color: white !important;
-        font-weight: 500;
-        font-size: 1.1em;
-    }
-
-    /* Navigation */
-    .nav-title {
-        color: white;
-        font-size: 1.8em;
-        font-weight: 700;
-        margin-bottom: 2rem;
-        letter-spacing: 0.5px;
-        text-shadow: 1px 1px 2px var(--shadow-color);
-    }
-
-    /* Radio buttons in sidebar */
-    [data-testid="stSidebar"] .stRadio > label {
-        color: white !important;
-        font-weight: 500;
-        font-size: 1.1em;
-        padding: 0.8rem 0;
-        transition: all 0.3s ease;
-    }
-
-    [data-testid="stSidebar"] .stRadio > label:hover {
-        color: var(--accent-color) !important;
-        transform: translateX(5px);
-    }
-
-    [data-testid="stSidebar"] .stRadio > div {
-        gap: 1rem;
-    }
-
-    /* Button styling with hover effects */
-    .stButton > button {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-        color: white;
-        border: none;
-        padding: 0.8rem 2.5rem;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 1.1em;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 6px var(--shadow-color);
-        max-width: var(--input-max-width);
-        margin: 0 auto;
-        display: block;
-    }
-
-    .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px var(--shadow-color);
-        background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-color) 100%);
-    }
-
-    /* Grid layout for metrics */
-    .metric-grid {
+    /* Performance Metrics Section */
+    .performance-metrics {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin: 2rem 0;
+        gap: 1rem;
+        margin: var(--section-spacing) 0;
     }
 
-    /* Responsive columns */
-    @media (max-width: 768px) {
-        .stColumns {
-            flex-direction: column !important;
-        }
-        
-        .stColumns > div {
-            width: 100% !important;
-        }
+    .performance-card {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
+        padding: var(--card-spacing);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px var(--shadow-color);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        min-height: 100px;
     }
 
-    /* Filter section with improved layout */
-    .filter-section {
-        background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(108, 99, 255, 0.1) 100%);
-        border-radius: 12px;
-        padding: 2rem;
-        margin-bottom: 2.5rem;
+    /* Team Member Performance Section */
+    .team-performance {
+        margin-top: var(--section-spacing);
+    }
+
+    .team-performance h3 {
+        color: white;
+        font-size: var(--font-size-section);
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    /* Dataframe Styling */
+    .dataframe {
+        background: var(--secondary-background-color);
+        border-radius: 10px;
         border: 1px solid var(--border-color);
         box-shadow: 0 4px 6px var(--shadow-color);
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.5rem;
+        margin: var(--section-spacing) 0;
+    }
+
+    .dataframe th {
+        background: rgba(74, 144, 226, 0.2);
+        color: white;
+        padding: 1rem;
+        font-weight: 600;
+        font-size: var(--font-size-label);
+    }
+
+    .dataframe td {
+        color: rgba(255, 255, 255, 0.9);
+        padding: 0.8rem;
+        font-size: var(--font-size-text);
     }
 
     /* Hide Streamlit branding */
