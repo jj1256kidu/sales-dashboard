@@ -5,7 +5,7 @@ st.set_page_config(
     page_title="Sales Dashboard",
     page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed"  # Changed to collapsed for login page
+    initial_sidebar_state="expanded"  # Changed to expanded for dashboard view
 )
 
 # Import other libraries after page config
@@ -18,11 +18,6 @@ import numpy as np
 import io
 from functools import lru_cache
 import hashlib
-
-# Check authentication first
-if not is_authenticated():
-    show_login_page()
-    st.stop()  # Stop execution here if not authenticated
 
 # Initialize session state with persistence
 if "persistent_state" not in st.session_state:
@@ -1546,33 +1541,40 @@ def show_filters():
 
 def main():
     """Main function to run the dashboard"""
-    # Check authentication
     if not is_authenticated():
         show_login_page()
-        return
-    
-    # Get current user
-    current_user = get_current_user()
-    if not current_user:
-        show_login_page()
-        return
-    
-    # Show navigation
-    show_navigation()
-    
-    # Show filters if data is loaded and not in overview or sales_team tab
-    if st.session_state.df is not None and st.session_state.current_view not in ["overview", "data_input", "sales_team"]:
-        show_filters()
-    
-    # Display current view
-    if st.session_state.current_view == "data_input":
-        show_data_input()
-    elif st.session_state.current_view == "overview":
-        show_overview()
-    elif st.session_state.current_view == "sales_team":
-        show_sales_team()
-    elif st.session_state.current_view == "detailed_data":
-        show_detailed()
+    else:
+        # Show navigation sidebar
+        with st.sidebar:
+            st.title("Navigation")
+            st.markdown(f"""
+                <div style='padding: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin-bottom: 15px;'>
+                    <h3 style='color: white; margin: 0;'>Welcome, {st.session_state.username}</h3>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Navigation options
+            selected = st.radio(
+                "Select View",
+                options=["Data Input", "Overview", "Sales Team", "Detailed Data"],
+                key="nav_view_selector"
+            )
+            st.session_state.current_view = selected.lower().replace(" ", "_")
+            
+            # Logout button
+            if st.button("Logout", key="nav_logout_button"):
+                logout()
+                st.rerun()
+
+        # Display current view
+        if st.session_state.current_view == "data_input":
+            show_data_input()
+        elif st.session_state.current_view == "overview":
+            show_overview()
+        elif st.session_state.current_view == "sales_team":
+            show_sales_team()
+        elif st.session_state.current_view == "detailed_data":
+            show_detailed()
 
 if __name__ == "__main__":
     main()
