@@ -1068,7 +1068,7 @@ def show_sales_team():
 
     st.markdown("""
         <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
-            <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>🔍 Filters</h4>
+            <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>🔍 Team Filters</h4>
         </div>
     """, unsafe_allow_html=True)
 
@@ -1078,37 +1078,44 @@ def show_sales_team():
             'selected_member': st.selectbox(
                 "👤 Sales Owner",
                 options=["All Team Members"] + team_members,
-                key="global_team_member_filter"
+                key="team_view_member_filter"
             )
         }
     with col2:
-        filters['search'] = st.text_input("🔍 Search", placeholder="Search...", key="global_search_filter")
+        filters['search'] = st.text_input("🔍 Search", placeholder="Search...", key="team_view_search_filter")
     with col3:
         fiscal_order = ['April', 'May', 'June', 'July', 'August', 'September', 
                        'October', 'November', 'December', 'January', 'February', 'March']
         available_months = df['Month'].dropna().unique().tolist()
         available_months.sort(key=lambda x: fiscal_order.index(x) if x in fiscal_order else len(fiscal_order))
-        filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months, key="global_month_filter")
+        filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months, key="team_view_month_filter")
     with col4:
-        filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"], key="global_quarter_filter")
+        filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"], key="team_view_quarter_filter")
     with col5:
-        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()), key="global_year_filter")
+        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()), key="team_view_year_filter")
     with col6:
         probability_options = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%", "Custom Range"]
-        filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_options, key="global_probability_filter")
+        filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_options, key="team_view_probability_filter")
         if filters['probability_filter'] == "Custom Range":
             col6a, col6b = st.columns(2)
             with col6a:
-                st.text_input("Min %", value="0", key="global_prob_min_filter")
+                min_prob = st.text_input("Min %", value="0", key="team_view_prob_min_filter")
             with col6b:
-                st.text_input("Max %", value="100", key="global_prob_max_filter")
+                max_prob = st.text_input("Max %", value="100", key="team_view_prob_max_filter")
+            try:
+                min_prob = int(min_prob)
+                max_prob = int(max_prob)
+                filters['custom_prob_range'] = f"{min_prob}-{max_prob}%"
+            except ValueError:
+                st.warning("Please enter valid numbers for probability range")
+                filters['custom_prob_range'] = "0-100%"
     with col7:
         status_options = ["All Status", "Committed for the Month", "Upsides for the Month"]
-        filters['status_filter'] = st.selectbox("🎯 Status", options=status_options, key="global_status_filter")
+        filters['status_filter'] = st.selectbox("🎯 Status", options=status_options, key="team_view_status_filter")
     with col8:
         if 'KritiKal Focus Areas' in df.columns:
             focus_areas = ["All Focus"] + sorted(df['KritiKal Focus Areas'].dropna().unique().tolist())
-            st.selectbox("🎯 Focus", options=focus_areas, key="global_focus_filter")
+            filters['focus_filter'] = st.selectbox("🎯 Focus", options=focus_areas, key="team_view_focus_filter")
 
     filtered_df = filter_dataframe(df, filters)
     
