@@ -225,22 +225,26 @@ def show_login_page():
         </style>
 
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
+    """, unsafe_allow_html=True)
 
+    # Create the main container with particles
+    st.markdown(f"""
         <div class="main">
             <div class="particles">
-    """ + particles_html + """
+                {particles_html}
             </div>
             <div class="container">
                 <div class="login-box">
                     <h1>Welcome Back</h1>
+                    <div id="login-form">
     """, unsafe_allow_html=True)
 
-    # Create columns for centering
+    # Create columns for centering the form
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        username = st.text_input("Username", value="", placeholder="Username", key="login_username", label_visibility="collapsed")
-        password = st.text_input("Password", value="", placeholder="Password", type="password", key="login_password", label_visibility="collapsed")
+        username = st.text_input("", value="", placeholder="Username", key="login_username", label_visibility="collapsed")
+        password = st.text_input("", value="", placeholder="Password", type="password", key="login_password", label_visibility="collapsed")
 
         if st.button("LOGIN", key="login_button"):
             if verify_password(username, password):
@@ -262,7 +266,9 @@ def show_login_page():
             </div>
         """, unsafe_allow_html=True)
 
+    # Close the containers
     st.markdown("""
+                    </div>
                 </div>
             </div>
         </div>
