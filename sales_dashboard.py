@@ -291,6 +291,44 @@ st.markdown("""
         margin: 10px 0;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
+
+    /* Override Streamlit defaults */
+    .stApp {
+        background: #0B0B1E !important;
+    }
+
+    .block-container {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* Remove this section that hides the sidebar */
+    /* section[data-testid="stSidebar"] {
+        display: none !important;
+    } */
+
+    /* Add new sidebar styling */
+    section[data-testid="stSidebar"] {
+        background-color: #f8f9fa !important;
+        padding: 1rem !important;
+        border-right: 1px solid #dee2e6 !important;
+    }
+
+    section[data-testid="stSidebar"] .block-container {
+        padding: 1rem !important;
+    }
+
+    /* Style the radio buttons in sidebar */
+    [data-testid="stSidebar"] .stRadio > label {
+        font-size: 1.1em !important;
+        font-weight: 500 !important;
+        color: #2c3e50 !important;
+        padding: 0.5rem 0 !important;
+    }
+
+    [data-testid="stSidebar"] .stRadio > div {
+        gap: 1rem !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
