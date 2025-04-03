@@ -76,231 +76,182 @@ def format_number(x):
 # Custom CSS for modern styling
 st.markdown("""
 <style>
-    /* Modern corporate theme colors */
+    /* Modern theme colors matching login page */
     :root {
-        --primary-color: #2563eb;
-        --secondary-color: #1e40af;
-        --accent-color: #3b82f6;
-        --background-color: #f8fafc;
+        --primary-color: #1e3c72;
+        --secondary-color: #2a5298;
+        --accent-color: #4A90E2;
+        --background-color: #f0f2f6;
         --card-background: #ffffff;
-        --text-color: #1e293b;
-        --text-light: #64748b;
-        --border-color: #e2e8f0;
+        --text-color: #2c3e50;
+        --text-light: #7f8c8d;
+        --border-color: #e0e0e0;
         --shadow-color: rgba(0, 0, 0, 0.1);
-        --success-color: #10b981;
-        --warning-color: #f59e0b;
-        --danger-color: #ef4444;
-        --input-max-width: 400px;
-        --container-padding: 1rem;
-        --section-spacing: 1.5rem;
-        --card-spacing: 1rem;
-    }
-
-    /* Typography Scale */
-    :root {
-        --font-size-title: 2rem;
-        --font-size-section: 1.5rem;
-        --font-size-metric: 1.8rem;
-        --font-size-label: 1.1rem;
-        --font-size-text: 1rem;
-        --font-size-small: 0.9rem;
+        --success-color: #2ecc71;
+        --warning-color: #f1c40f;
+        --danger-color: #e74c3c;
     }
 
     /* Main container and background */
     .stApp {
         background: var(--background-color) !important;
         color: var(--text-color);
-        font-family: 'Inter', 'Segoe UI', sans-serif;
+        font-family: 'Segoe UI', sans-serif;
         line-height: 1.6;
-        padding: var(--container-padding) !important;
+    }
+
+    /* Custom Header */
+    .custom-header {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 15px var(--shadow-color);
+        text-align: center;
+    }
+
+    .custom-header h1 {
+        color: white;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin: 0;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .custom-header p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.2rem;
+        margin: 0.5rem 0 0;
     }
 
     /* Section Headers */
     .section-header {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin-bottom: var(--section-spacing);
-        box-shadow: 0 4px 6px var(--shadow-color);
+        padding: 2rem;
+        border-radius: 15px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 4px 15px var(--shadow-color);
     }
 
     .section-header h2 {
         color: white;
         margin: 0;
-        font-size: var(--font-size-title);
+        font-size: 2.2rem;
         font-weight: 700;
         text-align: center;
         letter-spacing: 0.5px;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
     }
 
-    /* Metric Cards Grid */
-    .metric-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1.5rem;
-        margin: var(--section-spacing) 0;
-    }
-
-    /* Metric Card */
+    /* Metric Cards */
     .metric-card {
         background: var(--card-background);
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px var(--shadow-color);
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px var(--shadow-color);
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        min-height: 140px;
+        min-height: 160px;
         transition: all 0.3s ease;
         border: 1px solid var(--border-color);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
     }
 
     .metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 12px var(--shadow-color);
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px var(--shadow-color);
     }
 
     .metric-label {
         color: var(--text-light);
-        font-size: var(--font-size-label);
+        font-size: 1.2rem;
         font-weight: 600;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.8rem;
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
 
     .metric-value {
         color: var(--text-color);
-        font-size: var(--font-size-metric);
+        font-size: 2rem;
         font-weight: 700;
-        margin: 0.5rem 0;
+        margin: 0.8rem 0;
         line-height: 1.2;
-    }
-
-    .metric-sublabel {
-        color: var(--text-light);
-        font-size: var(--font-size-small);
-        margin-top: 0.5rem;
     }
 
     /* Filter Section */
     .filter-section {
         background: var(--card-background);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: var(--section-spacing);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.2rem;
         align-items: center;
-        box-shadow: 0 2px 4px var(--shadow-color);
+        box-shadow: 0 4px 15px var(--shadow-color);
         border: 1px solid var(--border-color);
     }
 
-    .filter-section h4 {
-        color: var(--text-color);
-        margin: 0;
-        font-size: var(--font-size-label);
-        font-weight: 600;
-        grid-column: 1 / -1;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    /* Input fields and form elements */
+    /* Input fields */
     .stTextInput > div > div > input,
     .stSelectbox > div > div {
         max-width: 100% !important;
         background: var(--card-background) !important;
-        border: 1px solid var(--border-color) !important;
-        border-radius: 8px;
-        padding: 0.75rem;
+        border: 2px solid var(--border-color) !important;
+        border-radius: 10px;
+        padding: 0.8rem;
         color: var(--text-color) !important;
         transition: all 0.3s ease;
-        height: 44px;
-        font-size: var(--font-size-text);
+        height: 48px;
+        font-size: 1rem;
     }
 
     .stTextInput > div > div > input:focus,
     .stSelectbox > div > div:focus-within {
         border-color: var(--primary-color) !important;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-    }
-
-    /* Performance Metrics Section */
-    .performance-metrics {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin: var(--section-spacing) 0;
-    }
-
-    .performance-card {
-        background: var(--card-background);
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px var(--shadow-color);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        min-height: 120px;
-        border: 1px solid var(--border-color);
-        transition: all 0.3s ease;
-    }
-
-    .performance-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 12px var(--shadow-color);
-    }
-
-    /* Team Member Performance Section */
-    .team-performance {
-        margin-top: var(--section-spacing);
-        background: var(--card-background);
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 6px var(--shadow-color);
-        border: 1px solid var(--border-color);
-    }
-
-    .team-performance h3 {
-        color: var(--text-color);
-        font-size: var(--font-size-section);
-        font-weight: 600;
-        margin-bottom: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid var(--border-color);
+        box-shadow: 0 0 0 4px rgba(30, 60, 114, 0.1);
     }
 
     /* Dataframe Styling */
     .dataframe {
         background: var(--card-background);
-        border-radius: 12px;
+        border-radius: 15px;
         border: 1px solid var(--border-color);
-        box-shadow: 0 4px 6px var(--shadow-color);
-        margin: var(--section-spacing) 0;
+        box-shadow: 0 4px 15px var(--shadow-color);
+        margin: 1.5rem 0;
         overflow: hidden;
     }
 
     .dataframe th {
-        background: var(--primary-color);
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
         color: white;
-        padding: 1rem;
+        padding: 1.2rem;
         font-weight: 600;
-        font-size: var(--font-size-label);
+        font-size: 1.2rem;
     }
 
     .dataframe td {
         color: var(--text-color);
-        padding: 1rem;
-        font-size: var(--font-size-text);
+        padding: 1.2rem;
+        font-size: 1rem;
         border-bottom: 1px solid var(--border-color);
     }
 
     .dataframe tr:hover {
-        background-color: rgba(37, 99, 235, 0.05);
+        background-color: rgba(30, 60, 114, 0.05);
     }
 
     /* Hide Streamlit branding */
