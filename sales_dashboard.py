@@ -398,31 +398,46 @@ def show_data_input():
     
     with col1:
         st.markdown('<div class="upload-container">', unsafe_allow_html=True)
-        uploaded_file = st.file_uploader(
-            "Upload Sales Data",
-            type=['xlsx', 'csv'],
-            help="Upload your sales data file in Excel or CSV format"
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
         
-        if uploaded_file:
-            try:
-                if uploaded_file.name.endswith('.xlsx'):
-                    excel_file = pd.ExcelFile(uploaded_file)
-                    sheet_name = st.selectbox("Select Worksheet", excel_file.sheet_names)
-                    df = pd.read_excel(uploaded_file, sheet_name=sheet_name)
-                else:
-                    df = pd.read_csv(uploaded_file)
-                
-                st.session_state.df = df
-                st.success(f"Successfully loaded {len(df):,} records")
-                
-                # Preview the data
-                st.subheader("Data Preview")
-                st.dataframe(df.head(), use_container_width=True)
-                
-            except Exception as e:
-                st.error(f"Error: {str(e)}")
+        # Only show file uploader if no data is loaded
+        if st.session_state.df is None:
+            uploaded_file = st.file_uploader(
+                "Upload Sales Data",
+                type=['xlsx', 'csv'],
+                help="Upload your sales data file in Excel or CSV format"
+            )
+            
+            if uploaded_file:
+                try:
+                    if uploaded_file.name.endswith('.xlsx'):
+                        excel_file = pd.ExcelFile(uploaded_file)
+                        sheet_name = st.selectbox("Select Worksheet", excel_file.sheet_names)
+                        df = pd.read_excel(uploaded_file, sheet_name=sheet_name)
+                    else:
+                        df = pd.read_csv(uploaded_file)
+                    
+                    st.session_state.df = df
+                    st.session_state.persistent_state["df"] = df
+                    update_persistent_state()
+                    st.success(f"Successfully loaded {len(df):,} records")
+                    
+                except Exception as e:
+                    st.error(f"Error: {str(e)}")
+        else:
+            # Show current data info and clear button
+            st.info(f"Currently loaded: {len(st.session_state.df):,} records")
+            if st.button("Clear Data", type="secondary"):
+                st.session_state.df = None
+                st.session_state.persistent_state["df"] = None
+                update_persistent_state()
+                st.rerun()
+        
+        # Preview the data if available
+        if st.session_state.df is not None:
+            st.subheader("Data Preview")
+            st.dataframe(st.session_state.df.head(), use_container_width=True)
+            
+        st.markdown("</div>", unsafe_allow_html=True)
     
     with col2:
         st.markdown("""
