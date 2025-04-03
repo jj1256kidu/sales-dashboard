@@ -804,28 +804,32 @@ def show_detailed_data_view(df):
     st.dataframe(df, use_container_width=True)
 
 def process_data(df):
-    """Process the dataframe for analysis"""
+    """Process and prepare data for the dashboard"""
     df = df.copy()
     
-    # Convert Amount to numeric, handling any non-numeric values
-    df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
-    
-    # Convert Amount to Lakhs
-    df['Amount_Lacs'] = df['Amount'] / 100000
-    
-    # Convert Sales Stage to string and create Is_Won column
-    df['Sales Stage'] = df['Sales Stage'].astype(str)
-    df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
-    
-    # Calculate Weighted Amount
-    df['Probability'] = pd.to_numeric(df['Probability'].str.rstrip('%'), errors='coerce') / 100
-    df['Weighted_Amount'] = df['Amount_Lacs'] * df['Probability']
-    
-    # Convert Expected Close Date to datetime
+    # Convert dates and calculate time-based columns at once
     df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
-    
-    # Extract Month from Expected Close Date
     df['Month'] = df['Expected Close Date'].dt.strftime('%B')
+    df['Year'] = df['Expected Close Date'].dt.year
+    df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
+    
+    # Convert probability and calculate numeric values at once with safe null handling
+    def convert_probability(x):
+        try:
+            if pd.isna(x):
+                return 0
+            if isinstance(x, str):
+                x = x.rstrip('%')
+            return float(x)
+        except:
+            return 0
+    
+    df['Probability_Num'] = df['Probability'].apply(convert_probability)
+    
+    # Pre-calculate common flags and metrics with safe null handling
+    df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
+    df['Amount_Lacs'] = df['Amount'].fillna(0).div(100000).round(0).astype(int)
+    df['Weighted_Amount'] = (df['Amount_Lacs'] * df['Probability_Num'] / 100).round(0).astype(int)
     
     return df
 
@@ -839,83 +843,77 @@ def format_percentage(value):
         return "0%"
 
 def filter_dataframe(df, filters):
-    """Filter dataframe based on selected criteria"""
-    filtered_df = df.copy()
+    """Apply filters to dataframe efficiently"""
+    mask = pd.Series(True, index=df.index)
     
-    # Apply member filter
-    if filters.get('selected_member') and filters['selected_member'] != "All Team Members":
-        filtered_df = filtered_df[filtered_df['Sales Owner'] == filters['selected_member']]
+    if filters.get('selected_member') != "All Team Members":
+        mask &= df['Sales Owner'] == filters['selected_member']
     
-    # Apply search filter
     if filters.get('search'):
-        search_term = filters['search'].lower()
-        mask = np.column_stack([filtered_df[col].astype(str).str.lower().str.contains(search_term, na=False) 
-                              for col in filtered_df.columns])
-        filtered_df = filtered_df[mask.any(axis=1)]
+        search_mask = pd.Series(False, index=df.index)
+        search = filters['search'].lower()
+        for col in ['Organization Name', 'Opportunity Name', 'Sales Owner', 'Sales Stage']:
+            search_mask |= df[col].astype(str).str.lower().str.contains(search, na=False)
+        mask &= search_mask
     
-    # Apply month filter
-    if filters.get('month_filter') and filters['month_filter'] != "All Months":
-        filtered_df = filtered_df[filtered_df['Month'] == filters['month_filter']]
+    if filters.get('month_filter') != "All Months":
+        mask &= df['Month'] == filters['month_filter']
     
-    # Apply quarter filter
-    if filters.get('quarter_filter') and filters['quarter_filter'] != "All Quarters":
-        quarter_map = {
-            'Q1': ['April', 'May', 'June'],
-            'Q2': ['July', 'August', 'September'],
-            'Q3': ['October', 'November', 'December'],
-            'Q4': ['January', 'February', 'March']
-        }
-        filtered_df = filtered_df[filtered_df['Month'].isin(quarter_map[filters['quarter_filter']])]
+    if filters.get('quarter_filter') != "All Quarters":
+        mask &= df['Quarter'] == filters['quarter_filter']
     
-    # Apply year filter
-    if filters.get('year_filter') and filters['year_filter'] != "All Years":
-        filtered_df = filtered_df[filtered_df['Expected Close Date'].dt.year == filters['year_filter']]
+    if filters.get('year_filter') != "All Years":
+        mask &= df['Year'] == filters['year_filter']
     
-    # Apply probability filter
-    if filters.get('probability_filter'):
+    if filters.get('probability_filter') != "All Probability":
         if filters['probability_filter'] == "Custom Range":
-            filtered_df = filtered_df[
-                (filtered_df['Probability'] * 100 >= filters.get('min_prob', 0)) &
-                (filtered_df['Probability'] * 100 <= filters.get('max_prob', 100))
-            ]
+            prob_range = filters['custom_prob_range'].split("-")
+            min_prob = float(prob_range[0])
+            max_prob = float(prob_range[1].rstrip("%"))
         else:
-            prob_ranges = {
-                "0-25%": (0, 25),
-                "26-50%": (26, 50),
-                "51-75%": (51, 75),
-                "76-100%": (76, 100)
-            }
-            if filters['probability_filter'] in prob_ranges:
-                min_prob, max_prob = prob_ranges[filters['probability_filter']]
-                filtered_df = filtered_df[
-                    (filtered_df['Probability'] * 100 >= min_prob) &
-                    (filtered_df['Probability'] * 100 <= max_prob)
-                ]
+            prob_range = filters['probability_filter'].split("-")
+            min_prob = float(prob_range[0])
+            max_prob = float(prob_range[1].rstrip("%"))
+        mask &= (df['Probability_Num'] >= min_prob) & (df['Probability_Num'] <= max_prob)
     
-    # Apply status filter
-    if filters.get('status_filter'):
+    if filters.get('status_filter') != "All Status":
         if filters['status_filter'] == "Committed for the Month":
-            filtered_df = filtered_df[filtered_df['Probability'] >= 0.75]
+            current_month = pd.Timestamp.now().strftime('%B')
+            mask &= (df['Month'] == current_month) & (df['Probability_Num'] > 75)
         elif filters['status_filter'] == "Upsides for the Month":
-            filtered_df = filtered_df[filtered_df['Probability'] < 0.75]
+            current_month = pd.Timestamp.now().strftime('%B')
+            mask &= (df['Month'] == current_month) & (df['Probability_Num'].between(25, 75))
+        else:
+            mask &= df['Sales Stage'] == filters['status_filter']
     
-    # Apply focus filter
-    if filters.get('focus_filter') and filters['focus_filter'] != "All Focus":
-        filtered_df = filtered_df[filtered_df['KritiKal Focus Areas'] == filters['focus_filter']]
+    if filters.get('focus_filter') != "All Focus":
+        mask &= df['KritiKal Focus Areas'] == filters['focus_filter']
     
-    return filtered_df
+    return df[mask]
 
 def calculate_team_metrics(df):
-    """Calculate team performance metrics"""
-    metrics = pd.DataFrame()
+    """Calculate all team-related metrics at once"""
+    team_metrics = df.groupby('Sales Owner').agg({
+        'Amount': lambda x: int(x[df['Is_Won'] & x.notna()].sum() / 100000) if len(x[df['Is_Won'] & x.notna()]) > 0 else 0,
+        'Is_Won': 'sum',
+        'Amount_Lacs': lambda x: int(x[~df['Is_Won'] & x.notna()].sum()) if len(x[~df['Is_Won'] & x.notna()]) > 0 else 0,
+        'Weighted_Amount': lambda x: int(x[~df['Is_Won'] & x.notna()].sum()) if len(x[~df['Is_Won'] & x.notna()]) > 0 else 0
+    }).reset_index()
     
-    # Group by Sales Owner
-    metrics['Current Pipeline'] = df[~df['Is_Won']].groupby('Sales Owner')['Amount_Lacs'].sum()
-    metrics['Closed Won'] = df[df['Is_Won']].groupby('Sales Owner')['Amount_Lacs'].sum()
-    metrics['Pipeline Deals'] = df[~df['Is_Won']].groupby('Sales Owner').size()
-    metrics['Closed Deals'] = df[df['Is_Won']].groupby('Sales Owner').size()
+    team_metrics.columns = ['Sales Owner', 'Closed Won', 'Closed Deals', 'Current Pipeline', 'Weighted Projections']
     
-    # Fill NaN values with 0
-    metrics = metrics.fillna(0)
+    team_metrics = team_metrics.fillna(0)
     
-    return metrics 
+    # Calculate Pipeline Deals
+    pipeline_deals = df[~df['Is_Won']].groupby('Sales Owner').size()
+    team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(pipeline_deals).fillna(0).astype(int)
+    
+    # Win Rate
+    total_deals = team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']
+    team_metrics['Win Rate'] = np.where(
+        total_deals > 0,
+        (team_metrics['Closed Deals'] / total_deals * 100).round(0),
+        0
+    ).astype(int)
+    
+    return team_metrics 
