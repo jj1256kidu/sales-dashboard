@@ -104,14 +104,200 @@ particles_init = f"""
     }}
 """
 
-# Title
-st.markdown("<h1 style='text-align:center; color:cyan;'>🚀 Welcome to the Futuristic Login Page</h1>", unsafe_allow_html=True)
+# Title with reduced margin
+st.markdown("<h1 style='text-align:center; color:cyan; margin: 0 0 1rem 0;'>🚀 Welcome to the Futuristic Login Page</h1>", unsafe_allow_html=True)
 
-# Embed HTML with theme-based styling
+# Embed HTML with theme-based styling - fixed height/width and spacing
 components.html(f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Futuristic Login</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Orbitron', sans-serif;
+        }}
+        html, body {{
+            height: 100vh;
+            width: 100vw;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: {particle_config["background"]["color"]};
+        }}
+        #tsparticles {{
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            pointer-events: none;
+        }}
+        .login-box {{
+            position: fixed;
+            z-index: 2;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            padding: 2rem;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            color: white;
+            box-shadow: 0 0 25px {particle_config["particles"]["color"]["value"][0]}40;
+            backdrop-filter: blur(10px);
+        }}
+        .login-box h2 {{
+            text-align: center;
+            color: {particle_config["particles"]["color"]["value"][0]};
+            margin-bottom: 1.5rem;
+        }}
+        .input-wrapper {{
+            position: relative;
+            margin-bottom: 1rem;
+        }}
+        .input-wrapper i {{
+            position: absolute;
+            top: 50%;
+            left: 15px;
+            transform: translateY(-50%);
+            color: {particle_config["particles"]["color"]["value"][0]};
+        }}
+        .input-wrapper input {{
+            width: 100%;
+            height: 45px;
+            padding: 0 15px 0 40px;
+            border: 1px solid {particle_config["particles"]["color"]["value"][0]};
+            background: transparent;
+            color: white;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+        }}
+        .login-box button {{
+            width: 100%;
+            height: 48px;
+            background: linear-gradient(135deg, 
+                {particle_config["particles"]["color"]["value"][0]}, 
+                {particle_config["particles"]["color"]["value"][1]}
+            );
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }}
+        .login-box button:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px {particle_config["particles"]["color"]["value"][0]}40;
+        }}
+        .debug-info {{
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            background: rgba(0,0,0,0.9);
+            padding: 1rem;
+            border-radius: 8px;
+            color: #00f0ff;
+            font-size: 12px;
+            z-index: 1000;
+            display: none;
+            border: 1px solid #00f0ff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+            max-width: 300px;
+        }}
+        .debug-info.show {{
+            display: block;
+        }}
+        .debug-section {{
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+        }}
+        .debug-title {{
+            color: #ff00e0;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }}
+        .debug-value {{
+            margin-left: 10px;
+            word-break: break-all;
+        }}
+        .debug-error {{
+            color: #ff3366;
+        }}
+    </style>
+</head>
+<body>
+    <div id="tsparticles"></div>
+    <div class="login-box">
+        <h2>Welcome Back</h2>
+        <div class="input-wrapper">
+            <i class="fas fa-user"></i>
+            <input type="text" placeholder="Username" id="username" oninput="logInput('username')" autocomplete="off"/>
+        </div>
+        <div class="input-wrapper">
+            <i class="fas fa-lock"></i>
+            <input type="password" placeholder="Password" id="password" oninput="logInput('password')" autocomplete="off"/>
+        </div>
+        <button onclick="handleLogin()">LOGIN</button>
+    </div>
+    
+    <!-- Enhanced debug information panel -->
+    <div class="debug-info" id="debugInfo">
+        <div class="debug-section">
+            <div class="debug-title">System Status</div>
+            <div class="debug-value" id="systemStatus">Initializing...</div>
+        </div>
+        <div class="debug-section">
+            <div class="debug-title">Last Action</div>
+            <div class="debug-value" id="lastAction">None</div>
+        </div>
+        <div class="debug-section">
+            <div class="debug-title">Input Status</div>
+            <div class="debug-value" id="inputStatus">Waiting</div>
+        </div>
+        <div class="debug-section">
+            <div class="debug-title">Performance</div>
+            <div class="debug-value" id="performance">Loading...</div>
+        </div>
+        <div class="debug-section">
+            <div class="debug-title">Errors</div>
+            <div class="debug-value debug-error" id="errors">None</div>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced debug logging
+        let debugStartTime = Date.now();
+        let inputHistory = [];
+        let errorCount = 0;
+        
+        function logToDebug(message, type = 'info') {
+            if (window.debugMode) {
+                const timestamp = new Date().toISOString();
+                console.log(`[Debug][${type}][${timestamp}] ${message}`);
+                
+                // Update debug panel
+                document.getElementById('lastAction').textContent = message;
+                document.getElementById('systemStatus').textContent = `Running for ${((Date.now() - debugStartTime)/1000).toFixed(1)}s`;
+                document.getElementById('performance').textContent = `Errors: ${errorCount}, Inputs: ${inputHistory.length}`;
+                
+                // Log to parent Streamlit
+                window.parent.postMessage({
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Futuristic Login</title>
