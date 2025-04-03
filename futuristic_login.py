@@ -117,6 +117,7 @@ components.html(f"""
             padding: 0;
             box-sizing: border-box;
             font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
         }}
 
         html, body {{
@@ -150,11 +151,11 @@ components.html(f"""
 
         .login-box {{
             background: rgba(0, 0, 0, 0.7);
-            border-radius: 20px;
-            padding: 15px 20px;
+            border-radius: 25px;
+            padding: 20px;
             width: 100%;
-            max-width: 400px;
-            box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
+            max-width: 380px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.15);
             backdrop-filter: blur(10px);
             margin: 0;
         }}
@@ -162,77 +163,113 @@ components.html(f"""
         .login-box h2 {{
             text-align: center;
             color: #00f0ff;
-            margin: 0 0 12px 0;
-            font-size: 20px;
-            line-height: 1;
+            margin: 0 0 20px 0;
+            font-size: 24px;
+            font-weight: 400;
+            letter-spacing: 2px;
         }}
 
         .input-wrapper {{
             position: relative;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }}
 
         .input-wrapper i {{
             position: absolute;
             top: 50%;
-            left: 12px;
+            left: 15px;
             transform: translateY(-50%);
-            color: #7efcff;
-            font-size: 12px;
+            color: #00f0ff;
+            font-size: 14px;
+            opacity: 0.8;
         }}
 
         .input-wrapper input {{
             width: 100%;
-            height: 36px;
-            padding: 0 12px 0 32px;
+            height: 45px;
+            padding: 0 15px 0 40px;
             border: 1px solid #00f0ff;
-            background: transparent;
-            color: white;
-            border-radius: 16px;
-            font-size: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            color: #fff;
+            border-radius: 50px;
+            font-size: 14px;
+            letter-spacing: 1px;
             outline: none;
-            transition: box-shadow 0.3s;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.1),
+                       inset 0 0 10px rgba(0, 240, 255, 0.1);
+        }}
+
+        .input-wrapper input::placeholder {{
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 1px;
         }}
 
         .input-wrapper input:focus {{
-            box-shadow: 0 0 10px #00f0ff;
+            border-color: #00f0ff;
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3),
+                       inset 0 0 15px rgba(0, 240, 255, 0.1);
         }}
 
         .login-box button {{
             width: 100%;
-            height: 36px;
-            background: linear-gradient(135deg, #00f0ff, #ff00e0);
+            height: 45px;
+            background: linear-gradient(90deg, #00f0ff 0%, #ff00ff 100%);
             color: white;
-            font-weight: bold;
-            font-size: 12px;
+            font-weight: 400;
+            font-size: 16px;
+            letter-spacing: 2px;
             border: none;
-            border-radius: 16px;
+            border-radius: 50px;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 2px;
+            margin-top: 5px;
+            text-transform: uppercase;
         }}
 
         .login-box button:hover {{
             transform: scale(1.02);
-            box-shadow: 0 0 15px #00f0ff;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
         }}
 
         .options {{
             display: flex;
             justify-content: space-between;
-            font-size: 11px;
-            color: #a0cbe8;
-            margin-top: 5px;
+            align-items: center;
+            font-size: 12px;
+            color: #00f0ff;
+            margin-top: 15px;
+            letter-spacing: 0.5px;
+        }}
+
+        .options label {{
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }}
+
+        .options input[type="checkbox"] {{
+            width: 14px;
+            height: 14px;
+            accent-color: #00f0ff;
+            cursor: pointer;
         }}
 
         .options a {{
-            color: #a0cbe8;
-            text-decoration: underline;
+            color: #00f0ff;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }}
+
+        .options a:hover {{
+            opacity: 0.8;
         }}
 
         @media (max-width: 480px) {{
             .login-box {{
-                padding: 12px 15px;
+                padding: 15px;
+                margin: 0 20px;
             }}
         }}
     </style>
