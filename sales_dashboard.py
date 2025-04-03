@@ -4,7 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import numpy as np
-from views import show_data_input_view, show_overview_view, show_sales_team_view, show_detailed_data_view
+from views import show_data_input_view, show_overview_view, show_sales_team_view, show_detailed_data_view, show_login_page
 from auth import check_password, init_session_state
 
 # Page configuration
@@ -87,29 +87,45 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Initialize session state
-init_session_state()
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+if 'df' not in st.session_state:
+    st.session_state.df = None
+if 'current_view' not in st.session_state:
+    st.session_state.current_view = 'data_input'
+if 'sales_target' not in st.session_state:
+    st.session_state.sales_target = 0.0
 
-# Sidebar
-with st.sidebar:
-    st.title("Navigation")
-    page = st.radio(
-        "Select a page",
-        ["Data Input", "Overview", "Sales Team", "Detailed Data"]
-    )
-    
-    if st.button("Logout"):
-        st.session_state.authenticated = False
-        st.rerun()
+def main():
+    # Check authentication
+    if not st.session_state.authenticated:
+        show_login_page()
+        return
 
-# Main content
-if st.session_state.authenticated:
-    if page == "Data Input":
-        show_data_input_view(st.session_state.get('df'))
-    elif page == "Overview":
-        show_overview_view(st.session_state.get('df'))
-    elif page == "Sales Team":
-        show_sales_team_view(st.session_state.get('df'))
-    elif page == "Detailed Data":
-        show_detailed_data_view(st.session_state.get('df'))
-else:
-    check_password()
+    # Sidebar navigation
+    with st.sidebar:
+        st.title("Navigation")
+        selected = st.radio(
+            "Select View",
+            options=["Data Input", "Overview", "Sales Team", "Detailed Data"],
+            key="navigation"
+        )
+        st.session_state.current_view = selected.lower().replace(" ", "_")
+        
+        # Logout button
+        if st.button("Logout"):
+            st.session_state.authenticated = False
+            st.rerun()
+
+    # Main content
+    if st.session_state.current_view == "data_input":
+        show_data_input_view(st.session_state.df)
+    elif st.session_state.current_view == "overview":
+        show_overview_view(st.session_state.df)
+    elif st.session_state.current_view == "sales_team":
+        show_sales_team_view(st.session_state.df)
+    elif st.session_state.current_view == "detailed_data":
+        show_detailed_data_view(st.session_state.df)
+
+if __name__ == "__main__":
+    main()
