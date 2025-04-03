@@ -1483,8 +1483,8 @@ def main():
     # Show navigation
     show_navigation()
     
-    # Show filters if data is loaded
-    if st.session_state.df is not None:
+    # Show filters if data is loaded and not in overview tab
+    if st.session_state.df is not None and st.session_state.current_view not in ["overview", "data_input"]:
         show_filters()
     
     # Display current view
