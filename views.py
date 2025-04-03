@@ -6,111 +6,87 @@ from datetime import datetime, timedelta
 import numpy as np
 
 def show_login_page():
-    """Display the login page with neon-styled authentication and particles"""
+    """Display the login page with neon-styled authentication and tsparticles"""
     # Custom CSS and JS for login page with particles
     st.markdown("""
         <style>
-            /* Existing styles */
-            @keyframes moveBackground {
-                0% { background-position: 0% 0%; }
-                100% { background-position: 100% 100%; }
-            }
-            
-            @keyframes neonGlow {
-                0% { box-shadow: 0 0 5px #0ff, 0 0 10px #0ff, 0 0 15px #0ff; }
-                50% { box-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff; }
-                100% { box-shadow: 0 0 5px #0ff, 0 0 10px #0ff, 0 0 15px #0ff; }
-            }
-            
-            @keyframes buttonGlow {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
+            /* Reset and base styles */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
             }
 
-            /* Particle animation */
-            @keyframes float-up {
-                0% { transform: translateY(0) rotate(0deg); opacity: 0; }
-                50% { opacity: 0.5; }
-                100% { transform: translateY(-1000px) rotate(720deg); opacity: 0; }
+            /* Particle container */
+            #tsparticles {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                z-index: 0;
+                background: #0a0a2e;
             }
 
             /* Main container */
-            .main {
-                background-color: #0a0a2e;
-                min-height: 100vh;
-                position: relative;
-                overflow: hidden;
-            }
-
-            /* Particles container */
-            .particles-container {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                pointer-events: none;
-                z-index: 0;
-            }
-
-            /* Individual particle */
-            .particle {
-                position: absolute;
-                width: 4px;
-                height: 4px;
-                background: #0ff;
-                border-radius: 50%;
-                pointer-events: none;
-                animation: float-up 10s infinite linear;
-            }
-
-            /* Login container */
-            .login-container {
-                max-width: 400px;
-                margin: 100px auto;
-                padding: 30px;
-                background: rgba(0, 0, 0, 0.8);
-                border-radius: 20px;
-                border: 1px solid rgba(0, 255, 255, 0.1);
-                box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-                backdrop-filter: blur(10px);
-                animation: neonGlow 2s infinite;
+            .container {
                 position: relative;
                 z-index: 1;
+                height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 20px;
             }
 
-            /* Login header */
+            /* Login box */
+            .login-box {
+                background: rgba(0, 0, 0, 0.8);
+                border-radius: 20px;
+                padding: 40px;
+                width: 100%;
+                max-width: 400px;
+                border: 1px solid rgba(0, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+            }
+
+            /* Form header */
             .login-header {
                 text-align: center;
-                color: #0ff;
                 margin-bottom: 30px;
-                text-shadow: 0 0 10px #0ff;
-            }
-            .login-header h1 {
-                font-size: 2.5em;
-                margin-bottom: 10px;
-                font-weight: 600;
-                font-family: 'Segoe UI', sans-serif;
             }
 
-            /* Input fields */
+            .login-header h1 {
+                color: #0ff;
+                font-size: 2.5em;
+                font-weight: 600;
+                font-family: 'Segoe UI', sans-serif;
+                text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+                margin-bottom: 10px;
+            }
+
+            /* Form inputs */
+            .form-group {
+                margin-bottom: 20px;
+            }
+
             .stTextInput > div > div > input {
+                width: 100% !important;
+                padding: 15px !important;
+                border-radius: 30px !important;
                 background: rgba(0, 0, 0, 0.5) !important;
                 border: 2px solid #0ff !important;
                 color: #0ff !important;
-                padding: 15px !important;
-                border-radius: 30px !important;
-                width: 100% !important;
-                margin-bottom: 15px !important;
                 font-size: 1.1em !important;
-                box-shadow: 0 0 10px rgba(0, 255, 255, 0.2) !important;
                 transition: all 0.3s ease !important;
             }
+
             .stTextInput > div > div > input:focus {
                 box-shadow: 0 0 20px rgba(0, 255, 255, 0.4) !important;
                 border-color: #0ff !important;
             }
+
             .stTextInput > div > div > input::placeholder {
                 color: rgba(0, 255, 255, 0.5) !important;
             }
@@ -118,26 +94,27 @@ def show_login_page():
             /* Login button */
             .stButton > button {
                 width: 100% !important;
-                background: linear-gradient(90deg, #00ffff, #ff00ff) !important;
-                background-size: 200% 200% !important;
-                color: white !important;
-                border: none !important;
                 padding: 15px !important;
                 border-radius: 30px !important;
+                background: linear-gradient(90deg, #00ffff, #ff00ff) !important;
+                background-size: 200% 200% !important;
+                border: none !important;
+                color: white !important;
                 font-size: 1.2em !important;
                 font-weight: 600 !important;
-                cursor: pointer !important;
                 text-transform: uppercase !important;
                 letter-spacing: 2px !important;
+                cursor: pointer !important;
                 transition: all 0.3s ease !important;
                 animation: buttonGlow 3s infinite !important;
             }
+
             .stButton > button:hover {
                 transform: translateY(-2px) !important;
                 box-shadow: 0 0 20px rgba(255, 0, 255, 0.4) !important;
             }
 
-            /* Remember me and forgot password */
+            /* Additional options */
             .login-options {
                 display: flex;
                 justify-content: space-between;
@@ -146,16 +123,23 @@ def show_login_page():
                 color: #0ff;
                 font-size: 0.9em;
             }
+
             .remember-me {
                 display: flex;
                 align-items: center;
                 gap: 5px;
             }
+
+            .remember-me input[type="checkbox"] {
+                accent-color: #0ff;
+            }
+
             .forgot-password {
                 color: #0ff;
                 text-decoration: none;
                 transition: all 0.3s ease;
             }
+
             .forgot-password:hover {
                 text-shadow: 0 0 10px #0ff;
             }
@@ -168,44 +152,120 @@ def show_login_page():
                 font-size: 0.9em;
                 text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
             }
+
+            /* Animations */
+            @keyframes buttonGlow {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
         </style>
 
+        <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
         <script>
-            function createParticle() {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + 'vw';
-                particle.style.animationDuration = (Math.random() * 5 + 5) + 's';
-                particle.style.opacity = Math.random();
-                document.querySelector('.particles-container').appendChild(particle);
-                
-                particle.addEventListener('animationend', () => {
-                    particle.remove();
+            window.onload = function() {
+                tsParticles.load("tsparticles", {
+                    fullScreen: {
+                        enable: true
+                    },
+                    particles: {
+                        number: {
+                            value: 80,
+                            density: {
+                                enable: true,
+                                value_area: 800
+                            }
+                        },
+                        color: {
+                            value: ["#00ffff", "#ff00ff", "#00ff00"]
+                        },
+                        shape: {
+                            type: "circle"
+                        },
+                        opacity: {
+                            value: 0.5,
+                            random: true,
+                            animation: {
+                                enable: true,
+                                speed: 1,
+                                minimumValue: 0.1,
+                                sync: false
+                            }
+                        },
+                        size: {
+                            value: 3,
+                            random: true,
+                            animation: {
+                                enable: true,
+                                speed: 2,
+                                minimumValue: 0.1,
+                                sync: false
+                            }
+                        },
+                        links: {
+                            enable: true,
+                            distance: 150,
+                            color: "#00ffff",
+                            opacity: 0.4,
+                            width: 1
+                        },
+                        move: {
+                            enable: true,
+                            speed: 2,
+                            direction: "none",
+                            random: false,
+                            straight: false,
+                            outModes: {
+                                default: "out"
+                            },
+                            attract: {
+                                enable: false,
+                                rotateX: 600,
+                                rotateY: 1200
+                            }
+                        }
+                    },
+                    interactivity: {
+                        detectsOn: "window",
+                        events: {
+                            onHover: {
+                                enable: true,
+                                mode: "repulse"
+                            },
+                            onClick: {
+                                enable: true,
+                                mode: "push"
+                            },
+                            resize: true
+                        },
+                        modes: {
+                            repulse: {
+                                distance: 100,
+                                duration: 0.4
+                            },
+                            push: {
+                                quantity: 4
+                            }
+                        }
+                    },
+                    background: {
+                        color: "#0a0a2e"
+                    }
                 });
             }
-
-            function initParticles() {
-                const container = document.createElement('div');
-                container.className = 'particles-container';
-                document.body.appendChild(container);
-                
-                setInterval(createParticle, 100);
-            }
-
-            // Initialize particles when the page loads
-            window.addEventListener('load', initParticles);
         </script>
 
-        <div class="particles-container"></div>
+        <div id="tsparticles"></div>
     """, unsafe_allow_html=True)
 
     # Login container
     st.markdown("""
-        <div class="login-container">
-            <div class="login-header">
-                <h1>Welcome Back</h1>
-            </div>
-            <div class="login-form">
+        <div class="container">
+            <div class="login-box">
+                <div class="login-header">
+                    <h1>Welcome Back</h1>
+                </div>
+                <div class="form-group">
     """, unsafe_allow_html=True)
 
     # Login form
@@ -221,16 +281,17 @@ def show_login_page():
 
     # Remember me and forgot password
     st.markdown("""
-        <div class="login-options">
-            <div class="remember-me">
-                <input type="checkbox" id="remember" name="remember">
-                <label for="remember">Remember me</label>
+                </div>
+                <div class="login-options">
+                    <div class="remember-me">
+                        <input type="checkbox" id="remember" name="remember">
+                        <label for="remember">Remember me</label>
+                    </div>
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                </div>
             </div>
-            <a href="#" class="forgot-password">Forgot password?</a>
         </div>
     """, unsafe_allow_html=True)
-
-    st.markdown("</div></div>", unsafe_allow_html=True)
 
 def show_data_input_view(df):
     # Custom header
