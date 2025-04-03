@@ -319,35 +319,45 @@ components.html("""
         fpsLimit: 60,
         particles: {
           number: {
-            value: 50,
+            value: 80,
             density: {
               enable: true,
-              value_area: 800
+              value_area: 1000
             }
           },
           color: {
-            value: ["#00f0ff", "#ff00e0", "#00ff00"]
+            value: ["#00f0ff", "#ff00e0", "#00ff00"],
+            animation: {
+              enable: true,
+              speed: 20,
+              sync: false
+            }
           },
           shape: {
-            type: ["circle", "triangle"]
+            type: ["circle", "triangle", "star"],
+            options: {
+              star: {
+                sides: 5
+              }
+            }
           },
           opacity: {
-            value: 0.6,
+            value: 0.8,
             random: false,
             animation: {
               enable: true,
               speed: 1,
-              minimumValue: 0.1,
+              minimumValue: 0.4,
               sync: false
             }
           },
           size: {
-            value: 4,
+            value: 8,
             random: true,
             animation: {
               enable: true,
               speed: 2,
-              minimumValue: 0.5,
+              minimumValue: 4,
               sync: false
             }
           },
@@ -355,23 +365,41 @@ components.html("""
             enable: true,
             distance: 150,
             color: "#00f0ff",
-            opacity: 0.4,
-            width: 1
+            opacity: 0.5,
+            width: 2,
+            triangles: {
+              enable: true,
+              opacity: 0.2
+            }
           },
           move: {
             enable: true,
-            speed: 2,
+            speed: 3,
             direction: "none",
-            random: false,
+            random: true,
             straight: false,
             outModes: {
-              default: "out"
+              default: "bounce"
             },
             attract: {
-              enable: false,
+              enable: true,
               rotateX: 600,
               rotateY: 1200
             }
+          },
+          rotate: {
+            random: true,
+            direction: "random",
+            animation: {
+              enable: true,
+              speed: 5,
+              sync: false
+            }
+          },
+          glow: {
+            enable: true,
+            color: "#00f0ff",
+            blur: 10
           }
         },
         interactivity: {
@@ -379,7 +407,12 @@ components.html("""
           events: {
             onHover: {
               enable: true,
-              mode: "repulse"
+              mode: ["grab", "bubble"],
+              parallax: {
+                enable: true,
+                force: 60,
+                smooth: 10
+              }
             },
             onClick: {
               enable: true,
@@ -388,12 +421,22 @@ components.html("""
             resize: true
           },
           modes: {
-            repulse: {
-              distance: 100,
-              duration: 0.4
+            grab: {
+              distance: 200,
+              links: {
+                opacity: 1,
+                color: "#ff00e0"
+              }
+            },
+            bubble: {
+              distance: 200,
+              size: 15,
+              duration: 2,
+              opacity: 0.8,
+              color: "#00f0ff"
             },
             push: {
-              quantity: 4
+              quantity: 6
             }
           }
         },
