@@ -1,7 +1,6 @@
 import streamlit as st
 import streamlit.components.v1 as components
 from typing import Optional
-import random
 import time
 
 # Initialize session state
@@ -13,8 +12,6 @@ if "login_attempts" not in st.session_state:
     st.session_state.login_attempts = 0
 if "last_attempt_time" not in st.session_state:
     st.session_state.last_attempt_time = 0
-if "form_submitted" not in st.session_state:
-    st.session_state.form_submitted = False
 
 # Simple user credentials
 USERS = {
@@ -59,16 +56,12 @@ def get_current_user() -> Optional[str]:
     """Get the current user's username"""
     return st.session_state.get("username")
 
-def show_login_page():
-    # Add custom CSS for error messages and Streamlit components
-    st.markdown("""
+# Cache the CSS to prevent recomputation
+@st.cache_data
+def get_css():
+    return """
         <style>
-            /* Hide Streamlit elements */
-            #MainMenu, footer, header {
-                display: none !important;
-            }
-            
-            /* Style error messages */
+            #MainMenu, footer, header { display: none !important; }
             [data-testid="stAlert"] {
                 position: fixed !important;
                 top: 20px !important;
@@ -85,33 +78,21 @@ def show_login_page():
                 min-width: 300px !important;
                 text-align: center !important;
             }
-            
-            /* Style form container */
             .stForm {
                 background: transparent !important;
                 border: none !important;
                 padding: 0 !important;
             }
-            
-            /* Style submit button */
-            .stButton > button {
-                display: none !important;
-            }
+            .stButton > button { display: none !important; }
         </style>
-    """, unsafe_allow_html=True)
-    
-    # Create form for handling submission
-    with st.form("login_form", clear_on_submit=True):
-        # Hidden inputs to store form data
-        username = st.text_input("Username", key="username", label_visibility="collapsed")
-        password = st.text_input("Password", type="password", key="password", label_visibility="collapsed")
-        submitted = st.form_submit_button("Submit", type="primary")
-    
-    # HTML template with embedded form handling
-    html_code = """
+    """
+
+# Cache the HTML template to prevent recomputation
+@st.cache_data
+def get_html_template():
+    return """
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-
     <style>
     body {
         background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
@@ -119,15 +100,16 @@ def show_login_page():
         margin: 0;
         padding: 0;
         min-height: 100vh;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
     }
-
     .login-container {
         display: flex;
         justify-content: center;
         align-items: center;
         height: 600px;
+        will-change: transform;
     }
-
     .login-box {
         background: rgba(0, 0, 0, 0.7);
         border-radius: 20px;
@@ -139,8 +121,8 @@ def show_login_page():
         backdrop-filter: blur(15px);
         -webkit-backdrop-filter: blur(15px);
         border: 1px solid rgba(0, 240, 255, 0.1);
+        transform: translateZ(0);
     }
-
     .login-box h2 {
         text-align: center;
         color: #00f0ff;
@@ -149,12 +131,11 @@ def show_login_page():
         letter-spacing: 1px;
         text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
     }
-
     .input-wrapper {
         position: relative;
         margin-bottom: 25px;
+        transform: translateZ(0);
     }
-
     .input-wrapper i {
         position: absolute;
         top: 50%;
@@ -164,7 +145,6 @@ def show_login_page():
         font-size: 14px;
         z-index: 2;
     }
-
     .input-wrapper input {
         width: 100%;
         height: 45px;
@@ -178,19 +158,16 @@ def show_login_page():
         outline: none;
         transition: all 0.3s ease;
         box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.2);
+        -webkit-appearance: none;
     }
-
     .input-wrapper input:focus {
         border-color: #00f0ff;
-        box-shadow: 0 0 12px rgba(0, 240, 255, 0.3), 
-                   inset 0 0 8px rgba(0, 240, 255, 0.3);
+        box-shadow: 0 0 12px rgba(0, 240, 255, 0.3), inset 0 0 8px rgba(0, 240, 255, 0.3);
     }
-
     .input-wrapper input::placeholder {
         color: rgba(160, 203, 232, 0.6);
         font-family: 'Orbitron', sans-serif;
     }
-
     .login-box button {
         width: 100%;
         height: 48px;
@@ -201,22 +178,20 @@ def show_login_page():
         border: none;
         border-radius: 25px;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
         letter-spacing: 1px;
         font-family: 'Orbitron', sans-serif;
         margin-top: 10px;
+        transform: translateZ(0);
     }
-
     .login-box button:hover {
-        transform: translateY(-2px);
+        transform: translateY(-2px) translateZ(0);
         box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
         background: linear-gradient(135deg, #ff00e0, #00f0ff);
     }
-
     .login-box button:active {
-        transform: translateY(1px);
+        transform: translateY(1px) translateZ(0);
     }
-
     .options {
         display: flex;
         justify-content: space-between;
@@ -224,25 +199,21 @@ def show_login_page():
         color: rgba(160, 203, 232, 0.8);
         margin-top: 20px;
     }
-
     .options label {
         display: flex;
         align-items: center;
         gap: 5px;
         cursor: pointer;
     }
-
     .options input[type="checkbox"] {
         cursor: pointer;
         accent-color: #00f0ff;
     }
-
     .options a {
         color: rgba(160, 203, 232, 0.8);
         text-decoration: none;
-        transition: all 0.3s ease;
+        transition: color 0.3s ease, text-shadow 0.3s ease;
     }
-
     .options a:hover {
         color: #00f0ff;
         text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
@@ -271,27 +242,38 @@ def show_login_page():
     </div>
 
     <script>
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-        
-        // Find the hidden Streamlit form inputs and submit button
-        const usernameInput = window.parent.document.querySelector('input[aria-label="Username"]');
-        const passwordInput = window.parent.document.querySelector('input[aria-label="Password"]');
-        const submitButton = window.parent.document.querySelector('button[type="submit"]');
-        
-        if (usernameInput && passwordInput && submitButton) {
-            usernameInput.value = username;
-            passwordInput.value = password;
-            submitButton.click();
-        }
-    });
+    (function() {
+        const form = document.getElementById('loginForm');
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const parent = window.parent;
+            const usernameInput = parent.document.querySelector('input[aria-label="Username"]');
+            const passwordInput = parent.document.querySelector('input[aria-label="Password"]');
+            const submitButton = parent.document.querySelector('button[type="submit"]');
+            if (usernameInput && passwordInput && submitButton) {
+                usernameInput.value = username;
+                passwordInput.value = password;
+                submitButton.click();
+            }
+        });
+    })();
     </script>
     """
+
+def show_login_page():
+    # Add custom CSS
+    st.markdown(get_css(), unsafe_allow_html=True)
+    
+    # Create form for handling submission
+    with st.form("login_form", clear_on_submit=True):
+        username = st.text_input("Username", key="username", label_visibility="collapsed")
+        password = st.text_input("Password", type="password", key="password", label_visibility="collapsed")
+        submitted = st.form_submit_button("Submit", type="primary")
     
     # Render the HTML
-    components.html(html_code, height=650, scrolling=False)
+    components.html(get_html_template(), height=650, scrolling=False)
     
     # Handle form submission
     if submitted:
