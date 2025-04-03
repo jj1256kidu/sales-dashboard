@@ -18,10 +18,20 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 def login(username: str, password: str) -> bool:
     """Attempt to log in a user"""
-    if username in USERS and verify_password(password, USERS[username]):
-        st.session_state["authenticated"] = True
-        st.session_state["username"] = username
-        return True
+    if username in USERS:
+        # Debug information
+        print(f"Username found: {username}")
+        print(f"Stored hash: {USERS[username]}")
+        print(f"Input password hash: {hash_password(password)}")
+        
+        if verify_password(password, USERS[username]):
+            st.session_state["authenticated"] = True
+            st.session_state["username"] = username
+            return True
+        else:
+            print("Password verification failed")
+    else:
+        print(f"Username not found: {username}")
     return False
 
 def logout():
@@ -89,6 +99,12 @@ def show_login_page():
                 margin-top: 1rem;
                 font-weight: bold;
             }
+            .credentials-info {
+                color: #666;
+                text-align: center;
+                margin-top: 1rem;
+                font-size: 0.9em;
+            }
         </style>
     """, unsafe_allow_html=True)
 
@@ -107,5 +123,12 @@ def show_login_page():
                 st.rerun()
             else:
                 st.markdown('<p class="error-message">Invalid username or password</p>', unsafe_allow_html=True)
+                st.markdown("""
+                    <p class="credentials-info">
+                        Try these credentials:<br>
+                        Username: admin, Password: admin123<br>
+                        Username: guest, Password: guest123
+                    </p>
+                """, unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True) 
