@@ -803,42 +803,118 @@ def show_detailed_data_view(df):
     
     st.dataframe(df, use_container_width=True)
 
-def filter_dataframe(df, date_filter, practice, stage):
+def process_data(df):
+    """Process the dataframe for analysis"""
+    df = df.copy()
+    
+    # Convert Amount to numeric, handling any non-numeric values
+    df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
+    
+    # Convert Amount to Lakhs
+    df['Amount_Lacs'] = df['Amount'] / 100000
+    
+    # Create Is_Won column
+    df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
+    
+    # Calculate Weighted Amount
+    df['Probability'] = pd.to_numeric(df['Probability'].str.rstrip('%'), errors='coerce') / 100
+    df['Weighted_Amount'] = df['Amount_Lacs'] * df['Probability']
+    
+    # Convert Expected Close Date to datetime
+    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
+    
+    # Extract Month from Expected Close Date
+    df['Month'] = df['Expected Close Date'].dt.strftime('%B')
+    
+    return df
+
+def format_percentage(value):
+    """Format probability as percentage"""
+    if pd.isna(value):
+        return "0%"
+    try:
+        return f"{int(float(str(value).rstrip('%')))}%"
+    except:
+        return "0%"
+
+def filter_dataframe(df, filters):
     """Filter dataframe based on selected criteria"""
     filtered_df = df.copy()
     
-    # Apply date filter
-    if date_filter != "All Time":
-        today = datetime.now().date()
-        if date_filter == "Last 7 Days":
-            filtered_df = filtered_df[filtered_df['Date'] >= today - timedelta(days=7)]
-        elif date_filter == "Last 30 Days":
-            filtered_df = filtered_df[filtered_df['Date'] >= today - timedelta(days=30)]
-        elif date_filter == "Last 90 Days":
-            filtered_df = filtered_df[filtered_df['Date'] >= today - timedelta(days=90)]
-        elif date_filter == "Last 12 Months":
-            filtered_df = filtered_df[filtered_df['Date'] >= today - timedelta(days=365)]
+    # Apply member filter
+    if filters.get('selected_member') and filters['selected_member'] != "All Team Members":
+        filtered_df = filtered_df[filtered_df['Sales Owner'] == filters['selected_member']]
     
-    # Apply practice filter
-    if practice != "All":
-        filtered_df = filtered_df[filtered_df['Practice'] == practice]
+    # Apply search filter
+    if filters.get('search'):
+        search_term = filters['search'].lower()
+        mask = np.column_stack([filtered_df[col].astype(str).str.lower().str.contains(search_term, na=False) 
+                              for col in filtered_df.columns])
+        filtered_df = filtered_df[mask.any(axis=1)]
     
-    # Apply stage filter
-    if stage != "All":
-        filtered_df = filtered_df[filtered_df['Stage'] == stage]
+    # Apply month filter
+    if filters.get('month_filter') and filters['month_filter'] != "All Months":
+        filtered_df = filtered_df[filtered_df['Month'] == filters['month_filter']]
+    
+    # Apply quarter filter
+    if filters.get('quarter_filter') and filters['quarter_filter'] != "All Quarters":
+        quarter_map = {
+            'Q1': ['April', 'May', 'June'],
+            'Q2': ['July', 'August', 'September'],
+            'Q3': ['October', 'November', 'December'],
+            'Q4': ['January', 'February', 'March']
+        }
+        filtered_df = filtered_df[filtered_df['Month'].isin(quarter_map[filters['quarter_filter']])]
+    
+    # Apply year filter
+    if filters.get('year_filter') and filters['year_filter'] != "All Years":
+        filtered_df = filtered_df[filtered_df['Expected Close Date'].dt.year == filters['year_filter']]
+    
+    # Apply probability filter
+    if filters.get('probability_filter'):
+        if filters['probability_filter'] == "Custom Range":
+            filtered_df = filtered_df[
+                (filtered_df['Probability'] * 100 >= filters.get('min_prob', 0)) &
+                (filtered_df['Probability'] * 100 <= filters.get('max_prob', 100))
+            ]
+        else:
+            prob_ranges = {
+                "0-25%": (0, 25),
+                "26-50%": (26, 50),
+                "51-75%": (51, 75),
+                "76-100%": (76, 100)
+            }
+            if filters['probability_filter'] in prob_ranges:
+                min_prob, max_prob = prob_ranges[filters['probability_filter']]
+                filtered_df = filtered_df[
+                    (filtered_df['Probability'] * 100 >= min_prob) &
+                    (filtered_df['Probability'] * 100 <= max_prob)
+                ]
+    
+    # Apply status filter
+    if filters.get('status_filter'):
+        if filters['status_filter'] == "Committed for the Month":
+            filtered_df = filtered_df[filtered_df['Probability'] >= 0.75]
+        elif filters['status_filter'] == "Upsides for the Month":
+            filtered_df = filtered_df[filtered_df['Probability'] < 0.75]
+    
+    # Apply focus filter
+    if filters.get('focus_filter') and filters['focus_filter'] != "All Focus":
+        filtered_df = filtered_df[filtered_df['KritiKal Focus Areas'] == filters['focus_filter']]
     
     return filtered_df
 
-def calculate_team_metrics(df, target):
+def calculate_team_metrics(df):
     """Calculate team performance metrics"""
-    total_sales = df['Amount'].sum()
-    num_deals = len(df)
-    avg_deal_size = df['Amount'].mean() if num_deals > 0 else 0
-    target_achievement = (total_sales / target * 100) if target > 0 else 0
+    metrics = pd.DataFrame()
     
-    return {
-        'total_sales': total_sales,
-        'num_deals': num_deals,
-        'avg_deal_size': avg_deal_size,
-        'target_achievement': target_achievement
-    } 
+    # Group by Sales Owner
+    metrics['Current Pipeline'] = df[~df['Is_Won']].groupby('Sales Owner')['Amount_Lacs'].sum()
+    metrics['Closed Won'] = df[df['Is_Won']].groupby('Sales Owner')['Amount_Lacs'].sum()
+    metrics['Pipeline Deals'] = df[~df['Is_Won']].groupby('Sales Owner').size()
+    metrics['Closed Deals'] = df[df['Is_Won']].groupby('Sales Owner').size()
+    
+    # Fill NaN values with 0
+    metrics = metrics.fillna(0)
+    
+    return metrics 
