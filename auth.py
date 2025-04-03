@@ -41,7 +41,6 @@ def show_login_page():
     st.markdown("""
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
         
         <style>
             /* Reset and base styles */
@@ -52,10 +51,23 @@ def show_login_page():
                 font-family: 'Orbitron', sans-serif !important;
             }
             
-            html, body, .stApp {
+            html, body {
                 height: 100vh;
                 overflow: hidden;
-                background: #0f0c29 !important;
+            }
+            
+            .stApp {
+                background: linear-gradient(45deg, #0f0c29, #302b63, #24243e) !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                overflow: auto !important;
+            }
+            
+            section[data-testid="stSidebar"] {
+                display: none !important;
             }
             
             .block-container {
@@ -67,22 +79,64 @@ def show_login_page():
                 background: transparent !important;
                 border: none !important;
                 padding: 0 !important;
+                max-width: 400px !important;
+                margin: 0 auto !important;
+                position: relative !important;
+                z-index: 2 !important;
             }
             
-            /* Particle container */
-            #tsparticles {
+            /* Animated background */
+            .particles {
                 position: fixed;
                 top: 0;
                 left: 0;
                 width: 100%;
                 height: 100%;
-                z-index: 0;
+                z-index: 1;
+                pointer-events: none;
+                overflow: hidden;
+            }
+            
+            .particle {
+                position: absolute;
+                width: 4px;
+                height: 4px;
+                background: #00f0ff;
+                border-radius: 50%;
+                animation: float 8s infinite linear;
+            }
+            
+            .particle:nth-child(3n) {
+                background: #ff00e0;
+                animation-duration: 12s;
+            }
+            
+            .particle:nth-child(3n + 1) {
+                background: #ffc400;
+                animation-duration: 10s;
+            }
+            
+            @keyframes float {
+                0% {
+                    transform: translate(0, 0) rotate(0deg);
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 1;
+                }
+                90% {
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(100vw, 100vh) rotate(360deg);
+                    opacity: 0;
+                }
             }
             
             /* Container styles */
             .container {
                 position: relative;
-                z-index: 1;
+                z-index: 2;
                 display: flex;
                 justify-content: center;
                 align-items: center;
@@ -99,6 +153,9 @@ def show_login_page():
                 max-width: 400px;
                 box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
                 backdrop-filter: blur(10px);
+                border: 1px solid rgba(0, 240, 255, 0.1);
+                position: relative;
+                z-index: 2;
             }
             
             .login-box h2 {
@@ -123,7 +180,7 @@ def show_login_page():
                 transform: translateY(-50%);
                 color: #7efcff;
                 font-size: 14px;
-                z-index: 2;
+                z-index: 3;
             }
             
             .stTextInput > div {
@@ -135,7 +192,7 @@ def show_login_page():
                 height: 45px !important;
                 padding: 0 15px 0 40px !important;
                 border: 1px solid #00f0ff !important;
-                background: transparent !important;
+                background: rgba(0, 0, 0, 0.3) !important;
                 color: white !important;
                 border-radius: 25px !important;
                 font-size: 14px !important;
@@ -143,17 +200,21 @@ def show_login_page():
                 transition: all 0.3s ease !important;
             }
             
+            .stTextInput > div > div:hover,
             .stTextInput > div > div:focus-within {
-                box-shadow: 0 0 10px #00f0ff !important;
+                box-shadow: 0 0 15px rgba(0, 240, 255, 0.3) !important;
+                border-color: #00f0ff !important;
+                background: rgba(0, 0, 0, 0.5) !important;
             }
             
             .stTextInput input {
                 color: white !important;
+                font-family: 'Orbitron', sans-serif !important;
             }
             
             .stTextInput input::placeholder {
-                color: #7efcff !important;
-                opacity: 0.7 !important;
+                color: rgba(126, 252, 255, 0.7) !important;
+                font-family: 'Orbitron', sans-serif !important;
             }
             
             /* Button styles */
@@ -170,11 +231,15 @@ def show_login_page():
                 transition: all 0.3s ease !important;
                 margin: 0 !important;
                 text-shadow: 0 0 10px rgba(255, 255, 255, 0.5) !important;
+                letter-spacing: 2px !important;
+                position: relative !important;
+                z-index: 2 !important;
             }
             
             .stButton > button:hover {
                 transform: scale(1.03) !important;
-                box-shadow: 0 0 15px #00f0ff !important;
+                box-shadow: 0 0 20px rgba(0, 240, 255, 0.4) !important;
+                background: linear-gradient(135deg, #ff00e0, #00f0ff) !important;
             }
             
             /* Options styles */
@@ -184,6 +249,8 @@ def show_login_page():
                 font-size: 12px;
                 color: #a0cbe8;
                 margin-top: 15px;
+                position: relative;
+                z-index: 2;
             }
             
             .options label {
@@ -200,49 +267,66 @@ def show_login_page():
             
             .options a {
                 color: #a0cbe8;
-                text-decoration: underline;
+                text-decoration: none;
+                transition: all 0.3s ease;
+            }
+            
+            .options a:hover {
+                color: #00f0ff;
+                text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+            }
+            
+            /* Error message styling */
+            [data-testid="stAlert"] {
+                background: rgba(255, 0, 224, 0.1) !important;
+                border: 1px solid rgba(255, 0, 224, 0.2) !important;
+                color: #ff00e0 !important;
+                padding: 0.75rem !important;
+                border-radius: 12px !important;
+                margin: 1rem 0 !important;
+                font-family: 'Orbitron', sans-serif !important;
+                position: relative !important;
+                z-index: 2 !important;
+            }
+            
+            [data-testid="stAlert"] > div {
+                padding: 0 !important;
             }
             
             /* Hide Streamlit elements */
             #MainMenu, footer, header {
                 display: none !important;
             }
+            
+            /* Mobile responsiveness */
+            @media (max-width: 480px) {
+                .login-box {
+                    padding: 30px 20px;
+                }
+                
+                .stTextInput > div > div {
+                    font-size: 13px !important;
+                }
+                
+                .stButton > button {
+                    font-size: 15px !important;
+                }
+                
+                .options {
+                    font-size: 11px;
+                }
+            }
         </style>
         
-        <!-- Particle system -->
-        <div id="tsparticles"></div>
-        <script>
-            tsParticles.load("tsparticles", {
-                fullScreen: { enable: false },
-                background: { color: "#0f0c29" },
-                particles: {
-                    number: { value: 100 },
-                    color: { value: ["#00f0ff", "#ff00e0", "#ffc400"] },
-                    shape: { type: ["circle", "square"] },
-                    opacity: { value: 0.7 },
-                    size: { value: 4 },
-                    move: {
-                        enable: true,
-                        speed: 1,
-                        direction: "none",
-                        random: false,
-                        straight: false,
-                        outModes: "bounce"
-                    }
-                },
-                interactivity: {
-                    events: {
-                        onHover: { enable: true, mode: "repulse" },
-                        onClick: { enable: true, mode: "push" }
-                    },
-                    modes: {
-                        repulse: { distance: 100 },
-                        push: { quantity: 4 }
-                    }
-                },
-                detectRetina: true
-            });
-        </script>
+        <div class="particles">
+            ${Array(50).fill().map((_, i) => `
+                <div class="particle" style="
+                    left: ${Math.random() * 100}vw;
+                    top: ${Math.random() * 100}vh;
+                    animation-delay: -${Math.random() * 8}s;
+                "></div>
+            `).join('')}
+        </div>
         
         <div class="container">
             <div class="login-box">
