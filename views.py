@@ -5,6 +5,97 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import numpy as np
 
+def show_login_page():
+    """Display the login page with authentication"""
+    # Custom CSS for login page
+    st.markdown("""
+        <style>
+            .login-container {
+                max-width: 400px;
+                margin: 100px auto;
+                padding: 30px;
+                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+                border-radius: 15px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            }
+            .login-header {
+                text-align: center;
+                color: white;
+                margin-bottom: 30px;
+            }
+            .login-header h1 {
+                font-size: 2em;
+                margin-bottom: 10px;
+                font-weight: 600;
+            }
+            .login-header p {
+                font-size: 1.1em;
+                opacity: 0.9;
+            }
+            .login-form {
+                background: rgba(255, 255, 255, 0.1);
+                padding: 20px;
+                border-radius: 10px;
+                backdrop-filter: blur(10px);
+            }
+            .stTextInput > div > div > input {
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                color: white;
+                padding: 10px;
+                border-radius: 5px;
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            .stTextInput > div > div > input::placeholder {
+                color: rgba(255, 255, 255, 0.5);
+            }
+            .stButton > button {
+                width: 100%;
+                background: #2ecc71;
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 5px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            .stButton > button:hover {
+                background: #27ae60;
+                transform: translateY(-2px);
+            }
+            .error-message {
+                color: #e74c3c;
+                text-align: center;
+                margin-top: 10px;
+                font-size: 0.9em;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Login container
+    st.markdown("""
+        <div class="login-container">
+            <div class="login-header">
+                <h1>Sales Dashboard</h1>
+                <p>Please enter your credentials to continue</p>
+            </div>
+            <div class="login-form">
+    """, unsafe_allow_html=True)
+
+    # Login form
+    password = st.text_input("Password", type="password", placeholder="Enter your password")
+    
+    if st.button("Login"):
+        if password == "admin123":  # Default password
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.markdown('<div class="error-message">Invalid password. Please try again.</div>', unsafe_allow_html=True)
+
+    st.markdown("</div></div>", unsafe_allow_html=True)
+
 def show_data_input_view(df):
     # Custom header
     st.markdown("""
