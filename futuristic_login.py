@@ -110,21 +110,21 @@ components.html(f"""
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&display=swap');
 
         * {{
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Orbitron', sans-serif;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
         }}
 
         html, body {{
             height: 100vh;
             width: 100vw;
             overflow: hidden;
-            background: #0f0c29;
+            background: #0a0520;
             margin: 0;
             padding: 0;
         }}
@@ -150,126 +150,132 @@ components.html(f"""
         }}
 
         .login-box {{
-            background: rgba(0, 0, 0, 0.7);
-            border-radius: 25px;
-            padding: 20px;
+            background: rgba(2, 4, 18, 0.8);
+            border-radius: 30px;
+            padding: 25px;
             width: 100%;
-            max-width: 380px;
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
+            max-width: 360px;
+            box-shadow: 0 0 40px rgba(0, 240, 255, 0.1);
+            backdrop-filter: blur(20px);
             margin: 0;
         }}
 
         .login-box h2 {{
             text-align: center;
             color: #00f0ff;
-            margin: 0 0 20px 0;
-            font-size: 24px;
-            font-weight: 400;
-            letter-spacing: 2px;
+            margin: 0 0 25px 0;
+            font-size: 26px;
+            font-weight: 500;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
         }}
 
         .input-wrapper {{
             position: relative;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }}
 
         .input-wrapper i {{
             position: absolute;
             top: 50%;
-            left: 15px;
+            left: 18px;
             transform: translateY(-50%);
             color: #00f0ff;
-            font-size: 14px;
+            font-size: 15px;
             opacity: 0.8;
         }}
 
         .input-wrapper input {{
             width: 100%;
-            height: 45px;
-            padding: 0 15px 0 40px;
-            border: 1px solid #00f0ff;
+            height: 48px;
+            padding: 0 20px 0 45px;
+            border: 1px solid rgba(0, 240, 255, 0.4);
             background: rgba(0, 0, 0, 0.2);
             color: #fff;
             border-radius: 50px;
-            font-size: 14px;
-            letter-spacing: 1px;
+            font-size: 15px;
+            letter-spacing: 2px;
             outline: none;
             transition: all 0.3s;
-            box-shadow: 0 0 10px rgba(0, 240, 255, 0.1),
-                       inset 0 0 10px rgba(0, 240, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.1),
+                       inset 0 0 15px rgba(0, 240, 255, 0.1);
         }}
 
         .input-wrapper input::placeholder {{
-            color: rgba(255, 255, 255, 0.5);
-            letter-spacing: 1px;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 2px;
+            font-weight: 400;
         }}
 
         .input-wrapper input:focus {{
             border-color: #00f0ff;
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3),
-                       inset 0 0 15px rgba(0, 240, 255, 0.1);
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.2),
+                       inset 0 0 20px rgba(0, 240, 255, 0.15);
         }}
 
         .login-box button {{
             width: 100%;
-            height: 45px;
+            height: 48px;
             background: linear-gradient(90deg, #00f0ff 0%, #ff00ff 100%);
             color: white;
-            font-weight: 400;
+            font-weight: 500;
             font-size: 16px;
-            letter-spacing: 2px;
+            letter-spacing: 4px;
             border: none;
             border-radius: 50px;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 5px;
+            margin-top: 10px;
             text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(0, 240, 255, 0.3);
         }}
 
         .login-box button:hover {{
             transform: scale(1.02);
-            box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.4);
         }}
 
         .options {{
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 12px;
-            color: #00f0ff;
+            font-size: 11px;
+            color: rgba(0, 240, 255, 0.8);
             margin-top: 15px;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }}
 
         .options label {{
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             cursor: pointer;
+            opacity: 0.9;
         }}
 
         .options input[type="checkbox"] {{
-            width: 14px;
-            height: 14px;
+            width: 13px;
+            height: 13px;
             accent-color: #00f0ff;
             cursor: pointer;
+            opacity: 0.9;
         }}
 
         .options a {{
-            color: #00f0ff;
+            color: rgba(0, 240, 255, 0.8);
             text-decoration: none;
             transition: opacity 0.3s;
+            opacity: 0.9;
         }}
 
         .options a:hover {{
-            opacity: 0.8;
+            opacity: 1;
         }}
 
         @media (max-width: 480px) {{
             .login-box {{
-                padding: 15px;
-                margin: 0 20px;
+                padding: 20px;
+                margin: 0 15px;
             }}
         }}
     </style>
