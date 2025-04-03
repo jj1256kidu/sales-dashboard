@@ -7,14 +7,12 @@ PARTICLE_CONFIG = {
     "fullScreen": {
         "enable": False
     },
-    "fpsLimit": 60,
+    "background": {
+        "color": "#0f0c29"
+    },
     "particles": {
         "number": {
-            "value": 100,
-            "density": {
-                "enable": True,
-                "value_area": 800
-            }
+            "value": 100
         },
         "color": {
             "value": ["#00f0ff", "#ff00e0", "#ffc400"]
@@ -23,12 +21,10 @@ PARTICLE_CONFIG = {
             "type": ["circle", "square"]
         },
         "opacity": {
-            "value": 0.7,
-            "random": False
+            "value": 0.7
         },
         "size": {
-            "value": 4,
-            "random": False
+            "value": 4
         },
         "move": {
             "enable": True,
@@ -40,7 +36,6 @@ PARTICLE_CONFIG = {
         }
     },
     "interactivity": {
-        "detectsOn": "canvas",
         "events": {
             "onHover": {
                 "enable": True,
@@ -49,8 +44,7 @@ PARTICLE_CONFIG = {
             "onClick": {
                 "enable": True,
                 "mode": "push"
-            },
-            "resize": True
+            }
         },
         "modes": {
             "repulse": {
@@ -61,23 +55,17 @@ PARTICLE_CONFIG = {
             }
         }
     },
-    "background": {
-        "color": "#0f0c29"
-    },
     "detectRetina": True
 }
 
-# Preset themes with simpler particle settings
+# Simple theme configurations
 NEON_THEME = {
     "colors": {
         "primary": "#00f0ff",
         "secondary": "#ff00e0",
         "accent": "#ffc400",
         "background": "#0f0c29"
-    },
-    "particle_size": 4,
-    "particle_count": 100,
-    "movement_speed": 1
+    }
 }
 
 CYBER_THEME = {
@@ -86,10 +74,7 @@ CYBER_THEME = {
         "secondary": "#ff00e0",
         "accent": "#ffc400",
         "background": "#000033"
-    },
-    "particle_size": 4,
-    "particle_count": 100,
-    "movement_speed": 1
+    }
 }
 
 MATRIX_THEME = {
@@ -98,10 +83,7 @@ MATRIX_THEME = {
         "secondary": "#00ff00",
         "accent": "#00ff00",
         "background": "#000000"
-    },
-    "particle_size": 4,
-    "particle_count": 120,
-    "movement_speed": 1
+    }
 }
 
 def get_theme_config(theme_name="neon"):
@@ -122,11 +104,8 @@ def get_theme_config(theme_name="neon"):
     
     theme = themes.get(theme_name.lower(), NEON_THEME)
     
-    # Update base configuration with theme settings
+    # Update base configuration with theme colors
     config = PARTICLE_CONFIG.copy()
-    config["particles"]["number"]["value"] = theme["particle_count"]
-    config["particles"]["size"]["value"] = theme["particle_size"]
-    config["particles"]["move"]["speed"] = theme["movement_speed"]
     config["particles"]["color"]["value"] = [
         theme["colors"]["primary"],
         theme["colors"]["secondary"],
