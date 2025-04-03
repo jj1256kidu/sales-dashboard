@@ -33,25 +33,92 @@ def show_login_page():
     """Display the login page"""
     st.markdown("""
         <style>
-            .login-container {
-                max-width: 400px;
-                margin: 0 auto;
-                padding: 2rem;
-                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-                border-radius: 15px;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            /* Modern animated background */
+            .stApp {
+                background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364);
+                background-size: 400% 400%;
+                animation: gradient 15s ease infinite;
             }
+            
+            @keyframes gradient {
+                0% {
+                    background-position: 0% 50%;
+                }
+                50% {
+                    background-position: 100% 50%;
+                }
+                100% {
+                    background-position: 0% 50%;
+                }
+            }
+            
+            /* Floating login container with glass effect */
+            .login-container {
+                max-width: 450px;
+                margin: 2rem auto;
+                padding: 2.5rem;
+                background: rgba(255, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                border-radius: 20px;
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                animation: float 6s ease-in-out infinite;
+            }
+            
+            @keyframes float {
+                0% {
+                    transform: translatey(0px);
+                }
+                50% {
+                    transform: translatey(-20px);
+                }
+                100% {
+                    transform: translatey(0px);
+                }
+            }
+            
+            /* Glowing title effect */
             .login-title {
                 color: white;
                 text-align: center;
-                font-size: 2em;
+                font-size: 2.5em;
                 margin-bottom: 2rem;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                text-shadow: 0 0 10px rgba(255,255,255,0.3),
+                             0 0 20px rgba(255,255,255,0.3),
+                             0 0 30px rgba(255,255,255,0.3);
+                animation: glow 3s ease-in-out infinite alternate;
             }
+            
+            @keyframes glow {
+                from {
+                    text-shadow: 0 0 10px rgba(255,255,255,0.3),
+                                0 0 20px rgba(255,255,255,0.3),
+                                0 0 30px rgba(255,255,255,0.3);
+                }
+                to {
+                    text-shadow: 0 0 20px rgba(255,255,255,0.5),
+                                0 0 30px rgba(255,255,255,0.5),
+                                0 0 40px rgba(255,255,255,0.5);
+                }
+            }
+            
+            /* Modern input fields */
             .stTextInput > div > div {
-                background: rgba(255,255,255,0.1) !important;
+                background: rgba(255,255,255,0.05) !important;
+                border: 2px solid rgba(255,255,255,0.1) !important;
+                border-radius: 12px !important;
+                padding: 8px 16px !important;
                 color: white !important;
+                transition: all 0.3s ease !important;
             }
+            
+            .stTextInput > div > div:hover,
+            .stTextInput > div > div:focus {
+                border-color: rgba(255,255,255,0.3) !important;
+                background: rgba(255,255,255,0.1) !important;
+                transform: translateY(-2px);
+            }
+            
             .stTextInput > label {
                 color: white !important;
             }
