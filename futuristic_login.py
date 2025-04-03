@@ -1,17 +1,88 @@
 import streamlit as st
 import streamlit.components.v1 as components
+import hashlib
+import sqlite3
 import time
-import re
+from datetime import datetime
+
+# Initialize database
+def init_db():
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS users
+                 (username TEXT PRIMARY KEY, 
+                  password TEXT, 
+                  created_date TEXT,
+                  last_login TEXT)''')
+    conn.commit()
+    conn.close()
+
+# Initialize session state
+if 'authenticated' not in st.session_state:
+    st.session_state.authenticated = False
+if 'login_attempts' not in st.session_state:
+    st.session_state.login_attempts = 0
+if 'last_attempt' not in st.session_state:
+    st.session_state.last_attempt = None
+
+# Initialize database
+init_db()
 
 st.set_page_config(page_title="Futuristic Login", layout="centered")
 
-# Initialize session state for login attempts
-if 'login_attempts' not in st.session_state:
-    st.session_state.login_attempts = 0
-    st.session_state.last_attempt = None
-    st.session_state.is_locked = False
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
-# Inject particles background with enhanced effects
+def verify_user(username, password):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("SELECT password FROM users WHERE username=?", (username,))
+    result = c.fetchone()
+    conn.close()
+    if result and result[0] == hash_password(password):
+        return True
+    return False
+
+def update_last_login(username):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("UPDATE users SET last_login=? WHERE username=?", 
+              (datetime.now().strftime("%Y-%m-%d %H:%M:%S"), username))
+    conn.commit()
+    conn.close()
+
+def create_user(username, password):
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    try:
+        c.execute("INSERT INTO users (username, password, created_date) VALUES (?, ?, ?)",
+                 (username, hash_password(password), datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        conn.commit()
+        return True
+    except sqlite3.IntegrityError:
+        return False
+    finally:
+        conn.close()
+
+# Handle login submission
+def handle_login(username, password):
+    if st.session_state.login_attempts >= 3:
+        if time.time() - st.session_state.last_attempt < 300:  # 5 minutes lockout
+            return "Too many failed attempts. Please try again later."
+        st.session_state.login_attempts = 0
+
+    if verify_user(username, password):
+        st.session_state.authenticated = True
+        st.session_state.username = username
+        st.session_state.login_attempts = 0
+        update_last_login(username)
+        return "success"
+    else:
+        st.session_state.login_attempts += 1
+        st.session_state.last_attempt = time.time()
+        return "Invalid username or password"
+
+# Inject particles background with exact HTML/CSS/JS from your shared code
 components.html("""
 <!DOCTYPE html>
 <html lang="en">
@@ -60,18 +131,6 @@ components.html("""
       width: 100%;
       max-width: 400px;
       box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
-      animation: glow 3s infinite alternate;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(0, 240, 255, 0.1);
-    }
-
-    @keyframes glow {
-      0% {
-        box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
-      }
-      100% {
-        box-shadow: 0 0 35px rgba(0, 255, 255, 0.4);
-      }
     }
 
     .login-box h2 {
@@ -79,13 +138,6 @@ components.html("""
       color: #00f0ff;
       margin-bottom: 30px;
       font-size: 26px;
-      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-      animation: textGlow 2s infinite alternate;
-    }
-
-    @keyframes textGlow {
-      from { text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
-      to { text-shadow: 0 0 20px rgba(0, 240, 255, 0.8); }
     }
 
     .input-wrapper {
@@ -100,12 +152,6 @@ components.html("""
       transform: translateY(-50%);
       color: #7efcff;
       font-size: 14px;
-      transition: all 0.3s ease;
-    }
-
-    .input-wrapper input:focus + i {
-      color: #00f0ff;
-      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
     }
 
     .input-wrapper input {
@@ -113,22 +159,16 @@ components.html("""
       height: 45px;
       padding: 0 15px 0 40px;
       border: 1px solid #00f0ff;
-      background: rgba(0, 0, 0, 0.3);
+      background: transparent;
       color: white;
       border-radius: 25px;
       font-size: 14px;
       outline: none;
-      transition: all 0.3s ease;
+      transition: box-shadow 0.3s;
     }
 
     .input-wrapper input:focus {
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
-      border-color: #00f0ff;
-      background: rgba(0, 0, 0, 0.5);
-    }
-
-    .input-wrapper input::placeholder {
-      color: rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 10px #00f0ff;
     }
 
     .login-box button {
@@ -142,33 +182,11 @@ components.html("""
       border-radius: 25px;
       cursor: pointer;
       transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .login-box button:before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(
-        120deg,
-        transparent,
-        rgba(255, 255, 255, 0.2),
-        transparent
-      );
-      transition: 0.5s;
-    }
-
-    .login-box button:hover:before {
-      left: 100%;
     }
 
     .login-box button:hover {
       transform: scale(1.03);
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+      box-shadow: 0 0 15px #00f0ff;
     }
 
     .options {
@@ -176,64 +194,35 @@ components.html("""
       justify-content: space-between;
       font-size: 12px;
       color: #a0cbe8;
-      margin-top: 15px;
-      align-items: center;
-    }
-
-    .options label {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .options label:hover {
-      color: #00f0ff;
-    }
-
-    .options input[type="checkbox"] {
-      accent-color: #00f0ff;
-      width: 14px;
-      height: 14px;
+      margin-top: 10px;
     }
 
     .options a {
       color: #a0cbe8;
-      text-decoration: none;
-      transition: all 0.3s ease;
+      text-decoration: underline;
     }
 
-    .options a:hover {
-      color: #00f0ff;
-      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-    }
-
-    .error-message {
-      color: #ff4444;
-      font-size: 12px;
-      margin-top: 5px;
+    .message {
       text-align: center;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 14px;
       opacity: 0;
       transition: opacity 0.3s ease;
     }
 
-    .error-message.show {
+    .message.error {
+      background: rgba(255, 0, 0, 0.1);
+      color: #ff4444;
       opacity: 1;
     }
 
-    .password-strength {
-      height: 3px;
-      background: #333;
-      margin-top: 5px;
-      border-radius: 2px;
-      transition: all 0.3s ease;
+    .message.success {
+      background: rgba(0, 255, 0, 0.1);
+      color: #00ff00;
+      opacity: 1;
     }
-
-    .strength-weak { background: #ff4444; }
-    .strength-medium { background: #ffaa00; }
-    .strength-strong { background: #00ff00; }
-
   </style>
 </head>
 <body>
@@ -252,176 +241,75 @@ components.html("""
     <div class="input-wrapper">
       <i class="fas fa-lock"></i>
       <input type="password" placeholder="Password" required id="password" />
-      <div class="password-strength"></div>
     </div>
-    <div class="error-message" id="errorMsg"></div>
+    <div class="message" id="messageBox"></div>
     <button type="submit">LOGIN</button>
     <div class="options">
-      <label><input type="checkbox" checked /> Remember me</label>
-      <a href="#">Forgot password?</a>
+      <label><input type="checkbox" id="remember" checked /> Remember me</label>
+      <a href="#" id="forgotPassword">Forgot password?</a>
     </div>
   </form>
 </div>
 
-<!-- Enhanced tsparticles config -->
+<!-- tsparticles config -->
 <script>
   tsParticles.load("tsparticles", {
     fullScreen: { enable: false },
     background: { color: "#0f0c29" },
     particles: {
       number: { value: 100 },
-      color: { 
-        value: ["#00f0ff", "#ff00e0", "#ffc400"],
-        animation: {
-          enable: true,
-          speed: 20,
-          sync: false
-        }
-      },
-      shape: { 
-        type: ["circle", "square", "triangle"],
-        options: {
-          triangle: {
-            sides: 3
-          }
-        }
-      },
-      opacity: { 
-        value: 0.7,
-        random: true,
-        animation: {
-          enable: true,
-          speed: 1,
-          minimumValue: 0.4,
-          sync: false
-        }
-      },
-      size: { 
-        value: { min: 2, max: 4 },
-        animation: {
-          enable: true,
-          speed: 2,
-          minimumValue: 0.5,
-          sync: false
-        }
-      },
+      color: { value: ["#00f0ff", "#ff00e0", "#ffc400"] },
+      shape: { type: ["circle", "square"] },
+      opacity: { value: 0.7 },
+      size: { value: 4 },
       move: {
         enable: true,
-        speed: 1.5,
+        speed: 1,
         direction: "none",
-        random: true,
+        random: false,
         straight: false,
-        outModes: "bounce",
-        attract: {
-          enable: true,
-          rotateX: 600,
-          rotateY: 1200
-        }
-      },
-      links: {
-        enable: true,
-        distance: 150,
-        color: "#00f0ff",
-        opacity: 0.2,
-        width: 1,
-        triangles: {
-          enable: true,
-          opacity: 0.05
-        }
-      },
-      rotate: {
-        value: 0,
-        random: true,
-        direction: "clockwise",
-        animation: {
-          enable: true,
-          speed: 5,
-          sync: false
-        }
+        outModes: "bounce"
       }
     },
     interactivity: {
       events: {
-        onHover: { 
-          enable: true, 
-          mode: ["grab", "bubble"],
-          parallax: {
-            enable: true,
-            smooth: 10,
-            force: 60
-          }
-        },
-        onClick: { 
-          enable: true, 
-          mode: "push" 
-        }
+        onHover: { enable: true, mode: "repulse" },
+        onClick: { enable: true, mode: "push" }
       },
       modes: {
-        grab: {
-          distance: 140,
-          links: { opacity: 0.5 }
-        },
-        bubble: {
-          distance: 200,
-          size: 6,
-          duration: 2,
-          opacity: 0.8,
-          speed: 3
-        },
-        push: { quantity: 6 }
+        repulse: { distance: 100 },
+        push: { quantity: 4 }
       }
     },
     detectRetina: true
   });
 
-  // Form validation and animations
+  // Form handling
   document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('loginForm');
-    const username = document.getElementById('username');
-    const password = document.getElementById('password');
-    const errorMsg = document.getElementById('errorMsg');
-    const strengthBar = document.querySelector('.password-strength');
-
-    function showError(message) {
-      errorMsg.textContent = message;
-      errorMsg.classList.add('show');
-      setTimeout(() => errorMsg.classList.remove('show'), 3000);
-    }
-
-    function validatePassword(pass) {
-      const hasUpperCase = /[A-Z]/.test(pass);
-      const hasLowerCase = /[a-z]/.test(pass);
-      const hasNumbers = /\d/.test(pass);
-      const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(pass);
-      const isLongEnough = pass.length >= 8;
-
-      const strength = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecial, isLongEnough]
-        .filter(Boolean).length;
-
-      strengthBar.className = 'password-strength';
-      if (strength < 2) strengthBar.classList.add('strength-weak');
-      else if (strength < 4) strengthBar.classList.add('strength-medium');
-      else strengthBar.classList.add('strength-strong');
-    }
-
-    password.addEventListener('input', (e) => validatePassword(e.target.value));
+    const messageBox = document.getElementById('messageBox');
 
     form.addEventListener('submit', function(e) {
       e.preventDefault();
-      
-      if (username.value.length < 3) {
-        showError('Username must be at least 3 characters long');
-        return;
-      }
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const remember = document.getElementById('remember').checked;
 
-      if (password.value.length < 8) {
-        showError('Password must be at least 8 characters long');
-        return;
-      }
+      // Send data to parent window (Streamlit)
+      window.parent.postMessage({
+        type: 'streamlit:login',
+        username: username,
+        password: password,
+        remember: remember
+      }, '*');
+    });
 
-      // Simulate login - replace with actual login logic
-      showError('Login successful!');
-      errorMsg.style.color = '#00ff00';
+    // Listen for messages from Streamlit
+    window.addEventListener('message', function(event) {
+      if (event.data.type === 'login:response') {
+        messageBox.textContent = event.data.message;
+        messageBox.className = 'message ' + (event.data.status === 'success' ? 'success' : 'error');
+      }
     });
   });
 </script>
@@ -441,13 +329,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Handle form submission in Streamlit
-if st.session_state.is_locked:
-    remaining_time = 30 - (time.time() - st.session_state.last_attempt)
-    if remaining_time <= 0:
-        st.session_state.is_locked = False
-        st.session_state.login_attempts = 0
-    else:
-        st.error(f"Too many login attempts. Please wait {int(remaining_time)} seconds.")
+# Handle the authenticated state
+if st.session_state.authenticated:
+    st.success(f"Welcome back, {st.session_state.username}!")
+    if st.button("Logout"):
+        st.session_state.authenticated = False
+else:
+    st.empty()  # Prevent default Streamlit layout from interfering
 
-st.empty()  # Prevent default Streamlit layout from interfering 
+# For demonstration, let's create a test user
+if not verify_user("demo", "password123"):
+    create_user("demo", "password123")
