@@ -123,53 +123,69 @@ def format_number(x):
 # Custom CSS for modern styling
 st.markdown("""
 <style>
-    /* Modern theme colors matching login page */
+    /* Modern theme colors */
     :root {
-        --primary-color: #1e3c72;
-        --secondary-color: #2a5298;
-        --accent-color: #4A90E2;
-        --background-color: #f0f2f6;
-        --card-background: #ffffff;
-        --text-color: #1a1a1a;
-        --text-light: #4a4a4a;
-        --text-muted: #666666;
-        --border-color: #e0e0e0;
-        --shadow-color: rgba(0, 0, 0, 0.1);
-        --success-color: #2ecc71;
-        --warning-color: #f1c40f;
-        --danger-color: #e74c3c;
+        --primary-color: #00b8d4;
+        --secondary-color: #006064;
+        --accent-color: #84ffff;
+        --background-color: #003340;
+        --card-background: rgba(0, 184, 212, 0.1);
+        --text-color: #ffffff;
+        --text-light: rgba(255, 255, 255, 0.9);
+        --text-muted: rgba(255, 255, 255, 0.7);
+        --border-color: rgba(255, 255, 255, 0.1);
+        --shadow-color: rgba(0, 0, 0, 0.2);
+        --success-color: #00e676;
+        --warning-color: #ffd740;
+        --danger-color: #ff5252;
     }
 
     /* Main container and background */
     .stApp {
-        background: var(--background-color) !important;
+        background: linear-gradient(135deg, var(--background-color), var(--secondary-color)) !important;
         color: var(--text-color);
         font-family: 'Segoe UI', sans-serif;
         line-height: 1.6;
+        position: relative;
+        overflow: hidden;
     }
 
-    /* All text elements */
-    div:not(.custom-header):not(.section-header):not(.metric-card) {
-        color: var(--text-color) !important;
+    /* Abstract wave background */
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url("data:image/svg+xml,%3Csvg viewBox='0 0 1000 1000' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M 0 1000 Q 250 750 500 1000 T 1000 1000 V 1000 H 0' fill='rgba(0, 184, 212, 0.05)'/%3E%3Cpath d='M 0 1000 Q 250 850 500 1000 T 1000 1000 V 1000 H 0' fill='rgba(0, 184, 212, 0.03)'/%3E%3C/svg%3E") no-repeat center center fixed;
+        background-size: cover;
+        opacity: 0.1;
+        z-index: 0;
     }
 
     /* Metric Cards */
     .metric-card {
-        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        background: linear-gradient(135deg, rgba(0, 184, 212, 0.2), rgba(0, 96, 100, 0.2));
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 1.5rem;
         border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         text-align: center;
         height: 100%;
-        transition: transform 0.2s ease-in-out;
+        transition: all 0.3s ease;
     }
 
     .metric-card:hover {
         transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+        border-color: rgba(255, 255, 255, 0.2);
     }
 
     .metric-label {
-        color: white !important;
+        color: var(--text-light) !important;
         font-size: 1.1rem;
         font-weight: 600;
         margin-bottom: 0.5rem;
@@ -178,100 +194,136 @@ st.markdown("""
     }
 
     .metric-value {
-        color: white !important;
+        color: var(--accent-color) !important;
         font-size: 2rem;
         font-weight: 700;
         margin: 0.5rem 0;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     .metric-sublabel {
-        color: rgba(255, 255, 255, 0.9) !important;
+        color: var(--text-muted) !important;
         font-size: 0.9rem;
         font-weight: 500;
     }
 
-    /* Improve dropdown and select visibility */
-    .stSelectbox [data-baseweb="select"] {
-        background-color: white !important;
+    /* Progress bar container */
+    .progress-container {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 25px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        margin: 20px 0;
     }
 
-    .stSelectbox [data-baseweb="select"] > div {
-        background-color: white !important;
-        color: var(--text-color) !important;
-        font-weight: 500 !important;
+    /* Progress bar */
+    .progress-bar {
+        background: linear-gradient(90deg, var(--success-color), var(--accent-color));
+        height: 40px;
+        border-radius: 20px;
+        position: relative;
+        overflow: hidden;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
-    .stSelectbox [data-baseweb="select"] > div > div {
-        color: var(--text-color) !important;
-        font-weight: 500 !important;
+    .progress-text {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: var(--text-color);
+        font-weight: 700;
+        font-size: 1.2em;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        z-index: 1;
     }
 
-    /* Improve input field visibility */
-    .stTextInput > div > div > input {
-        background-color: white !important;
-        color: var(--text-color) !important;
-        font-weight: 500 !important;
-        border: 1px solid var(--border-color) !important;
+    /* Section headers */
+    .section-header {
+        background: linear-gradient(135deg, rgba(0, 184, 212, 0.2), rgba(0, 96, 100, 0.2));
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Improve label visibility */
-    .stSelectbox label, 
-    .stTextInput label,
-    .stNumberInput label {
-        color: var(--text-color) !important;
-        font-weight: 600 !important;
-        font-size: 1rem !important;
-    }
-
-    /* Filter section improvements */
-    .filter-section {
-        background: white !important;
-        padding: 1.5rem !important;
-        border-radius: 10px !important;
-        margin-bottom: 1.5rem !important;
-    }
-
-    .filter-section label {
-        color: var(--text-color) !important;
-        font-weight: 600 !important;
-    }
-
-    /* Headers in white sections */
-    .white-section h1, 
-    .white-section h2, 
-    .white-section h3, 
-    .white-section h4 {
-        color: var(--text-color) !important;
-        font-weight: 600 !important;
-    }
-
-    /* Data display elements */
-    .dataframe td,
-    .stDataFrame td {
-        color: var(--text-color) !important;
-        font-weight: 500 !important;
-    }
-
-    /* Table headers */
-    .dataframe th,
-    .stDataFrame th {
-        background: var(--primary-color) !important;
-        color: white !important;
-        font-weight: 600 !important;
-    }
-
-    /* Custom header text (white) */
-    .custom-header h1,
-    .custom-header p,
     .section-header h2 {
-        color: white !important;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        color: var(--text-color) !important;
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    /* Data tables */
+    .dataframe, .stDataFrame {
+        background: rgba(0, 184, 212, 0.1) !important;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+    }
+
+    .dataframe th, .stDataFrame th {
+        background: rgba(0, 184, 212, 0.2) !important;
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+        padding: 1rem !important;
+    }
+
+    .dataframe td, .stDataFrame td {
+        color: var(--text-light) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        padding: 0.75rem !important;
+    }
+
+    /* Form elements */
+    .stSelectbox [data-baseweb="select"],
+    .stTextInput > div > div > input {
+        background: rgba(0, 184, 212, 0.1) !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        color: var(--text-color) !important;
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    .stSelectbox [data-baseweb="select"]:hover,
+    .stTextInput > div > div > input:hover {
+        border-color: var(--accent-color) !important;
+    }
+
+    /* Labels */
+    .stSelectbox label, 
+    .stTextInput label {
+        color: var(--text-light) !important;
+        font-weight: 500 !important;
     }
 
     /* Hide Streamlit branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: var(--primary-color);
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--accent-color);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -510,66 +562,23 @@ def show_overview():
 
     st.markdown(
         f"""
-        <div style='
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            margin: 20px 0;
-        '>
-            <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;'>
+        <div class="progress-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <div>
-                    <h3 style='
-                        color: white;
-                        margin: 0;
-                        font-size: 1.8em;
-                        font-weight: 700;
-                        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-                    '>Closed Won</h3>
-                    <div style='
-                        color: white;
-                        font-size: 2.5em;
-                        font-weight: 800;
-                        margin-top: 5px;
-                        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-                    '>₹{int(won_amount_lacs):,}L</div>
+                    <h3 style="color: var(--text-light); margin: 0; font-size: 1.4em; font-weight: 600;">
+                        Closed Won
+                    </h3>
+                    <div style="color: var(--accent-color); font-size: 2.2em; font-weight: 700; margin-top: 5px;">
+                        ₹{int(won_amount_lacs):,}L
+                    </div>
                 </div>
-                <div style='
-                    color: rgba(255, 255, 255, 0.9);
-                    font-size: 1.2em;
-                    font-weight: 600;
-                    text-align: right;
-                    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-                '>
+                <div style="color: var(--text-muted); font-size: 1.1em; text-align: right;">
                     Target: ₹{int(st.session_state.sales_target):,}L
                 </div>
             </div>
-            <div style='
-                background: rgba(255, 255, 255, 0.15);
-                height: 40px;
-                border-radius: 20px;
-                overflow: hidden;
-                position: relative;
-                box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-            '>
-                <div style='
-                    background: linear-gradient(90deg, #2ecc71, #27ae60);
-                    height: 100%;
-                    width: {min(achievement_pct, 100)}%;
-                    transition: width 0.5s ease-in-out;
-                    box-shadow: 2px 0 4px rgba(0,0,0,0.1);
-                '></div>
-                <div style='
-                    position: absolute;
-                    top: 50%;
-                    left: 50%;
-                    transform: translate(-50%, -50%);
-                    color: white;
-                    font-weight: 700;
-                    font-size: 1.2em;
-                    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-                    z-index: 1;
-                '>
+            <div class="progress-bar" style="width: 100%;">
+                <div style="background: linear-gradient(90deg, var(--success-color), var(--accent-color)); height: 100%; width: {min(achievement_pct, 100)}%; transition: width 0.5s ease-in-out;"></div>
+                <div class="progress-text">
                     {int(achievement_pct)}% Complete
                 </div>
             </div>
