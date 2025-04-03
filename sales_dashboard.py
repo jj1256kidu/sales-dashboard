@@ -17,27 +17,74 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize session state
+# Initialize session state with persistence
+if "persistent_state" not in st.session_state:
+    st.session_state.persistent_state = {
+        "authenticated": False,
+        "username": None,
+        "current_view": "data_input",
+        "df": None,
+        "date_filter": None,
+        "selected_practice": "All",
+        "selected_stage": "All",
+        "reset_triggered": False,
+        "selected_team_member": None,
+        "sales_target": 0.0
+    }
+
+# Use persistent state for all session variables
 if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
+    st.session_state.authenticated = st.session_state.persistent_state["authenticated"]
 if "username" not in st.session_state:
-    st.session_state.username = None
+    st.session_state.username = st.session_state.persistent_state["username"]
 if "current_view" not in st.session_state:
-    st.session_state.current_view = "data_input"
+    st.session_state.current_view = st.session_state.persistent_state["current_view"]
 if "df" not in st.session_state:
-    st.session_state.df = None
+    st.session_state.df = st.session_state.persistent_state["df"]
 if "date_filter" not in st.session_state:
-    st.session_state.date_filter = None
+    st.session_state.date_filter = st.session_state.persistent_state["date_filter"]
 if "selected_practice" not in st.session_state:
-    st.session_state.selected_practice = "All"
+    st.session_state.selected_practice = st.session_state.persistent_state["selected_practice"]
 if "selected_stage" not in st.session_state:
-    st.session_state.selected_stage = "All"
+    st.session_state.selected_stage = st.session_state.persistent_state["selected_stage"]
 if "reset_triggered" not in st.session_state:
-    st.session_state.reset_triggered = False
+    st.session_state.reset_triggered = st.session_state.persistent_state["reset_triggered"]
 if "selected_team_member" not in st.session_state:
-    st.session_state.selected_team_member = None
+    st.session_state.selected_team_member = st.session_state.persistent_state["selected_team_member"]
 if "sales_target" not in st.session_state:
-    st.session_state.sales_target = 0.0
+    st.session_state.sales_target = st.session_state.persistent_state["sales_target"]
+
+# Update persistent state whenever session state changes
+def update_persistent_state():
+    st.session_state.persistent_state.update({
+        "authenticated": st.session_state.authenticated,
+        "username": st.session_state.username,
+        "current_view": st.session_state.current_view,
+        "df": st.session_state.df,
+        "date_filter": st.session_state.date_filter,
+        "selected_practice": st.session_state.selected_practice,
+        "selected_stage": st.session_state.selected_stage,
+        "reset_triggered": st.session_state.reset_triggered,
+        "selected_team_member": st.session_state.selected_team_member,
+        "sales_target": st.session_state.sales_target
+    })
+
+# Modified logout function to properly clear persistent state
+def logout():
+    st.session_state.persistent_state = {
+        "authenticated": False,
+        "username": None,
+        "current_view": "data_input",
+        "df": None,
+        "date_filter": None,
+        "selected_practice": "All",
+        "selected_stage": "All",
+        "reset_triggered": False,
+        "selected_team_member": None,
+        "sales_target": 0.0
+    }
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
 
 # Format helper functions
 def format_amount(x):
