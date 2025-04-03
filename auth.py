@@ -6,12 +6,14 @@ import json
 import os
 import random
 
-def init_session_state():
-    """Initialize session state for authentication"""
-    if "authenticated" not in st.session_state:
-        st.session_state.authenticated = False
-    if "username" not in st.session_state:
-        st.session_state.username = None
+# Set page config must be the first Streamlit command
+st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
+
+# Initialize session state for authentication
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "username" not in st.session_state:
+    st.session_state.username = None
 
 # Load users from JSON file
 def load_users():
@@ -38,9 +40,6 @@ def verify_password(username, password):
     return False
 
 def show_login_page():
-    # Initialize session state
-    init_session_state()
-    
     # Generate particles HTML
     particles_html = ""
     for i in range(30):
@@ -270,15 +269,12 @@ def show_login_page():
     """, unsafe_allow_html=True)
 
 def is_authenticated():
-    init_session_state()
-    return st.session_state.authenticated
+    return st.session_state.get("authenticated", False)
 
 def get_current_user():
-    init_session_state()
-    return st.session_state.username if is_authenticated() else None
+    return st.session_state.get("username") if is_authenticated() else None
 
 def logout():
-    init_session_state()
     st.session_state.authenticated = False
     st.session_state.username = None
 
