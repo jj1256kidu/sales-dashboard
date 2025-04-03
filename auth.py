@@ -1,12 +1,12 @@
 import streamlit as st
-
-# Set page config must be the first Streamlit command
-st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
-
 import hashlib
 from typing import Optional, Dict, Any
 import json
 import os
+import random
+
+# Set page config must be the first Streamlit command
+st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
 
 # Initialize session state for authentication
 if "authenticated" not in st.session_state:
@@ -49,7 +49,6 @@ def show_login_page():
     # Generate particles HTML
     particles_html = ""
     for i in range(30):
-        import random
         left = random.randint(0, 100)
         delay = random.randint(0, 20)
         duration = random.randint(15, 25)
