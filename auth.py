@@ -91,158 +91,233 @@ def get_css():
 @st.cache_data
 def get_html_template():
     return """
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
     <style>
     body {
-        background: linear-gradient(45deg, #0f0c29, #302b63, #24243e);
-        font-family: 'Orbitron', sans-serif;
         margin: 0;
         padding: 0;
-        min-height: 100vh;
+        overflow: hidden;
+        font-family: 'Orbitron', sans-serif;
+        background-color: #0f0f25;
+        color: #00f0ff;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
     }
-    .login-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 600px;
-        will-change: transform;
-    }
-    .login-box {
-        background: rgba(0, 0, 0, 0.7);
-        border-radius: 20px;
-        padding: 50px 40px;
+
+    canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 0;
         width: 100%;
-        max-width: 400px;
-        box-shadow: 0 0 25px rgba(0, 255, 255, 0.2), 0 0 60px rgba(255, 0, 224, 0.1);
-        color: #fff;
-        backdrop-filter: blur(15px);
-        -webkit-backdrop-filter: blur(15px);
-        border: 1px solid rgba(0, 240, 255, 0.1);
-        transform: translateZ(0);
+        height: 100%;
     }
-    .login-box h2 {
-        text-align: center;
-        color: #00f0ff;
-        font-size: 32px;
-        margin-bottom: 30px;
-        letter-spacing: 1px;
-        text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-    }
-    .input-wrapper {
-        position: relative;
-        margin-bottom: 25px;
-        transform: translateZ(0);
-    }
-    .input-wrapper i {
+
+    .login-container {
         position: absolute;
         top: 50%;
-        left: 15px;
-        transform: translateY(-50%);
-        color: #00f0ff;
-        font-size: 14px;
-        z-index: 2;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(17, 17, 17, 0.9);
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.67);
+        text-align: center;
+        width: 350px;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 1;
     }
-    .input-wrapper input {
-        width: 100%;
-        height: 45px;
-        padding: 0 15px 0 40px;
-        border: 1px solid rgba(0, 240, 255, 0.3);
-        background: rgba(0, 0, 0, 0.4);
-        color: white;
-        border-radius: 25px;
-        font-size: 15px;
-        font-family: 'Orbitron', sans-serif;
-        outline: none;
+
+    .login-container h2 {
+        font-size: 28px;
+        margin-bottom: 30px;
+        color: #00ffff;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+
+    .input-box {
+        display: flex;
+        align-items: center;
+        background-color: rgba(26, 26, 46, 0.8);
+        border-radius: 30px;
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.27);
         transition: all 0.3s ease;
-        box-shadow: inset 0 0 8px rgba(0, 240, 255, 0.2);
-        -webkit-appearance: none;
     }
-    .input-wrapper input:focus {
-        border-color: #00f0ff;
-        box-shadow: 0 0 12px rgba(0, 240, 255, 0.3), inset 0 0 8px rgba(0, 240, 255, 0.3);
+
+    .input-box:focus-within {
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+        background-color: rgba(26, 26, 46, 0.9);
     }
-    .input-wrapper input::placeholder {
-        color: rgba(160, 203, 232, 0.6);
-        font-family: 'Orbitron', sans-serif;
-    }
-    .login-box button {
-        width: 100%;
-        height: 48px;
-        background: linear-gradient(135deg, #00f0ff, #ff00e0);
-        color: white;
-        font-weight: bold;
-        font-size: 17px;
+
+    .input-box input {
+        flex: 1;
         border: none;
-        border-radius: 25px;
-        cursor: pointer;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        letter-spacing: 1px;
+        background: transparent;
+        outline: none;
+        color: #fff;
+        font-size: 14px;
+        margin-left: 10px;
         font-family: 'Orbitron', sans-serif;
-        margin-top: 10px;
-        transform: translateZ(0);
     }
-    .login-box button:hover {
-        transform: translateY(-2px) translateZ(0);
-        box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
-        background: linear-gradient(135deg, #ff00e0, #00f0ff);
+
+    .input-box input::placeholder {
+        color: rgba(204, 204, 204, 0.7);
     }
-    .login-box button:active {
-        transform: translateY(1px) translateZ(0);
+
+    .icon {
+        font-size: 16px;
+        color: #00ffff;
+        width: 20px;
+        text-align: center;
     }
+
+    .login-btn {
+        background: linear-gradient(135deg, #00f0ff, #ff00ff);
+        border: none;
+        color: white;
+        padding: 12px 40px;
+        border-radius: 30px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 15px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+        font-family: 'Orbitron', sans-serif;
+        letter-spacing: 1px;
+        width: 100%;
+    }
+
+    .login-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 25px rgba(0, 255, 255, 0.7);
+        background: linear-gradient(135deg, #ff00ff, #00f0ff);
+    }
+
+    .login-btn:active {
+        transform: translateY(1px);
+    }
+
     .options {
+        margin-top: 20px;
         display: flex;
         justify-content: space-between;
-        font-size: 13px;
-        color: rgba(160, 203, 232, 0.8);
-        margin-top: 20px;
+        color: rgba(204, 204, 204, 0.8);
+        font-size: 12px;
     }
+
     .options label {
         display: flex;
         align-items: center;
         gap: 5px;
         cursor: pointer;
     }
+
     .options input[type="checkbox"] {
         cursor: pointer;
-        accent-color: #00f0ff;
+        accent-color: #00ffff;
     }
+
     .options a {
-        color: rgba(160, 203, 232, 0.8);
+        color: rgba(204, 204, 204, 0.8);
         text-decoration: none;
         transition: color 0.3s ease, text-shadow 0.3s ease;
     }
+
     .options a:hover {
-        color: #00f0ff;
-        text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        color: #00ffff;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
     }
     </style>
 
+    <canvas id="particles"></canvas>
+
     <div class="login-container">
-        <div class="login-box">
-            <h2>Welcome Back</h2>
-            <form id="loginForm">
-                <div class="input-wrapper">
-                    <i class="fas fa-user"></i>
-                    <input type="text" id="username" placeholder="Username" required />
-                </div>
-                <div class="input-wrapper">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="password" placeholder="Password" required />
-                </div>
-                <button type="submit">LOGIN</button>
-                <div class="options">
-                    <label><input type="checkbox" checked /> Remember me</label>
-                    <a href="#">Forgot password?</a>
-                </div>
-            </form>
-        </div>
+        <h2>Welcome Back</h2>
+        <form id="loginForm">
+            <div class="input-box">
+                <span class="icon">👤</span>
+                <input type="text" id="username" placeholder="Username" required />
+            </div>
+            <div class="input-box">
+                <span class="icon">🔒</span>
+                <input type="password" id="password" placeholder="Password" required />
+            </div>
+            <button type="submit" class="login-btn">LOGIN</button>
+            <div class="options">
+                <label><input type="checkbox" checked /> Remember me</label>
+                <a href="#">Forgot password?</a>
+            </div>
+        </form>
     </div>
 
     <script>
     (function() {
+        // Canvas setup and particle animation
+        const canvas = document.getElementById("particles");
+        const ctx = canvas.getContext("2d");
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        let particles = [];
+        const colors = ["#ff00ff", "#00ffff", "#ffaa00", "#ffffff"];
+
+        function createParticles() {
+            particles = [];
+            const particleCount = Math.min(100, Math.floor((canvas.width * canvas.height) / 20000));
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 2 + 1,
+                    dx: (Math.random() - 0.5) * 0.5,
+                    dy: (Math.random() - 0.5) * 0.5,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    alpha: Math.random() * 0.5 + 0.5
+                });
+            }
+        }
+        createParticles();
+        window.addEventListener('resize', createParticles);
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.globalCompositeOperation = 'lighter';
+            for (let p of particles) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color + Math.floor(p.alpha * 255).toString(16).padStart(2, '0');
+                ctx.fill();
+
+                p.x += p.dx;
+                p.y += p.dy;
+
+                // Wrap particles around screen edges
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+
+                // Subtle alpha animation
+                p.alpha += (Math.random() - 0.5) * 0.01;
+                p.alpha = Math.max(0.3, Math.min(0.8, p.alpha));
+            }
+            ctx.globalCompositeOperation = 'source-over';
+            
+            requestAnimationFrame(draw);
+        }
+        draw();
+
+        // Form handling
         const form = document.getElementById('loginForm');
         form.addEventListener('submit', function(e) {
             e.preventDefault();
