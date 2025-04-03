@@ -33,7 +33,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Inject Particles
+# Inject Colorful Floating Particles
 components.html("""
 <div id="tsparticles"></div>
 <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
@@ -109,164 +109,184 @@ components.html("""
 </script>
 """, height=0)
 
-# Custom CSS for futuristic look
+# Custom CSS
 st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&display=swap');
-    @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
 
-    .stApp {
-        background: transparent !important;
-    }
+<style>
+.stApp {
+    background: transparent !important;
+}
 
-    #MainMenu, footer, header {
-        visibility: hidden;
-    }
+#MainMenu, footer, header {
+    visibility: hidden;
+}
 
-    div[data-testid="stVerticalBlock"] {
-        padding-top: 2rem;
-    }
+div[data-testid="stVerticalBlock"] {
+    padding-top: 2rem;
+}
 
-    .login-box {
-        background: rgba(2, 4, 18, 0.8);
-        border-radius: 30px;
-        padding: 25px;
-        box-shadow: 0 0 40px rgba(0, 240, 255, 0.1);
-        backdrop-filter: blur(20px);
-        width: 360px;
-        margin: 0 auto;
-        font-family: 'Orbitron', sans-serif;
-    }
+.login-box {
+    background: rgba(2, 4, 18, 0.85);
+    border-radius: 25px;
+    padding: 30px;
+    width: 380px;
+    margin: 50px auto;
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.15),
+               inset 0 0 20px rgba(0, 240, 255, 0.05);
+    backdrop-filter: blur(10px);
+    font-family: 'Orbitron', sans-serif;
+    border: 1px solid rgba(0, 240, 255, 0.1);
+    position: relative;
+    z-index: 1;
+}
 
-    .login-title {
-        text-align: center;
-        color: #00f0ff;
-        margin: 0 0 25px 0;
-        font-size: 26px;
-        font-weight: 500;
-        letter-spacing: 3px;
-        text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
-    }
+.login-box h2 {
+    text-align: center;
+    color: #00f0ff;
+    margin: 0 0 30px 0;
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-shadow: 0 0 15px rgba(0, 240, 255, 0.5);
+}
 
-    .stTextInput > div > div > input {
-        width: 100% !important;
-        height: 48px !important;
-        padding: 0 20px 0 45px !important;
-        border: 1px solid rgba(0, 240, 255, 0.4) !important;
-        background: rgba(0, 0, 0, 0.2) !important;
-        color: #fff !important;
-        border-radius: 50px !important;
-        font-size: 15px !important;
-        letter-spacing: 2px !important;
-        font-family: 'Orbitron', sans-serif !important;
-        box-shadow: 0 0 20px rgba(0, 240, 255, 0.1),
-                   inset 0 0 15px rgba(0, 240, 255, 0.1) !important;
-    }
+.input-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+}
 
-    .stTextInput > div > div > input:focus {
-        border-color: #00f0ff !important;
-        box-shadow: 0 0 25px rgba(0, 240, 255, 0.2),
-                   inset 0 0 20px rgba(0, 240, 255, 0.15) !important;
-    }
+.input-wrapper i {
+    position: absolute;
+    top: 50%;
+    left: 18px;
+    transform: translateY(-50%);
+    color: #00f0ff;
+    font-size: 15px;
+    opacity: 0.8;
+    z-index: 2;
+}
 
-    .stTextInput > div > div > input::placeholder {
-        color: rgba(255, 255, 255, 0.3) !important;
-        letter-spacing: 2px !important;
-        font-weight: 400 !important;
-    }
+.input-wrapper input {
+    width: 100%;
+    height: 45px;
+    padding: 0 20px 0 45px;
+    border: 1px solid rgba(0, 240, 255, 0.3);
+    background: rgba(0, 0, 0, 0.25);
+    color: #fff;
+    border-radius: 50px;
+    font-size: 14px;
+    letter-spacing: 1px;
+    font-family: 'Orbitron', sans-serif;
+    outline: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.1),
+               inset 0 0 10px rgba(0, 240, 255, 0.05);
+}
 
-    .stButton > button {
-        width: 100% !important;
-        height: 48px !important;
-        background: linear-gradient(90deg, #00f0ff 0%, #ff00ff 100%) !important;
-        color: white !important;
-        font-weight: 500 !important;
-        font-size: 16px !important;
-        letter-spacing: 4px !important;
-        border: none !important;
-        border-radius: 50px !important;
-        cursor: pointer !important;
-        margin-top: 10px !important;
-        text-transform: uppercase !important;
-        box-shadow: 0 0 20px rgba(0, 240, 255, 0.3) !important;
-        font-family: 'Orbitron', sans-serif !important;
-    }
+.input-wrapper input:focus {
+    border-color: rgba(0, 240, 255, 0.6);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.2),
+               inset 0 0 15px rgba(0, 240, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+}
 
-    .stButton > button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 0 30px rgba(0, 240, 255, 0.4) !important;
-    }
+.input-wrapper input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+    letter-spacing: 1px;
+    font-weight: 400;
+    font-size: 14px;
+}
 
-    .stCheckbox {
-        color: rgba(0, 240, 255, 0.8) !important;
-        font-size: 11px !important;
-        letter-spacing: 1px !important;
-    }
+.login-button {
+    width: 100%;
+    height: 45px;
+    background: linear-gradient(90deg, #00f0ff, #ff00ff);
+    color: white;
+    font-weight: 500;
+    font-size: 16px;
+    letter-spacing: 3px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    margin-top: 15px;
+    text-transform: uppercase;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+    font-family: 'Orbitron', sans-serif;
+    transition: all 0.3s ease;
+}
 
-    .stCheckbox > label > div {
-        gap: 6px !important;
-    }
+.login-button:hover {
+    transform: scale(1.02);
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.3);
+    background: linear-gradient(90deg, #ff00ff, #00f0ff);
+}
 
-    .stCheckbox > label > div > input {
-        accent-color: #00f0ff !important;
-        width: 13px !important;
-        height: 13px !important;
-        opacity: 0.9 !important;
-    }
+.options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: rgba(0, 240, 255, 0.7);
+    margin-top: 15px;
+    letter-spacing: 0.5px;
+}
 
-    .forgot-password {
-        text-align: right !important;
-        font-size: 11px !important;
-        letter-spacing: 1px !important;
-        margin-top: 5px !important;
-    }
+.options label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    opacity: 0.9;
+}
 
-    .forgot-password a {
-        color: rgba(0, 240, 255, 0.8) !important;
-        text-decoration: none !important;
-        opacity: 0.9 !important;
-        transition: opacity 0.3s !important;
-    }
+.options input[type="checkbox"] {
+    accent-color: #00f0ff;
+    width: 14px;
+    height: 14px;
+    opacity: 0.8;
+}
 
-    .forgot-password a:hover {
-        opacity: 1 !important;
-    }
+.options a {
+    color: rgba(0, 240, 255, 0.7);
+    text-decoration: none;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+}
 
-    div[data-testid="stForm"] {
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-    }
+.options a:hover {
+    opacity: 1;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+}
 
-    </style>
+div[data-testid="stForm"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}
+</style>
 """, unsafe_allow_html=True)
 
-# Login layout
-with st.form("login_form"):
-    st.markdown('<div class="login-box">', unsafe_allow_html=True)
-    st.markdown('<h2 class="login-title">Welcome Back</h2>', unsafe_allow_html=True)
-
-    username = st.text_input("", placeholder="Username", key="username")
-    password = st.text_input("", placeholder="Password", type="password", key="password")
-
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        remember = st.checkbox("Remember me")
-    with col2:
-        st.markdown('<div class="forgot-password"><a href="#">Forgot password?</a></div>', unsafe_allow_html=True)
-
-    submitted = st.form_submit_button("LOGIN")
-
-    if submitted:
-        if username and password:
-            st.session_state.login_attempts += 1
-            log_debug_event('login_attempt', {'username': username, 'success': True})
-            st.success(f"Welcome, {username}!")
-        else:
-            log_debug_event('login_attempt', {'error': 'Missing credentials'})
-            st.error("Please enter both username and password.")
-
-    st.markdown('</div>', unsafe_allow_html=True)
+# Login Form UI
+st.markdown("""
+<div class="login-box">
+    <h2>Welcome Back</h2>
+    <div class="input-wrapper">
+        <i class="fas fa-user"></i>
+        <input type="text" placeholder="Username" name="username" required />
+    </div>
+    <div class="input-wrapper">
+        <i class="fas fa-lock"></i>
+        <input type="password" placeholder="Password" name="password" required />
+    </div>
+    <button class="login-button" type="submit">LOGIN</button>
+    <div class="options">
+        <label><input type="checkbox" checked /> Remember me</label>
+        <a href="#">Forgot password?</a>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # Debug section
 if st.session_state.debug_mode:
