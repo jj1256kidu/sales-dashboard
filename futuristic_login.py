@@ -161,13 +161,13 @@ components.html(f"""
         .login-box h2 {{
             text-align: center;
             color: #00f0ff;
-            margin-bottom: 30px;
-            font-size: 26px;
+            margin-bottom: 20px;
+            font-size: 24px;
         }}
 
         .input-wrapper {{
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }}
 
         .input-wrapper i {{
@@ -181,12 +181,12 @@ components.html(f"""
 
         .input-wrapper input {{
             width: 100%;
-            height: 45px;
+            height: 40px;
             padding: 0 15px 0 40px;
             border: 1px solid #00f0ff;
             background: transparent;
             color: white;
-            border-radius: 25px;
+            border-radius: 20px;
             font-size: 14px;
             outline: none;
             transition: box-shadow 0.3s;
@@ -198,19 +198,20 @@ components.html(f"""
 
         .login-box button {{
             width: 100%;
-            height: 48px;
+            height: 42px;
             background: linear-gradient(135deg, #00f0ff, #ff00e0);
             color: white;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 14px;
             border: none;
-            border-radius: 25px;
+            border-radius: 20px;
             cursor: pointer;
             transition: all 0.3s ease;
+            margin-top: 5px;
         }}
 
         .login-box button:hover {{
-            transform: scale(1.03);
+            transform: scale(1.02);
             box-shadow: 0 0 15px #00f0ff;
         }}
 
@@ -219,7 +220,7 @@ components.html(f"""
             justify-content: space-between;
             font-size: 12px;
             color: #a0cbe8;
-            margin-top: 10px;
+            margin-top: 8px;
         }}
 
         .options a {{
