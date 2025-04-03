@@ -265,10 +265,12 @@ def get_current_user():
     return st.session_state.get("username") if is_authenticated() else None
 
 def logout():
-    if "authenticated" in st.session_state:
-        del st.session_state["authenticated"]
-    if "username" in st.session_state:
-        del st.session_state["username"]
+    # Clear all session state
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    # Reinitialize authentication state
+    st.session_state["authenticated"] = False
+    st.session_state["username"] = None
 
 def hash_password(password: str) -> str:
     """Hash a password using SHA-256"""
