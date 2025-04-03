@@ -50,46 +50,95 @@ def show_login_page():
     """Show the login page with futuristic design"""
     st.markdown("""
         <style>
-            /* Reset styles */
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
+            /* Override Streamlit defaults */
+            .stApp {
+                background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%) !important;
+            }
+            
+            .block-container {
+                padding: 0 !important;
+                max-width: 100% !important;
             }
 
-            /* Base styles */
-            body {
-                font-family: 'Segoe UI', sans-serif;
-                background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-                color: #fff;
-                min-height: 100vh;
+            section[data-testid="stSidebar"] {
+                display: none !important;
+            }
+
+            header[data-testid="stHeader"] {
+                display: none !important;
+            }
+
+            #MainMenu {
+                display: none !important;
+            }
+
+            footer {
+                display: none !important;
+            }
+
+            /* Custom styles for form elements */
+            [data-testid="stTextInput"] > div > div > input {
+                background-color: rgba(255, 255, 255, 0.1) !important;
+                border: 1px solid rgba(255, 255, 255, 0.2) !important;
+                border-radius: 8px !important;
+                color: white !important;
+                font-size: 1em !important;
+                padding: 12px 15px !important;
+            }
+
+            [data-testid="stTextInput"] > div > div > input:focus {
+                border-color: #4A90E2 !important;
+                box-shadow: 0 0 10px rgba(74, 144, 226, 0.3) !important;
+            }
+
+            [data-testid="stButton"] > button {
+                width: 100% !important;
+                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%) !important;
+                color: white !important;
+                font-weight: 600 !important;
+                padding: 12px !important;
+                font-size: 1.1em !important;
+                border-radius: 8px !important;
+                border: none !important;
+                transition: all 0.3s ease !important;
+            }
+
+            [data-testid="stButton"] > button:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4) !important;
+            }
+
+            /* Base layout */
+            .main {
                 display: flex;
-                align-items: center;
                 justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                padding: 20px;
             }
 
-            /* Container styles */
+            /* Container and login box */
             .container {
                 width: 100%;
                 max-width: 400px;
-                padding: 20px;
+                margin: 0 auto;
                 position: relative;
                 z-index: 1;
             }
 
-            /* Login box styles */
             .login-box {
                 background: rgba(255, 255, 255, 0.1);
                 backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
                 border-radius: 15px;
                 padding: 30px;
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
                 border: 1px solid rgba(255, 255, 255, 0.1);
             }
 
-            /* Title styles */
+            /* Title */
             .login-box h1 {
-                color: #fff;
+                color: white;
                 text-align: center;
                 margin-bottom: 30px;
                 font-size: 2em;
@@ -97,69 +146,19 @@ def show_login_page():
                 text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
             }
 
-            /* Input field styles */
-            .input-group {
-                position: relative;
-                margin-bottom: 20px;
+            /* Error message */
+            [data-testid="stAlert"] {
+                background-color: rgba(255, 0, 0, 0.1) !important;
+                border: 1px solid rgba(255, 0, 0, 0.2) !important;
+                color: #ff4444 !important;
+                padding: 10px !important;
+                border-radius: 5px !important;
+                margin-bottom: 20px !important;
+                text-align: center !important;
+                font-size: 0.9em !important;
             }
 
-            .input-group input {
-                width: 100%;
-                padding: 12px 15px;
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                border-radius: 8px;
-                color: #fff;
-                font-size: 1em;
-                transition: all 0.3s ease;
-            }
-
-            .input-group input:focus {
-                outline: none;
-                border-color: #4A90E2;
-                box-shadow: 0 0 10px rgba(74, 144, 226, 0.3);
-            }
-
-            .input-group i {
-                position: absolute;
-                right: 15px;
-                top: 50%;
-                transform: translateY(-50%);
-                color: rgba(255, 255, 255, 0.5);
-            }
-
-            /* Button styles */
-            .login-btn {
-                width: 100%;
-                padding: 12px;
-                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
-                border: none;
-                border-radius: 8px;
-                color: #fff;
-                font-size: 1.1em;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-
-            .login-btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4);
-            }
-
-            /* Error message styles */
-            .error-message {
-                background: rgba(255, 0, 0, 0.1);
-                border: 1px solid rgba(255, 0, 0, 0.2);
-                color: #ff4444;
-                padding: 10px;
-                border-radius: 5px;
-                margin-bottom: 20px;
-                text-align: center;
-                font-size: 0.9em;
-            }
-
-            /* Credentials info box */
+            /* Credentials info */
             .credentials-info {
                 background: rgba(255, 255, 255, 0.05);
                 border: 1px solid rgba(255, 255, 255, 0.1);
@@ -204,29 +203,23 @@ def show_login_page():
                 }
             }
         </style>
-    """, unsafe_allow_html=True)
 
-    # Add particle effect
-    st.markdown("""
-        <div class="particles">
-            <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
-            <div class="particle" style="left: 20%; animation-delay: 2s;"></div>
-            <div class="particle" style="left: 30%; animation-delay: 4s;"></div>
-            <div class="particle" style="left: 40%; animation-delay: 6s;"></div>
-            <div class="particle" style="left: 50%; animation-delay: 8s;"></div>
-            <div class="particle" style="left: 60%; animation-delay: 10s;"></div>
-            <div class="particle" style="left: 70%; animation-delay: 12s;"></div>
-            <div class="particle" style="left: 80%; animation-delay: 14s;"></div>
-            <div class="particle" style="left: 90%; animation-delay: 16s;"></div>
-            <div class="particle" style="left: 95%; animation-delay: 18s;"></div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Login form
-    st.markdown("""
-        <div class="container">
-            <div class="login-box">
-                <h1>Login</h1>
+        <div class="main">
+            <div class="particles">
+                <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+                <div class="particle" style="left: 20%; animation-delay: 2s;"></div>
+                <div class="particle" style="left: 30%; animation-delay: 4s;"></div>
+                <div class="particle" style="left: 40%; animation-delay: 6s;"></div>
+                <div class="particle" style="left: 50%; animation-delay: 8s;"></div>
+                <div class="particle" style="left: 60%; animation-delay: 10s;"></div>
+                <div class="particle" style="left: 70%; animation-delay: 12s;"></div>
+                <div class="particle" style="left: 80%; animation-delay: 14s;"></div>
+                <div class="particle" style="left: 90%; animation-delay: 16s;"></div>
+                <div class="particle" style="left: 95%; animation-delay: 18s;"></div>
+            </div>
+            <div class="container">
+                <div class="login-box">
+                    <h1>Login</h1>
     """, unsafe_allow_html=True)
 
     # Create columns for centering
@@ -251,4 +244,8 @@ def show_login_page():
             </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("</div></div>", unsafe_allow_html=True) 
+    st.markdown("""
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True) 
