@@ -39,6 +39,10 @@ def show_login_page():
                 background-size: 300% 300%;
                 animation: gradient 15s ease infinite;
                 min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 2rem;
             }
             
             @keyframes gradient {
@@ -85,44 +89,52 @@ def show_login_page():
             
             /* Enhanced login container with modern glass effect */
             .login-container {
-                max-width: 450px;
-                margin: 4rem auto;
-                padding: 2.5rem;
+                width: 100%;
+                max-width: 400px;
+                margin: 0 auto;
+                padding: 2rem;
                 background: rgba(255, 255, 255, 0.05);
                 backdrop-filter: blur(10px);
-                border-radius: 24px;
+                border-radius: 20px;
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
                 border: 1px solid rgba(255, 255, 255, 0.1);
                 text-align: center;
             }
             
+            /* Logo style */
+            .logo {
+                color: rgba(255, 255, 255, 0.9);
+                font-size: 1.4em;
+                font-weight: 700;
+                margin-bottom: 1.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+            }
+            
             /* Welcome text */
             .welcome-title {
                 color: #fff;
-                font-size: 2.8em;
+                font-size: 2.2em;
                 font-weight: 700;
-                margin-bottom: 0.5rem;
+                margin-bottom: 0.3rem;
                 line-height: 1.2;
             }
             
             .welcome-subtitle {
                 color: rgba(255, 255, 255, 0.7);
-                font-size: 1em;
-                line-height: 1.6;
+                font-size: 0.95em;
+                line-height: 1.5;
                 margin-bottom: 2rem;
-                padding: 0 1rem;
+                padding: 0 0.5rem;
             }
             
-            /* Logo style */
-            .logo {
-                color: rgba(255, 255, 255, 0.9);
-                font-size: 1.5em;
-                font-weight: 700;
-                margin-bottom: 2rem;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 0.5rem;
+            /* Form container */
+            .form-container {
+                width: 100%;
+                max-width: 280px;
+                margin: 0 auto;
             }
             
             /* Modern input fields */
@@ -134,9 +146,7 @@ def show_login_page():
                 color: white !important;
                 transition: all 0.3s ease !important;
                 margin-bottom: 0.75rem !important;
-                max-width: 300px !important;
-                margin-left: auto !important;
-                margin-right: auto !important;
+                width: 100% !important;
             }
             
             .stTextInput > div > div:hover,
@@ -151,7 +161,8 @@ def show_login_page():
                 font-size: 0.9rem !important;
                 font-weight: 500 !important;
                 margin-bottom: 0.25rem !important;
-                text-align: center !important;
+                text-align: left !important;
+                padding-left: 0.5rem !important;
             }
             
             /* Enhanced button */
@@ -164,11 +175,9 @@ def show_login_page():
                 font-weight: 600;
                 font-size: 0.95rem;
                 letter-spacing: 0.5px;
-                width: 300px;
+                width: 100%;
                 transition: all 0.3s ease;
                 margin-top: 0.5rem;
-                margin-left: auto;
-                margin-right: auto;
             }
             
             .stButton > button:hover {
@@ -186,9 +195,7 @@ def show_login_page():
                 border-radius: 12px;
                 border: 1px solid rgba(255,107,107,0.2);
                 animation: shake 0.5s ease-in-out;
-                max-width: 300px;
-                margin-left: auto;
-                margin-right: auto;
+                font-size: 0.9rem;
             }
             
             /* Credentials info */
@@ -200,9 +207,7 @@ def show_login_page():
                 background: rgba(255,255,255,0.05);
                 border-radius: 12px;
                 border: 1px solid rgba(255,255,255,0.1);
-                max-width: 300px;
-                margin-left: auto;
-                margin-right: auto;
+                font-size: 0.9rem;
             }
             
             .credentials-info code {
@@ -215,11 +220,17 @@ def show_login_page():
                 display: inline-block;
                 margin: 0.3rem;
                 transition: all 0.3s ease;
+                font-size: 0.85rem;
             }
             
             .credentials-info code:hover {
                 background: rgba(255,255,255,0.15);
                 transform: translateY(-2px);
+            }
+
+            /* Hide Streamlit branding */
+            #MainMenu, footer, header {
+                visibility: hidden;
             }
         </style>
         
@@ -237,6 +248,7 @@ def show_login_page():
             </div>
             <h1 class="welcome-title">Welcome.</h1>
             <p class="welcome-subtitle">Access your sales dashboard to track performance, analyze trends, and make data-driven decisions.</p>
+            <div class="form-container">
     """, unsafe_allow_html=True)
 
     with st.form("login_form"):
@@ -264,5 +276,6 @@ def show_login_page():
                 """, unsafe_allow_html=True)
 
     st.markdown("""
+            </div>
         </div>
     """, unsafe_allow_html=True) 
