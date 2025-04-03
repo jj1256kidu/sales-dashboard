@@ -108,7 +108,7 @@ particles_init = f"""
 st.markdown("<h1 style='text-align:center; color:cyan; margin: 0 0 1rem 0;'>🚀 Welcome to the Futuristic Login Page</h1>", unsafe_allow_html=True)
 
 # Embed HTML with theme-based styling
-components.html(f"""
+components.html("""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -119,24 +119,28 @@ components.html(f"""
     <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-        * {{
+
+        * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Orbitron', sans-serif;
-        }}
-        html, body {{
+        }
+
+        html, body {
             height: 100%;
             overflow: hidden;
-            background: {particle_config["background"]["color"]};
-        }}
-        #tsparticles {{
+            background: #0f0c29;
+        }
+
+        #tsparticles {
             position: absolute;
             width: 100%;
             height: 100%;
             z-index: 0;
-        }}
-        .container {{
+        }
+
+        .container {
             position: relative;
             z-index: 1;
             display: flex;
@@ -144,34 +148,39 @@ components.html(f"""
             align-items: center;
             height: 100%;
             padding: 20px;
-        }}
-        .login-box {{
+        }
+
+        .login-box {
             background: rgba(0, 0, 0, 0.7);
             border-radius: 20px;
             padding: 40px 30px;
             width: 100%;
             max-width: 400px;
             box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
-        }}
-        .login-box h2 {{
+        }
+
+        .login-box h2 {
             text-align: center;
             color: #00f0ff;
             margin-bottom: 30px;
             font-size: 26px;
-        }}
-        .input-wrapper {{
+        }
+
+        .input-wrapper {
             position: relative;
             margin-bottom: 20px;
-        }}
-        .input-wrapper i {{
+        }
+
+        .input-wrapper i {
             position: absolute;
             top: 50%;
             left: 15px;
             transform: translateY(-50%);
             color: #7efcff;
             font-size: 14px;
-        }}
-        .input-wrapper input {{
+        }
+
+        .input-wrapper input {
             width: 100%;
             height: 45px;
             padding: 0 15px 0 40px;
@@ -182,11 +191,13 @@ components.html(f"""
             font-size: 14px;
             outline: none;
             transition: box-shadow 0.3s;
-        }}
-        .input-wrapper input:focus {{
+        }
+
+        .input-wrapper input:focus {
             box-shadow: 0 0 10px #00f0ff;
-        }}
-        .login-box button {{
+        }
+
+        .login-box button {
             width: 100%;
             height: 48px;
             background: linear-gradient(135deg, #00f0ff, #ff00e0);
@@ -197,27 +208,31 @@ components.html(f"""
             border-radius: 25px;
             cursor: pointer;
             transition: all 0.3s ease;
-        }}
-        .login-box button:hover {{
+        }
+
+        .login-box button:hover {
             transform: scale(1.03);
             box-shadow: 0 0 15px #00f0ff;
-        }}
-        .options {{
+        }
+
+        .options {
             display: flex;
             justify-content: space-between;
             font-size: 12px;
             color: #a0cbe8;
             margin-top: 10px;
-        }}
-        .options a {{
+        }
+
+        .options a {
             color: #a0cbe8;
             text-decoration: underline;
-        }}
-        @media (max-width: 480px) {{
-            .login-box {{
+        }
+
+        @media (max-width: 480px) {
+            .login-box {
                 padding: 30px 20px;
-            }}
-        }}
+            }
+        }
     </style>
 </head>
 <body>
@@ -244,9 +259,38 @@ components.html(f"""
         </form>
     </div>
 
+    <!-- tsparticles config -->
     <script>
-        // Initialize particles with theme configuration
-        tsParticles.load("tsparticles", {json.dumps(particle_config)});
+        tsParticles.load("tsparticles", {
+            fullScreen: { enable: false },
+            background: { color: "#0f0c29" },
+            particles: {
+                number: { value: 100 },
+                color: { value: ["#00f0ff", "#ff00e0", "#ffc400"] },
+                shape: { type: ["circle", "square"] },
+                opacity: { value: 0.7 },
+                size: { value: 4 },
+                move: {
+                    enable: true,
+                    speed: 1,
+                    direction: "none",
+                    random: false,
+                    straight: false,
+                    outModes: "bounce"
+                }
+            },
+            interactivity: {
+                events: {
+                    onHover: { enable: true, mode: "repulse" },
+                    onClick: { enable: true, mode: "push" }
+                },
+                modes: {
+                    repulse: { distance: 100 },
+                    push: { quantity: 4 }
+                }
+            },
+            detectRetina: true
+        });
     </script>
 </body>
 </html>
