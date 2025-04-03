@@ -19,6 +19,11 @@ import io
 from functools import lru_cache
 import hashlib
 
+# Check authentication first
+if not is_authenticated():
+    show_login_page()
+    st.stop()  # Stop execution here if not authenticated
+
 # Initialize session state with persistence
 if "persistent_state" not in st.session_state:
     st.session_state.persistent_state = {
@@ -34,41 +39,24 @@ if "persistent_state" not in st.session_state:
         "sales_target": 0.0
     }
 
-# Use persistent state for all session variables
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = st.session_state.persistent_state["authenticated"]
-if "username" not in st.session_state:
-    st.session_state.username = st.session_state.persistent_state["username"]
-if "current_view" not in st.session_state:
-    st.session_state.current_view = st.session_state.persistent_state["current_view"]
-if "df" not in st.session_state:
-    st.session_state.df = st.session_state.persistent_state["df"]
-if "date_filter" not in st.session_state:
-    st.session_state.date_filter = st.session_state.persistent_state["date_filter"]
-if "selected_practice" not in st.session_state:
-    st.session_state.selected_practice = st.session_state.persistent_state["selected_practice"]
-if "selected_stage" not in st.session_state:
-    st.session_state.selected_stage = st.session_state.persistent_state["selected_stage"]
-if "reset_triggered" not in st.session_state:
-    st.session_state.reset_triggered = st.session_state.persistent_state["reset_triggered"]
-if "selected_team_member" not in st.session_state:
-    st.session_state.selected_team_member = st.session_state.persistent_state["selected_team_member"]
-if "sales_target" not in st.session_state:
-    st.session_state.sales_target = st.session_state.persistent_state["sales_target"]
+# Initialize session state variables from persistent state
+for key, value in st.session_state.persistent_state.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
 
 # Update persistent state whenever session state changes
 def update_persistent_state():
     st.session_state.persistent_state.update({
-        "authenticated": st.session_state.authenticated,
-        "username": st.session_state.username,
-        "current_view": st.session_state.current_view,
-        "df": st.session_state.df,
-        "date_filter": st.session_state.date_filter,
-        "selected_practice": st.session_state.selected_practice,
-        "selected_stage": st.session_state.selected_stage,
-        "reset_triggered": st.session_state.reset_triggered,
-        "selected_team_member": st.session_state.selected_team_member,
-        "sales_target": st.session_state.sales_target
+        "authenticated": st.session_state.get("authenticated", False),
+        "username": st.session_state.get("username"),
+        "current_view": st.session_state.get("current_view", "data_input"),
+        "df": st.session_state.get("df"),
+        "date_filter": st.session_state.get("date_filter"),
+        "selected_practice": st.session_state.get("selected_practice", "All"),
+        "selected_stage": st.session_state.get("selected_stage", "All"),
+        "reset_triggered": st.session_state.get("reset_triggered", False),
+        "selected_team_member": st.session_state.get("selected_team_member"),
+        "sales_target": st.session_state.get("sales_target", 0.0)
     })
 
 # Modified logout function to properly clear persistent state
