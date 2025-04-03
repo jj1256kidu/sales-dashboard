@@ -79,12 +79,14 @@ if "login_attempts" not in st.session_state:
     st.session_state.login_attempts = 0
 if "last_attempt" not in st.session_state:
     st.session_state.last_attempt = None
+if "form_data" not in st.session_state:
+    st.session_state.form_data = None
 
 # Streamlit page config
 st.set_page_config(page_title="Futuristic Login", layout="centered")
 
 # Inject particles background with exact HTML/CSS/JS
-components.html("""
+form_data = components.html("""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -302,8 +304,7 @@ if st.session_state.authenticated:
         st.session_state.username = None
         st.rerun()
 else:
-    # Get form data from JavaScript
-    form_data = st.session_state.get('form_data', {})
+    # Get form data from component
     if form_data:
         username = form_data.get('username', '')
         password = form_data.get('password', '')
