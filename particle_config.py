@@ -5,57 +5,108 @@ This file contains the tsParticles configuration settings.
 
 PARTICLE_CONFIG = {
     "fullScreen": {
-        "enable": False
+        "enable": True,
+        "zIndex": 0
     },
+    "fpsLimit": 60,
     "background": {
         "color": "#0f0c29"
     },
     "particles": {
         "number": {
-            "value": 100
+            "value": 80,
+            "density": {
+                "enable": True,
+                "value_area": 800
+            }
         },
         "color": {
             "value": ["#00f0ff", "#ff00e0", "#ffc400"]
         },
         "shape": {
-            "type": ["circle", "square"]
+            "type": ["circle", "triangle"],
+            "options": {
+                "triangle": {
+                    "sides": 3
+                }
+            }
         },
         "opacity": {
-            "value": 0.7
+            "value": 0.8,
+            "random": True,
+            "anim": {
+                "enable": True,
+                "speed": 1,
+                "opacity_min": 0.4,
+                "sync": False
+            }
         },
         "size": {
-            "value": 4
+            "value": 6,
+            "random": True,
+            "anim": {
+                "enable": True,
+                "speed": 2,
+                "size_min": 3,
+                "sync": False
+            }
+        },
+        "line_linked": {
+            "enable": True,
+            "distance": 150,
+            "color": "#00f0ff",
+            "opacity": 0.6,
+            "width": 1
         },
         "move": {
             "enable": True,
-            "speed": 1,
+            "speed": 2,
             "direction": "none",
             "random": False,
             "straight": False,
-            "outModes": "bounce"
+            "outModes": {
+                "default": "bounce"
+            },
+            "attract": {
+                "enable": True,
+                "rotateX": 600,
+                "rotateY": 1200
+            }
         }
     },
     "interactivity": {
+        "detect_on": "window",
         "events": {
             "onHover": {
                 "enable": True,
-                "mode": "repulse"
+                "mode": ["grab", "bubble"]
             },
             "onClick": {
                 "enable": True,
                 "mode": "push"
-            }
+            },
+            "resize": True
         },
         "modes": {
-            "repulse": {
-                "distance": 100
+            "grab": {
+                "distance": 140,
+                "line_linked": {
+                    "opacity": 0.8
+                }
+            },
+            "bubble": {
+                "distance": 200,
+                "size": 12,
+                "duration": 2,
+                "opacity": 0.8,
+                "speed": 3
             },
             "push": {
-                "quantity": 4
+                "particles_nb": 6
             }
         }
     },
-    "detectRetina": True
+    "retina_detect": True
 }
 
 # Simple theme configurations
@@ -70,18 +121,18 @@ NEON_THEME = {
 
 CYBER_THEME = {
     "colors": {
-        "primary": "#00f0ff",
-        "secondary": "#ff00e0",
-        "accent": "#ffc400",
+        "primary": "#0af",
+        "secondary": "#f0a",
+        "accent": "#fa0",
         "background": "#000033"
     }
 }
 
 MATRIX_THEME = {
     "colors": {
-        "primary": "#00ff00",
-        "secondary": "#00ff00",
-        "accent": "#00ff00",
+        "primary": "#0f0",
+        "secondary": "#0f0",
+        "accent": "#0f0",
         "background": "#000000"
     }
 }
@@ -112,5 +163,6 @@ def get_theme_config(theme_name="neon"):
         theme["colors"]["accent"]
     ]
     config["background"]["color"] = theme["colors"]["background"]
+    config["particles"]["line_linked"]["color"] = theme["colors"]["primary"]
     
     return config 
