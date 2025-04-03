@@ -33,222 +33,232 @@ def show_login_page():
     """Display the login page"""
     st.markdown("""
         <style>
-            /* Modern animated background with purple gradient */
+            /* Modern animated background */
             .stApp {
-                background: linear-gradient(45deg, #1E1E2E, #2D1E4F, #4A1E6D, #6B1E8F);
-                background-size: 300% 300%;
-                animation: gradient 15s ease infinite;
+                background: #13111C;
                 min-height: 100vh;
+                margin: 0;
+                padding: 0;
                 display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 2rem;
+                align-items: stretch;
             }
             
-            @keyframes gradient {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-            }
-            
-            /* Wave animation */
-            .wave-container {
-                position: fixed;
-                top: 0;
-                left: 0;
+            /* Split screen container */
+            .split-container {
+                display: flex;
                 width: 100%;
-                height: 100%;
-                overflow: hidden;
-                pointer-events: none;
+                height: 100vh;
+                margin: 0;
+                padding: 0;
             }
             
-            .wave {
-                position: absolute;
-                width: 150%;
-                height: 150%;
-                background: linear-gradient(45deg, rgba(66, 99, 235, 0.1), rgba(142, 84, 233, 0.1));
-                transform-origin: 50% 48%;
-                border-radius: 40%;
-                animation: wave 10s infinite linear;
-            }
-            
-            .wave-2 {
-                animation: wave 16s infinite linear;
-                opacity: 0.5;
-            }
-            
-            .wave-3 {
-                animation: wave 20s infinite linear;
-                opacity: 0.3;
-            }
-            
-            @keyframes wave {
-                from { transform: rotate(0deg); }
-                to { transform: rotate(360deg); }
-            }
-            
-            /* Enhanced login container with modern glass effect */
-            .login-container {
-                width: 100%;
-                max-width: 400px;
-                margin: 0 auto;
-                padding: 2rem;
-                background: rgba(255, 255, 255, 0.05);
+            /* Left panel - Login form */
+            .login-panel {
+                flex: 0 0 40%;
+                background: rgba(255, 255, 255, 0.02);
                 backdrop-filter: blur(10px);
-                border-radius: 20px;
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                text-align: center;
+                padding: 3rem;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                position: relative;
+                overflow: hidden;
             }
             
-            /* Logo style */
-            .logo {
-                color: rgba(255, 255, 255, 0.9);
-                font-size: 1.4em;
-                font-weight: 700;
-                margin-bottom: 1.5rem;
+            /* Right panel - Welcome visual */
+            .welcome-panel {
+                flex: 0 0 60%;
+                background: linear-gradient(135deg, #2A1E5C, #4A1E6D, #7A1E7C);
+                padding: 4rem;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                position: relative;
+                overflow: hidden;
+            }
+            
+            /* Animated background elements */
+            .bg-element {
+                position: absolute;
+                border-radius: 50%;
+                filter: blur(80px);
+                opacity: 0.4;
+                animation: float 8s infinite ease-in-out;
+            }
+            
+            .bg-element-1 {
+                width: 300px;
+                height: 300px;
+                background: radial-gradient(circle, #FF3366, #FF338800);
+                top: -100px;
+                right: -100px;
+            }
+            
+            .bg-element-2 {
+                width: 400px;
+                height: 400px;
+                background: radial-gradient(circle, #3366FF, #3366FF00);
+                bottom: -150px;
+                left: -150px;
+                animation-delay: -4s;
+            }
+            
+            @keyframes float {
+                0%, 100% { transform: translateY(0) scale(1); }
+                50% { transform: translateY(-20px) scale(1.05); }
+            }
+            
+            /* Avatar/Logo */
+            .avatar {
+                width: 80px;
+                height: 80px;
+                background: linear-gradient(45deg, #FF3366, #FF33FF);
+                border-radius: 50%;
+                margin: 0 auto 2rem;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                gap: 0.5rem;
+                font-size: 2rem;
+                color: white;
+                box-shadow: 0 8px 32px rgba(255, 51, 102, 0.3);
             }
             
-            /* Welcome text */
+            /* Welcome text styles */
             .welcome-title {
                 color: #fff;
-                font-size: 2.2em;
+                font-size: 3.5em;
                 font-weight: 700;
-                margin-bottom: 0.3rem;
+                margin-bottom: 1rem;
                 line-height: 1.2;
+                position: relative;
             }
             
             .welcome-subtitle {
                 color: rgba(255, 255, 255, 0.7);
-                font-size: 0.95em;
-                line-height: 1.5;
-                margin-bottom: 2rem;
-                padding: 0 0.5rem;
+                font-size: 1.1em;
+                line-height: 1.6;
+                max-width: 500px;
             }
             
             /* Form container */
             .form-container {
                 width: 100%;
-                max-width: 280px;
+                max-width: 320px;
                 margin: 0 auto;
             }
             
-            /* Modern input fields */
+            /* Input fields */
             .stTextInput > div > div {
-                background: rgba(255,255,255,0.05) !important;
-                border: 2px solid rgba(255,255,255,0.1) !important;
+                background: rgba(255, 255, 255, 0.03) !important;
+                border: 1px solid rgba(255, 255, 255, 0.1) !important;
                 border-radius: 12px !important;
-                padding: 8px 16px !important;
+                padding: 0.8rem 1rem !important;
                 color: white !important;
                 transition: all 0.3s ease !important;
-                margin-bottom: 0.75rem !important;
-                width: 100% !important;
+                margin-bottom: 1rem !important;
             }
             
             .stTextInput > div > div:hover,
             .stTextInput > div > div:focus {
-                border-color: rgba(142, 84, 233, 0.5) !important;
-                background: rgba(255,255,255,0.08) !important;
+                border-color: #FF3366 !important;
+                background: rgba(255, 255, 255, 0.05) !important;
                 transform: translateY(-2px);
             }
             
             .stTextInput > label {
-                color: rgba(255,255,255,0.8) !important;
+                color: rgba(255, 255, 255, 0.8) !important;
                 font-size: 0.9rem !important;
                 font-weight: 500 !important;
-                margin-bottom: 0.25rem !important;
+                margin-bottom: 0.5rem !important;
                 text-align: left !important;
-                padding-left: 0.5rem !important;
             }
             
-            /* Enhanced button */
+            /* Login button */
             .stButton > button {
-                background: linear-gradient(45deg, #8E54E9, #4263EB);
-                color: white;
-                border: none;
-                padding: 0.7rem 2rem;
-                border-radius: 12px;
-                font-weight: 600;
-                font-size: 0.95rem;
-                letter-spacing: 0.5px;
-                width: 100%;
-                transition: all 0.3s ease;
-                margin-top: 0.5rem;
+                background: linear-gradient(45deg, #FF3366, #FF33FF) !important;
+                color: white !important;
+                border: none !important;
+                padding: 0.8rem !important;
+                border-radius: 12px !important;
+                font-weight: 600 !important;
+                font-size: 1rem !important;
+                letter-spacing: 0.5px !important;
+                width: 100% !important;
+                transition: all 0.3s ease !important;
+                margin-top: 1rem !important;
+                text-transform: uppercase !important;
             }
             
             .stButton > button:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(142, 84, 233, 0.3);
+                transform: translateY(-2px) !important;
+                box-shadow: 0 8px 25px rgba(255, 51, 102, 0.4) !important;
             }
             
             /* Error message */
             .error-message {
-                color: #FF6B6B;
-                text-align: center;
+                color: #FF3366;
+                text-align: left;
                 margin-top: 1rem;
-                padding: 0.8rem;
-                background: rgba(255,107,107,0.1);
+                padding: 1rem;
+                background: rgba(255, 51, 102, 0.1);
                 border-radius: 12px;
-                border: 1px solid rgba(255,107,107,0.2);
-                animation: shake 0.5s ease-in-out;
+                border: 1px solid rgba(255, 51, 102, 0.2);
                 font-size: 0.9rem;
             }
             
             /* Credentials info */
             .credentials-info {
-                color: rgba(255,255,255,0.8);
-                text-align: center;
                 margin-top: 1.5rem;
                 padding: 1rem;
-                background: rgba(255,255,255,0.05);
+                background: rgba(255, 255, 255, 0.03);
                 border-radius: 12px;
-                border: 1px solid rgba(255,255,255,0.1);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
+            
+            .credentials-info p {
+                color: rgba(255, 255, 255, 0.7);
                 font-size: 0.9rem;
+                margin: 0.5rem 0;
             }
             
             .credentials-info code {
-                background: rgba(255,255,255,0.1);
+                background: rgba(255, 255, 255, 0.1);
                 padding: 0.3rem 0.8rem;
                 border-radius: 8px;
                 color: #fff;
                 font-family: 'Courier New', monospace;
-                border: 1px solid rgba(255,255,255,0.15);
+                border: 1px solid rgba(255, 255, 255, 0.15);
                 display: inline-block;
-                margin: 0.3rem;
-                transition: all 0.3s ease;
+                margin: 0.2rem;
                 font-size: 0.85rem;
-            }
-            
-            .credentials-info code:hover {
-                background: rgba(255,255,255,0.15);
-                transform: translateY(-2px);
             }
 
             /* Hide Streamlit branding */
             #MainMenu, footer, header {
                 visibility: hidden;
             }
+            
+            /* Responsive adjustments */
+            @media (max-width: 768px) {
+                .split-container {
+                    flex-direction: column;
+                }
+                .login-panel, .welcome-panel {
+                    flex: 0 0 100%;
+                    padding: 2rem;
+                }
+                .welcome-panel {
+                    display: none;
+                }
+            }
         </style>
         
-        <div class="wave-container">
-            <div class="wave"></div>
-            <div class="wave wave-2"></div>
-            <div class="wave wave-3"></div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-        <div class="login-container">
-            <div class="logo">
-                📊 Sales Dashboard
-            </div>
-            <h1 class="welcome-title">Welcome.</h1>
-            <p class="welcome-subtitle">Access your sales dashboard to track performance, analyze trends, and make data-driven decisions.</p>
-            <div class="form-container">
+        <div class="split-container">
+            <div class="login-panel">
+                <div class="bg-element bg-element-1"></div>
+                <div class="bg-element bg-element-2"></div>
+                <div class="form-container">
+                    <div class="avatar">📊</div>
     """, unsafe_allow_html=True)
 
     with st.form("login_form"):
@@ -276,6 +286,11 @@ def show_login_page():
                 """, unsafe_allow_html=True)
 
     st.markdown("""
+                </div>
+            </div>
+            <div class="welcome-panel">
+                <h1 class="welcome-title">Welcome Back</h1>
+                <p class="welcome-subtitle">Access your sales dashboard to track performance, analyze trends, and make data-driven decisions that drive business growth.</p>
             </div>
         </div>
     """, unsafe_allow_html=True) 
