@@ -6,7 +6,6 @@ from datetime import datetime
 import numpy as np
 import io
 from functools import lru_cache
-from auth import is_authenticated, get_current_user, show_login_page, logout
 import hashlib
 
 # Set page config
@@ -1406,6 +1405,9 @@ def show_sidebar():
             st.rerun()
 
 def main():
+    # Import auth functions here to avoid circular import
+    from auth import is_authenticated, get_current_user, show_login_page, logout
+    
     # Check authentication first
     if not is_authenticated():
         show_login_page()
