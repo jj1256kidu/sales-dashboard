@@ -7,6 +7,7 @@ import numpy as np
 import io
 from functools import lru_cache
 from auth import is_authenticated, get_current_user, show_login_page, logout
+import hashlib
 
 # Format helper functions
 def format_amount(x):
