@@ -18,20 +18,31 @@ def verify_password(password: str, hashed_password: str) -> bool:
 
 def login(username: str, password: str) -> bool:
     """Attempt to log in a user"""
+    print(f"\n=== Login Attempt ===")
+    print(f"Input username: '{username}'")
+    print(f"Input password: '{password}'")
+    
     if username in USERS:
-        # Debug information
-        print(f"Username found: {username}")
-        print(f"Stored hash: {USERS[username]}")
-        print(f"Input password hash: {hash_password(password)}")
+        print(f"Username '{username}' found in USERS")
+        stored_hash = USERS[username]
+        input_hash = hash_password(password)
         
-        if verify_password(password, USERS[username]):
+        print(f"Stored hash: {stored_hash}")
+        print(f"Input hash:  {input_hash}")
+        print(f"Hashes match: {stored_hash == input_hash}")
+        
+        if verify_password(password, stored_hash):
+            print("Password verification successful")
             st.session_state["authenticated"] = True
             st.session_state["username"] = username
             return True
         else:
             print("Password verification failed")
     else:
-        print(f"Username not found: {username}")
+        print(f"Username '{username}' not found in USERS")
+        print(f"Available usernames: {list(USERS.keys())}")
+    
+    print("=== End Login Attempt ===\n")
     return False
 
 def logout():
@@ -104,6 +115,9 @@ def show_login_page():
                 text-align: center;
                 margin-top: 1rem;
                 font-size: 0.9em;
+                background: rgba(255,255,255,0.1);
+                padding: 10px;
+                border-radius: 8px;
             }
         </style>
     """, unsafe_allow_html=True)
@@ -124,11 +138,14 @@ def show_login_page():
             else:
                 st.markdown('<p class="error-message">Invalid username or password</p>', unsafe_allow_html=True)
                 st.markdown("""
-                    <p class="credentials-info">
-                        Try these credentials:<br>
-                        Username: admin, Password: admin123<br>
-                        Username: guest, Password: guest123
-                    </p>
+                    <div class="credentials-info">
+                        <strong>Try these exact credentials:</strong><br>
+                        <code>Username: admin</code><br>
+                        <code>Password: admin123</code><br><br>
+                        <strong>Or:</strong><br>
+                        <code>Username: guest</code><br>
+                        <code>Password: guest123</code>
+                    </div>
                 """, unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True) 
