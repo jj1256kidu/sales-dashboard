@@ -87,6 +87,39 @@ st.markdown("""
         --card-background: rgba(255, 255, 255, 0.05);
         --border-color: rgba(255, 255, 255, 0.1);
         --shadow-color: rgba(0, 0, 0, 0.2);
+        --input-max-width: 400px;
+        --container-padding: 1rem;
+    }
+
+    /* Responsive breakpoints */
+    @media (max-width: 768px) {
+        :root {
+            --container-padding: 0.5rem;
+        }
+        
+        .stApp {
+            padding: var(--container-padding) !important;
+        }
+        
+        [data-testid="stSidebar"] {
+            padding: 1rem !important;
+        }
+        
+        .custom-header {
+            padding: 1.5rem;
+        }
+        
+        .custom-header h1 {
+            font-size: 2em;
+        }
+        
+        .metric-container {
+            padding: 1rem;
+        }
+        
+        .metric-value {
+            font-size: 2em;
+        }
     }
 
     /* Main container and background */
@@ -95,6 +128,7 @@ st.markdown("""
         color: var(--text-color);
         font-family: var(--font-family);
         line-height: 1.6;
+        padding: var(--container-padding) !important;
     }
 
     /* Sidebar styling */
@@ -102,19 +136,27 @@ st.markdown("""
         background-color: var(--secondary-background-color) !important;
         border-right: 1px solid var(--border-color);
         padding: 2rem 1rem !important;
+        transition: all 0.3s ease;
     }
 
     [data-testid="stSidebar"] .block-container {
         padding: 0 !important;
     }
 
-    /* Custom header */
+    /* Custom header with animation */
     .custom-header {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
         padding: 2.5rem;
         border-radius: 15px;
         margin-bottom: 2.5rem;
         box-shadow: 0 4px 15px var(--shadow-color);
+        transform: translateY(0);
+        transition: all 0.3s ease;
+    }
+
+    .custom-header:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px var(--shadow-color);
     }
 
     .custom-header h1 {
@@ -125,53 +167,101 @@ st.markdown("""
         margin: 0;
         text-shadow: 2px 2px 4px var(--shadow-color);
         letter-spacing: 0.5px;
+        animation: glow 2s ease-in-out infinite alternate;
     }
 
-    .custom-header p {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 1.3em;
-        text-align: center;
-        margin: 15px 0 0 0;
-        font-weight: 500;
+    @keyframes glow {
+        from {
+            text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 15px var(--accent-color);
+        }
+        to {
+            text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px var(--accent-color);
+        }
     }
 
-    /* Upload container */
-    .upload-container {
-        background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(108, 99, 255, 0.1) 100%);
-        border-radius: 15px;
-        padding: 3.5rem;
-        margin: 2.5rem 0;
-        border: 2px dashed var(--border-color);
-        text-align: center;
+    /* Input fields and form elements */
+    .stTextInput > div > div > input,
+    .stSelectbox > div > div {
+        max-width: var(--input-max-width) !important;
+        margin: 0 auto !important;
+        background: var(--card-background) !important;
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px;
+        padding: 0.8rem;
+        color: white !important;
+        transition: all 0.3s ease;
     }
 
-    /* Info box */
-    .info-box {
-        background: var(--card-background);
-        border-left: 4px solid var(--accent-color);
-        padding: 2rem;
+    .stTextInput > div > div > input:focus,
+    .stSelectbox > div > div:focus-within {
+        border-color: var(--accent-color) !important;
+        box-shadow: 0 0 0 2px rgba(108, 99, 255, 0.2);
+    }
+
+    /* Welcome message with depth */
+    .welcome-message {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 1.5rem;
         border-radius: 12px;
-        margin: 1.5rem 0;
-        color: var(--text-color);
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--border-color);
         box-shadow: 0 4px 6px var(--shadow-color);
+        transform: translateY(0);
+        transition: all 0.3s ease;
     }
 
-    .info-box h4 {
-        color: var(--accent-color);
-        margin: 0 0 1.2rem 0;
+    .welcome-message:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 15px var(--shadow-color);
+    }
+
+    .welcome-message h3 {
+        color: white;
+        margin: 0;
         font-size: 1.3em;
         font-weight: 600;
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 2px var(--shadow-color);
     }
 
-    .info-box ul {
-        margin: 0;
-        padding-left: 1.8rem;
-        color: rgba(255, 255, 255, 0.9);
+    /* Checkbox styling */
+    .stCheckbox > label {
+        margin-left: 0.5rem !important;
+        color: white !important;
+        font-weight: 500;
         font-size: 1.1em;
-        line-height: 1.8;
     }
 
-    /* Button styling */
+    /* Navigation */
+    .nav-title {
+        color: white;
+        font-size: 1.8em;
+        font-weight: 700;
+        margin-bottom: 2rem;
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 2px var(--shadow-color);
+    }
+
+    /* Radio buttons in sidebar */
+    [data-testid="stSidebar"] .stRadio > label {
+        color: white !important;
+        font-weight: 500;
+        font-size: 1.1em;
+        padding: 0.8rem 0;
+        transition: all 0.3s ease;
+    }
+
+    [data-testid="stSidebar"] .stRadio > label:hover {
+        color: var(--accent-color) !important;
+        transform: translateX(5px);
+    }
+
+    [data-testid="stSidebar"] .stRadio > div {
+        gap: 1rem;
+    }
+
+    /* Button styling with hover effects */
     .stButton > button {
         background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
         color: white;
@@ -182,107 +272,37 @@ st.markdown("""
         font-size: 1.1em;
         transition: all 0.3s ease;
         box-shadow: 0 4px 6px var(--shadow-color);
+        max-width: var(--input-max-width);
+        margin: 0 auto;
+        display: block;
     }
 
     .stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 12px var(--shadow-color);
+        background: linear-gradient(135deg, var(--accent-color) 0%, var(--primary-color) 100%);
     }
 
-    /* File uploader */
-    [data-testid="stFileUploader"] {
-        background: var(--card-background);
-        border-radius: 12px;
-        padding: 2.5rem;
-        border: 2px dashed var(--border-color);
+    /* Grid layout for metrics */
+    .metric-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
     }
 
-    /* Dataframe styling */
-    .dataframe {
-        background: var(--secondary-background-color);
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 6px var(--shadow-color);
+    /* Responsive columns */
+    @media (max-width: 768px) {
+        .stColumns {
+            flex-direction: column !important;
+        }
+        
+        .stColumns > div {
+            width: 100% !important;
+        }
     }
 
-    .dataframe th {
-        background: rgba(74, 144, 226, 0.2);
-        color: white;
-        padding: 1.2rem;
-        font-weight: 600;
-        font-size: 1.1em;
-    }
-
-    .dataframe td {
-        color: rgba(255, 255, 255, 0.9);
-        padding: 1rem;
-        border-bottom: 1px solid var(--border-color);
-        font-size: 1.1em;
-    }
-
-    /* Radio buttons in sidebar */
-    [data-testid="stSidebar"] .stRadio > label {
-        color: white !important;
-        font-weight: 500;
-        font-size: 1.1em;
-        padding: 0.5rem 0;
-    }
-
-    [data-testid="stSidebar"] .stRadio > div {
-        gap: 1rem;
-    }
-
-    /* Metrics and KPIs */
-    .metric-container {
-        background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(108, 99, 255, 0.1) 100%);
-        border-radius: 12px;
-        padding: 2rem;
-        margin: 1.5rem 0;
-        box-shadow: 0 4px 6px var(--shadow-color);
-    }
-
-    .metric-value {
-        font-size: 2.8em;
-        font-weight: 800;
-        color: var(--accent-color);
-        text-shadow: 2px 2px 4px var(--shadow-color);
-        margin: 1rem 0;
-        letter-spacing: 0.5px;
-    }
-
-    .metric-label {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 1.2em;
-        margin-bottom: 0.8rem;
-        font-weight: 600;
-    }
-
-    /* Charts and graphs */
-    .js-plotly-plot {
-        background: var(--secondary-background-color);
-        border-radius: 12px;
-        padding: 1.5rem;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 6px var(--shadow-color);
-    }
-
-    /* Inputs and selects */
-    .stSelectbox > div > div {
-        background: var(--card-background) !important;
-        border: 1px solid var(--border-color) !important;
-        border-radius: 8px;
-        padding: 0.5rem;
-    }
-
-    .stTextInput > div > div > input {
-        background: var(--card-background) !important;
-        border: 1px solid var(--border-color) !important;
-        color: white !important;
-        border-radius: 8px;
-        padding: 0.5rem;
-    }
-
-    /* Filter section styling */
+    /* Filter section with improved layout */
     .filter-section {
         background: linear-gradient(135deg, rgba(74, 144, 226, 0.1) 0%, rgba(108, 99, 255, 0.1) 100%);
         border-radius: 12px;
@@ -290,104 +310,9 @@ st.markdown("""
         margin-bottom: 2.5rem;
         border: 1px solid var(--border-color);
         box-shadow: 0 4px 6px var(--shadow-color);
-    }
-
-    .filter-section h3 {
-        color: white;
-        margin: 0 0 1.5rem 0;
-        font-size: 1.4em;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-
-    /* Team filters section */
-    .team-filters {
-        background: linear-gradient(to right, #f8f9fa, #e9ecef);
-        border-radius: 12px;
-        padding: 2rem;
-        margin: 2rem 0;
-        box-shadow: 0 4px 6px var(--shadow-color);
-    }
-
-    .team-filters h4 {
-        color: #2a5298;
-        margin: 0 0 1.5rem 0;
-        font-size: 1.3em;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-
-    /* Performance metrics section */
-    .performance-metrics {
-        margin: 2.5rem 0;
-    }
-
-    .performance-metrics h3 {
-        color: #2a5298;
-        margin: 0 0 2rem 0;
-        font-size: 1.6em;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-
-    /* Team member performance section */
-    .team-member-performance {
-        background: linear-gradient(to right, #f8f9fa, #e9ecef);
-        border-radius: 15px;
-        padding: 2rem;
-        margin: 2.5rem 0;
-        box-shadow: 0 4px 8px var(--shadow-color);
-    }
-
-    .team-member-performance h3 {
-        color: #2a5298;
-        margin: 0;
-        font-size: 1.6em;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-
-    /* Section headers */
-    .section-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--accent-color) 100%);
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 2rem 0;
-        box-shadow: 0 4px 6px var(--shadow-color);
-    }
-
-    .section-header h3 {
-        color: white;
-        margin: 0;
-        font-size: 1.6em;
-        font-weight: 600;
-        text-align: center;
-        letter-spacing: 0.5px;
-    }
-
-    /* Welcome message */
-    .welcome-message {
-        background: rgba(255, 255, 255, 0.1);
-        padding: 1.2rem;
-        border-radius: 10px;
-        margin-bottom: 1.5rem;
-    }
-
-    .welcome-message h3 {
-        color: white;
-        margin: 0;
-        font-size: 1.3em;
-        font-weight: 600;
-        letter-spacing: 0.5px;
-    }
-
-    /* Navigation */
-    .nav-title {
-        color: white;
-        font-size: 1.8em;
-        font-weight: 700;
-        margin-bottom: 2rem;
-        letter-spacing: 0.5px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
     }
 
     /* Hide Streamlit branding */
