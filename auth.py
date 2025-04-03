@@ -6,9 +6,6 @@ import json
 import os
 import random
 
-# Set page config must be the first Streamlit command
-st.set_page_config(layout="wide", initial_sidebar_state="collapsed")
-
 # Initialize session state for authentication
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
