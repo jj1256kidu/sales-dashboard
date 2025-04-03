@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import hashlib
 import sqlite3
 import time
@@ -81,80 +82,219 @@ if "last_attempt" not in st.session_state:
 
 # Streamlit page config
 st.set_page_config(page_title="Futuristic Login", layout="centered")
+
+# Inject particles background with exact HTML/CSS/JS
+components.html("""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #0f0c29;
+    }
+
+    #tsparticles {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      padding: 20px;
+    }
+
+    .login-box {
+      background: rgba(0, 0, 0, 0.7);
+      border-radius: 20px;
+      padding: 40px 30px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
+    }
+
+    .login-box h2 {
+      text-align: center;
+      color: #00f0ff;
+      margin-bottom: 30px;
+      font-size: 26px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      top: 50%;
+      left: 15px;
+      transform: translateY(-50%);
+      color: #7efcff;
+      font-size: 14px;
+    }
+
+    .input-wrapper input {
+      width: 100%;
+      height: 45px;
+      padding: 0 15px 0 40px;
+      border: 1px solid #00f0ff;
+      background: transparent;
+      color: white;
+      border-radius: 25px;
+      font-size: 14px;
+      outline: none;
+      transition: box-shadow 0.3s;
+    }
+
+    .input-wrapper input:focus {
+      box-shadow: 0 0 10px #00f0ff;
+    }
+
+    .login-box button {
+      width: 100%;
+      height: 48px;
+      background: linear-gradient(135deg, #00f0ff, #ff00e0);
+      color: white;
+      font-weight: bold;
+      font-size: 16px;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .login-box button:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 15px #00f0ff;
+    }
+
+    .options {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #a0cbe8;
+      margin-top: 10px;
+    }
+
+    .options a {
+      color: #a0cbe8;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Particle Background -->
+<div id="tsparticles"></div>
+
+<!-- Login Form -->
+<div class="container">
+  <form class="login-box" id="loginForm">
+    <h2>Welcome Back</h2>
+    <div class="input-wrapper">
+      <i class="fas fa-user"></i>
+      <input type="text" id="username" placeholder="Username" required />
+    </div>
+    <div class="input-wrapper">
+      <i class="fas fa-lock"></i>
+      <input type="password" id="password" placeholder="Password" required />
+    </div>
+    <button type="submit">LOGIN</button>
+    <div class="options">
+      <label><input type="checkbox" checked /> Remember me</label>
+      <a href="#">Forgot password?</a>
+    </div>
+  </form>
+</div>
+
+<!-- tsparticles config -->
+<script>
+  tsParticles.load("tsparticles", {
+    fullScreen: { enable: false },
+    background: { color: "#0f0c29" },
+    particles: {
+      number: { value: 100 },
+      color: { value: ["#00f0ff", "#ff00e0", "#ffc400"] },
+      shape: { type: ["circle", "square"] },
+      opacity: { value: 0.7 },
+      size: { value: 4 },
+      move: {
+        enable: true,
+        speed: 1,
+        direction: "none",
+        random: false,
+        straight: false,
+        outModes: "bounce"
+      }
+    },
+    interactivity: {
+      events: {
+        onHover: { enable: true, mode: "repulse" },
+        onClick: { enable: true, mode: "push" }
+      },
+      modes: {
+        repulse: { distance: 100 },
+        push: { quantity: 4 }
+      }
+    },
+    detectRetina: true
+  });
+
+  // Handle form submission
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    
+    // Send data to Streamlit
+    window.parent.postMessage({
+      type: 'streamlit:setComponentValue',
+      value: {
+        username: username,
+        password: password
+      }
+    }, '*');
+  });
+</script>
+
+</body>
+</html>
+""", height=800, scrolling=False)
+
+# Hide Streamlit elements
 st.markdown("""
-<link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
 <style>
-    html, body, [class*="css"]  {
-        font-family: 'Orbitron', sans-serif;
-        background-color: #0f0c29;
-    }
-    .stTextInput>div>div>input, .stTextInput>div>div>div>input {
-        background-color: rgba(0,0,0,0.7) !important;
-        color: white !important;
-        border: 1px solid #00f0ff;
-        border-radius: 30px;
-        padding-left: 40px;
-    }
-    .stTextInput>div:before {
-        content: '';
-        position: absolute;
-        left: 16px;
-        top: 12px;
-        width: 16px;
-        height: 16px;
-        background-size: contain;
-    }
-    button[kind="primary"] {
-        background: linear-gradient(to right, #00f0ff, #ff00e0);
-        border-radius: 25px;
-        color: white;
-        font-weight: bold;
-    }
-    .stCheckbox>div>label {
-        color: #00f0ff !important;
-    }
-    .stButton>button:hover {
-        box-shadow: 0 0 10px #00f0ff;
-    }
     .block-container {
-        padding-top: 5rem;
-    }
-    .stFormSubmitButton>button {
-        width: 100%;
-        margin-top: 1rem;
+        padding-top: 0 !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Add particle background
-st.markdown("""
-<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
-<div id="tsparticles" style="position:fixed; width:100%; height:100%; z-index:0;"></div>
-<script>
-tsParticles.load("tsparticles", {
-    fullScreen: { enable: false },
-    background: { color: "#0f0c29" },
-    particles: {
-        number: { value: 100 },
-        color: { value: ["#00f0ff", "#ff00e0", "#ffc400"] },
-        shape: { type: ["circle", "square"] },
-        opacity: { value: 0.7 },
-        size: { value: 4 },
-        move: { enable: true, speed: 1, direction: "none", outModes: "bounce" }
-    },
-    interactivity: {
-        events: {
-            onHover: { enable: true, mode: "repulse" },
-            onClick: { enable: true, mode: "push" }
-        },
-        modes: { repulse: { distance: 100 }, push: { quantity: 4 } }
-    },
-    detectRetina: true
-});
-</script>
-""", unsafe_allow_html=True)
+st.empty()  # Prevent default Streamlit layout from interfering
 
-# Login logic
+# Handle login
 if st.session_state.authenticated:
     st.success(f"🎉 Welcome back, {st.session_state.username}!")
     if st.button("Logout", key="logout_button"):
@@ -162,38 +302,19 @@ if st.session_state.authenticated:
         st.session_state.username = None
         st.rerun()
 else:
-    with st.form("login_form", clear_on_submit=True):
-        st.markdown("<h2 style='text-align: center; color: #00f0ff;'>Welcome Back</h2>", unsafe_allow_html=True)
+    # Get form data from JavaScript
+    form_data = st.session_state.get('form_data', {})
+    if form_data:
+        username = form_data.get('username', '')
+        password = form_data.get('password', '')
         
-        username = st.text_input(
-            label="Username",
-            placeholder="Enter your username",
-            key="username_input",
-            label_visibility="collapsed"
-        )
-        password = st.text_input(
-            label="Password",
-            type="password",
-            placeholder="Enter your password",
-            key="password_input",
-            label_visibility="collapsed"
-        )
-
-        col1, col2 = st.columns(2)
-        with col1:
-            remember = st.checkbox("Remember me", value=True, key="remember_checkbox")
-        with col2:
-            st.markdown('<div style="text-align: right;"><a href="#" style="color: #a0cbe8;">Forgot password?</a></div>', unsafe_allow_html=True)
-        
-        login = st.form_submit_button("LOGIN", use_container_width=True)
-        if login:
-            result = handle_login(username, password)
-            if result == "success":
-                st.success("Login successful! Redirecting...")
-                time.sleep(1)
-                st.rerun()
-            else:
-                st.error(result)
+        result = handle_login(username, password)
+        if result == "success":
+            st.success("Login successful! Redirecting...")
+            time.sleep(1)
+            st.rerun()
+        else:
+            st.error(result)
 
 # Optional: Create default user for testing
 if not verify_user("demo", "password123"):
