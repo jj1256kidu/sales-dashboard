@@ -159,27 +159,14 @@ components.html("""
       color: { value: ["#00f0ff", "#ff00e0", "#ffc400"] },
       shape: { type: ["circle", "square"] },
       opacity: { value: 0.7 },
-      size: { value: 4 },
-      move: {
-        enable: true,
-        speed: 1,
-        direction: "none",
-        random: false,
-        straight: false,
-        outModes: "bounce"
-      }
+      size: { value: 4 }
     },
     interactivity: {
       events: {
         onHover: { enable: true, mode: "repulse" },
         onClick: { enable: true, mode: "push" }
-      },
-      modes: {
-        repulse: { distance: 100 },
-        push: { quantity: 4 }
       }
-    },
-    detectRetina: true
+    }
   });
 </script>
 
