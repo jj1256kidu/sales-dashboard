@@ -36,9 +36,7 @@ def show_login_page():
     """Display the login page"""
     # Add required external resources
     st.markdown("""
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
         <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-        <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
     """, unsafe_allow_html=True)
     
     st.markdown("""
@@ -52,7 +50,7 @@ def show_login_page():
             }
             
             .stApp {
-                background: #0f0c29 !important;
+                background: #0B0B1F !important;
                 height: 100vh;
                 overflow: hidden;
             }
@@ -68,8 +66,8 @@ def show_login_page():
                 padding: 0 !important;
             }
             
-            /* Particle effect simulation with CSS */
-            .particles {
+            /* Stars background */
+            .stars {
                 position: fixed;
                 top: 0;
                 left: 0;
@@ -79,27 +77,30 @@ def show_login_page():
                 z-index: 0;
             }
             
-            .particle {
+            .star {
                 position: absolute;
-                width: 4px;
-                height: 4px;
-                border-radius: 50%;
+                width: 3px;
+                height: 3px;
                 background: #00f0ff;
-                animation: float 8s infinite linear;
-                opacity: 0.7;
+                border-radius: 50%;
             }
             
-            .particle:nth-child(2n) {
+            .star:nth-child(2n) {
                 background: #ff00e0;
+                width: 2px;
+                height: 2px;
             }
             
-            .particle:nth-child(3n) {
+            .star:nth-child(3n) {
                 background: #ffc400;
+                width: 2px;
+                height: 2px;
             }
             
-            @keyframes float {
-                0% { transform: translate(0, 0); }
-                100% { transform: translate(100px, 100px); }
+            .star:nth-child(4n) {
+                background: #00f0ff;
+                width: 1px;
+                height: 1px;
             }
             
             /* Container styles */
@@ -115,35 +116,37 @@ def show_login_page():
             
             /* Login box styles */
             .login-box {
-                background: rgba(0, 0, 0, 0.7);
+                background: rgba(2, 6, 23, 0.95);
                 border-radius: 20px;
-                padding: 40px 30px;
+                padding: 40px;
                 width: 100%;
                 max-width: 400px;
-                box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
+                box-shadow: 0 0 40px rgba(0, 240, 255, 0.2);
+                border: 1px solid rgba(0, 240, 255, 0.1);
             }
             
             .login-box h2 {
                 text-align: center;
                 color: #00f0ff;
-                margin-bottom: 30px;
-                font-size: 26px;
+                margin-bottom: 40px;
+                font-size: 28px;
                 font-weight: 700;
+                text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
             }
             
             /* Input field styles */
             .input-wrapper {
                 position: relative;
-                margin-bottom: 20px;
+                margin-bottom: 25px;
             }
             
             .input-icon {
                 position: absolute;
                 top: 50%;
-                left: 15px;
+                left: 20px;
                 transform: translateY(-50%);
-                color: #7efcff;
-                font-size: 14px;
+                color: #00f0ff;
+                font-size: 16px;
                 z-index: 2;
             }
             
@@ -152,18 +155,25 @@ def show_login_page():
             }
             
             .stTextInput > div > div {
-                background: transparent !important;
+                background: rgba(0, 240, 255, 0.05) !important;
                 border: 1px solid #00f0ff !important;
-                border-radius: 25px !important;
-                padding: 0 15px 0 40px !important;
-                height: 45px !important;
-                color: white !important;
-                font-size: 14px !important;
-                transition: box-shadow 0.3s !important;
+                border-radius: 30px !important;
+                padding: 0 20px 0 45px !important;
+                height: 50px !important;
+                color: #00f0ff !important;
+                font-size: 16px !important;
+                transition: all 0.3s ease !important;
+                box-shadow: 0 0 10px rgba(0, 240, 255, 0.1) !important;
             }
             
             .stTextInput > div > div:focus {
-                box-shadow: 0 0 10px #00f0ff !important;
+                box-shadow: 0 0 20px rgba(0, 240, 255, 0.2) !important;
+                border-color: #00f0ff !important;
+                background: rgba(0, 240, 255, 0.1) !important;
+            }
+            
+            .stTextInput input::placeholder {
+                color: rgba(0, 240, 255, 0.5) !important;
             }
             
             .stTextInput > label {
@@ -173,110 +183,71 @@ def show_login_page():
             /* Button styles */
             .stButton > button {
                 width: 100% !important;
-                height: 48px !important;
-                background: linear-gradient(135deg, #00f0ff, #ff00e0) !important;
+                height: 50px !important;
+                background: linear-gradient(90deg, #00f0ff, #ff00e0) !important;
                 color: white !important;
                 font-weight: bold !important;
-                font-size: 16px !important;
+                font-size: 18px !important;
                 border: none !important;
-                border-radius: 25px !important;
+                border-radius: 30px !important;
                 cursor: pointer !important;
                 transition: all 0.3s ease !important;
-                margin: 0 !important;
+                margin: 10px 0 !important;
+                text-shadow: 0 0 10px rgba(255, 255, 255, 0.5) !important;
+                box-shadow: 0 0 20px rgba(0, 240, 255, 0.3) !important;
             }
             
             .stButton > button:hover {
-                transform: scale(1.03) !important;
-                box-shadow: 0 0 15px #00f0ff !important;
+                transform: translateY(-2px) !important;
+                box-shadow: 0 0 30px rgba(0, 240, 255, 0.5) !important;
             }
             
             /* Options styles */
             .options {
                 display: flex;
                 justify-content: space-between;
-                font-size: 12px;
-                color: #a0cbe8;
-                margin-top: 15px;
+                align-items: center;
+                margin-top: 20px;
+                padding: 0 10px;
             }
             
-            .options label {
+            .remember-me {
                 display: flex;
                 align-items: center;
-                gap: 5px;
-                cursor: pointer;
-            }
-            
-            .options a {
-                color: #a0cbe8;
-                text-decoration: underline;
-            }
-            
-            /* Error message */
-            .error-message {
-                color: #ff00e0;
-                background: rgba(255, 0, 224, 0.1);
-                border: 1px solid rgba(255, 0, 224, 0.2);
-                padding: 0.75rem;
-                border-radius: 12px;
-                margin: 1rem 0;
-                font-size: 0.9rem;
-                text-align: center;
-            }
-            
-            /* Credentials info */
-            .credentials-info {
-                background: rgba(0, 240, 255, 0.1);
-                border: 1px solid rgba(0, 240, 255, 0.2);
-                padding: 0.75rem;
-                border-radius: 12px;
-                margin-top: 1rem;
-                text-align: center;
-            }
-            
-            .credentials-info p {
-                color: #a0cbe8;
-                font-size: 0.85rem;
-                margin: 0.25rem 0;
-            }
-            
-            .credentials-info code {
-                background: rgba(0, 240, 255, 0.1);
-                padding: 0.2rem 0.5rem;
-                border-radius: 4px;
-                font-size: 0.85rem;
-                margin: 0 0.2rem;
+                gap: 8px;
                 color: #00f0ff;
-                border: 1px solid rgba(0, 240, 255, 0.2);
+                font-size: 14px;
+            }
+            
+            .remember-me input[type="checkbox"] {
+                width: 16px;
+                height: 16px;
+                accent-color: #00f0ff;
+            }
+            
+            .forgot-password {
+                color: #00f0ff;
+                font-size: 14px;
+                text-decoration: none;
+                transition: all 0.3s ease;
+            }
+            
+            .forgot-password:hover {
+                text-shadow: 0 0 10px #00f0ff;
             }
 
             /* Hide Streamlit elements */
             #MainMenu, footer, header {
                 display: none !important;
             }
-            
-            /* Generate particles */
-            .particles {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-            }
-            
-            @media (max-width: 480px) {
-                .login-box {
-                    padding: 30px 20px;
-                }
-            }
         </style>
         
-        <div class="particles">
-            ${Array(50).fill().map((_, i) => `
-                <div class="particle" style="
+        <div class="stars">
+            ${Array(100).fill().map((_, i) => `
+                <div class="star" style="
                     left: ${Math.random() * 100}%;
                     top: ${Math.random() * 100}%;
-                    animation-delay: -${Math.random() * 8}s;
-                    animation-duration: ${5 + Math.random() * 5}s;
+                    opacity: ${0.3 + Math.random() * 0.7};
                 "></div>
             `).join('')}
         </div>
@@ -317,8 +288,11 @@ def show_login_page():
 
         st.markdown("""
             <div class="options">
-                <label><input type="checkbox" checked /> Remember me</label>
-                <a href="#">Forgot password?</a>
+                <label class="remember-me">
+                    <input type="checkbox" checked />
+                    Remember me
+                </label>
+                <a href="#" class="forgot-password">Forgot password?</a>
             </div>
         """, unsafe_allow_html=True)
 
