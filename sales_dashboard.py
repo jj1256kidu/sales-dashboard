@@ -8,6 +8,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Import other libraries after page config
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -16,7 +17,7 @@ import numpy as np
 import io
 from functools import lru_cache
 import hashlib
-from auth import is_authenticated, get_current_user, show_login_page, logout
+from auth import is_authenticated, get_current_user, show_login_page, logout, init_session_state
 
 # Initialize session state with persistence
 if "persistent_state" not in st.session_state:
