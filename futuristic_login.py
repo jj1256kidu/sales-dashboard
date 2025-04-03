@@ -89,39 +89,18 @@ with st.sidebar:
 
 # Theme selector in sidebar
 with st.sidebar:
-    st.session_state.theme = st.selectbox(
+    theme = st.selectbox(
         "Select Theme",
         ["Neon", "Cyber", "Matrix"],
-        index=["Neon", "Cyber", "Matrix"].index(st.session_state.theme.capitalize())
+        index=0
     )
 
-# Get particle configuration based on selected theme
-particle_config = get_theme_config(st.session_state.theme)
+# Get particle configuration
+particle_config = get_theme_config(theme)
+particle_config_json = json.dumps(particle_config)
 
-# Update the particle initialization in the JavaScript
-particles_init = f"""
-    try {{
-      tsParticles.load("tsparticles", {json.dumps(particle_config)}).then(() => {{
-        logToDebug('Particles initialized successfully', 'system');
-      }}).catch(error => {{
-        errorCount++;
-        console.error('Particles initialization error:', error);
-        logToDebug(`Particles error: ${{error.message}}`, 'error');
-        document.getElementById('errors').textContent = `Particle Init: ${{error.message}}`;
-      }});
-    }} catch (error) {{
-      errorCount++;
-      console.error('Critical error:', error);
-      logToDebug(`Critical error: ${{error.message}}`, 'error');
-      document.getElementById('errors').textContent = `Critical: ${{error.message}}`;
-    }}
-"""
-
-# Title with reduced margin
-st.markdown("<h1 style='text-align:center; color:cyan; margin: 0 0 1rem 0;'>🚀 Welcome to the Futuristic Login Page</h1>", unsafe_allow_html=True)
-
-# Embed the login page
-components.html("""
+# Embed the login page with dynamic particle configuration
+components.html(f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -133,32 +112,33 @@ components.html("""
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
 
-        * {
+        * {{
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             font-family: 'Orbitron', sans-serif;
-        }
+        }}
 
-        html, body {
+        html, body {{
             height: 100vh;
             width: 100vw;
             overflow: hidden;
             background: #0f0c29;
             margin: 0;
             padding: 0;
-        }
+        }}
 
-        #tsparticles {
+        #tsparticles {{
             position: fixed;
             width: 100%;
             height: 100%;
             top: 0;
             left: 0;
             z-index: 0;
-        }
+            pointer-events: none;
+        }}
 
-        .container {
+        .container {{
             position: relative;
             z-index: 1;
             display: flex;
@@ -166,39 +146,40 @@ components.html("""
             align-items: center;
             height: 100vh;
             padding: 20px;
-        }
+        }}
 
-        .login-box {
+        .login-box {{
             background: rgba(0, 0, 0, 0.7);
             border-radius: 20px;
             padding: 40px 30px;
             width: 100%;
             max-width: 400px;
             box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
-        }
+            backdrop-filter: blur(10px);
+        }}
 
-        .login-box h2 {
+        .login-box h2 {{
             text-align: center;
             color: #00f0ff;
             margin-bottom: 30px;
             font-size: 26px;
-        }
+        }}
 
-        .input-wrapper {
+        .input-wrapper {{
             position: relative;
             margin-bottom: 20px;
-        }
+        }}
 
-        .input-wrapper i {
+        .input-wrapper i {{
             position: absolute;
             top: 50%;
             left: 15px;
             transform: translateY(-50%);
             color: #7efcff;
             font-size: 14px;
-        }
+        }}
 
-        .input-wrapper input {
+        .input-wrapper input {{
             width: 100%;
             height: 45px;
             padding: 0 15px 0 40px;
@@ -209,13 +190,13 @@ components.html("""
             font-size: 14px;
             outline: none;
             transition: box-shadow 0.3s;
-        }
+        }}
 
-        .input-wrapper input:focus {
+        .input-wrapper input:focus {{
             box-shadow: 0 0 10px #00f0ff;
-        }
+        }}
 
-        .login-box button {
+        .login-box button {{
             width: 100%;
             height: 48px;
             background: linear-gradient(135deg, #00f0ff, #ff00e0);
@@ -226,31 +207,31 @@ components.html("""
             border-radius: 25px;
             cursor: pointer;
             transition: all 0.3s ease;
-        }
+        }}
 
-        .login-box button:hover {
+        .login-box button:hover {{
             transform: scale(1.03);
             box-shadow: 0 0 15px #00f0ff;
-        }
+        }}
 
-        .options {
+        .options {{
             display: flex;
             justify-content: space-between;
             font-size: 12px;
             color: #a0cbe8;
             margin-top: 10px;
-        }
+        }}
 
-        .options a {
+        .options a {{
             color: #a0cbe8;
             text-decoration: underline;
-        }
+        }}
 
-        @media (max-width: 480px) {
-            .login-box {
+        @media (max-width: 480px) {{
+            .login-box {{
                 padding: 30px 20px;
-            }
-        }
+            }}
+        }}
     </style>
 </head>
 <body>
@@ -278,38 +259,13 @@ components.html("""
     </div>
 
     <script>
-        window.onload = function() {
-            tsParticles.load("tsparticles", {
-                fullScreen: { enable: false },
-                background: { color: "#0f0c29" },
-                particles: {
-                    number: { value: 100 },
-                    color: { value: ["#00f0ff", "#ff00e0", "#ffc400"] },
-                    shape: { type: ["circle", "square"] },
-                    opacity: { value: 0.7 },
-                    size: { value: 4 },
-                    move: {
-                        enable: true,
-                        speed: 1,
-                        direction: "none",
-                        random: false,
-                        straight: false,
-                        outModes: "bounce"
-                    }
-                },
-                interactivity: {
-                    events: {
-                        onHover: { enable: true, mode: "repulse" },
-                        onClick: { enable: true, mode: "push" }
-                    },
-                    modes: {
-                        repulse: { distance: 100 },
-                        push: { quantity: 4 }
-                    }
-                },
-                detectRetina: true
-            });
-        };
+        document.addEventListener('DOMContentLoaded', function() {{
+            tsParticles.load("tsparticles", {particle_config_json}).then(function() {{
+                console.log('Particles loaded successfully');
+            }}).catch(function(error) {{
+                console.error('Error loading particles:', error);
+            }});
+        }});
     </script>
 </body>
 </html>
