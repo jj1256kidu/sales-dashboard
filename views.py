@@ -6,93 +6,191 @@ from datetime import datetime, timedelta
 import numpy as np
 
 def show_login_page():
-    """Display the login page with authentication"""
+    """Display the login page with neon-styled authentication"""
     # Custom CSS for login page
     st.markdown("""
         <style>
+            /* Background animation */
+            @keyframes moveBackground {
+                0% { background-position: 0% 0%; }
+                100% { background-position: 100% 100%; }
+            }
+            
+            /* Neon glow animation */
+            @keyframes neonGlow {
+                0% { box-shadow: 0 0 5px #0ff, 0 0 10px #0ff, 0 0 15px #0ff; }
+                50% { box-shadow: 0 0 10px #0ff, 0 0 20px #0ff, 0 0 30px #0ff; }
+                100% { box-shadow: 0 0 5px #0ff, 0 0 10px #0ff, 0 0 15px #0ff; }
+            }
+            
+            /* Button animation */
+            @keyframes buttonGlow {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
+
+            /* Main container */
+            .main {
+                background-color: #0a0a2e;
+                min-height: 100vh;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+
+            /* Login container */
             .login-container {
                 max-width: 400px;
                 margin: 100px auto;
                 padding: 30px;
-                background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-                border-radius: 15px;
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+                background: rgba(0, 0, 0, 0.8);
+                border-radius: 20px;
+                border: 1px solid rgba(0, 255, 255, 0.1);
+                box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                animation: neonGlow 2s infinite;
             }
+
+            /* Login header */
             .login-header {
                 text-align: center;
-                color: white;
+                color: #0ff;
                 margin-bottom: 30px;
+                text-shadow: 0 0 10px #0ff;
             }
             .login-header h1 {
-                font-size: 2em;
+                font-size: 2.5em;
                 margin-bottom: 10px;
                 font-weight: 600;
+                font-family: 'Segoe UI', sans-serif;
             }
-            .login-header p {
-                font-size: 1.1em;
-                opacity: 0.9;
-            }
-            .login-form {
-                background: rgba(255, 255, 255, 0.1);
-                padding: 20px;
-                border-radius: 10px;
-                backdrop-filter: blur(10px);
-            }
+
+            /* Input fields */
             .stTextInput > div > div > input {
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                color: white;
-                padding: 10px;
-                border-radius: 5px;
-                width: 100%;
-                margin-bottom: 15px;
+                background: rgba(0, 0, 0, 0.5) !important;
+                border: 2px solid #0ff !important;
+                color: #0ff !important;
+                padding: 15px !important;
+                border-radius: 30px !important;
+                width: 100% !important;
+                margin-bottom: 15px !important;
+                font-size: 1.1em !important;
+                box-shadow: 0 0 10px rgba(0, 255, 255, 0.2) !important;
+                transition: all 0.3s ease !important;
+            }
+            .stTextInput > div > div > input:focus {
+                box-shadow: 0 0 20px rgba(0, 255, 255, 0.4) !important;
+                border-color: #0ff !important;
             }
             .stTextInput > div > div > input::placeholder {
-                color: rgba(255, 255, 255, 0.5);
+                color: rgba(0, 255, 255, 0.5) !important;
             }
+
+            /* Login button */
             .stButton > button {
-                width: 100%;
-                background: #2ecc71;
-                color: white;
-                border: none;
-                padding: 12px;
-                border-radius: 5px;
-                font-weight: 600;
-                cursor: pointer;
-                transition: all 0.3s ease;
+                width: 100% !important;
+                background: linear-gradient(90deg, #00ffff, #ff00ff) !important;
+                background-size: 200% 200% !important;
+                color: white !important;
+                border: none !important;
+                padding: 15px !important;
+                border-radius: 30px !important;
+                font-size: 1.2em !important;
+                font-weight: 600 !important;
+                cursor: pointer !important;
+                text-transform: uppercase !important;
+                letter-spacing: 2px !important;
+                transition: all 0.3s ease !important;
+                animation: buttonGlow 3s infinite !important;
             }
             .stButton > button:hover {
-                background: #27ae60;
-                transform: translateY(-2px);
+                transform: translateY(-2px) !important;
+                box-shadow: 0 0 20px rgba(255, 0, 255, 0.4) !important;
             }
-            .error-message {
-                color: #e74c3c;
-                text-align: center;
-                margin-top: 10px;
+
+            /* Remember me and forgot password */
+            .login-options {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 20px;
+                color: #0ff;
                 font-size: 0.9em;
             }
+            .remember-me {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+            .forgot-password {
+                color: #0ff;
+                text-decoration: none;
+                transition: all 0.3s ease;
+            }
+            .forgot-password:hover {
+                text-shadow: 0 0 10px #0ff;
+            }
+
+            /* Error message */
+            .error-message {
+                color: #ff0055;
+                text-align: center;
+                margin-top: 15px;
+                font-size: 0.9em;
+                text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
+            }
+
+            /* Background dots */
+            .background-dots {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: radial-gradient(circle, #0ff 1px, transparent 1px),
+                            radial-gradient(circle, #ff00ff 1px, transparent 1px),
+                            radial-gradient(circle, #ffff00 1px, transparent 1px);
+                background-size: 50px 50px;
+                background-position: 0 0, 25px 25px, 12px 12px;
+                opacity: 0.1;
+                z-index: -1;
+                animation: moveBackground 20s linear infinite;
+            }
         </style>
+        <div class="background-dots"></div>
     """, unsafe_allow_html=True)
 
     # Login container
     st.markdown("""
         <div class="login-container">
             <div class="login-header">
-                <h1>Sales Dashboard</h1>
-                <p>Please enter your credentials to continue</p>
+                <h1>Welcome Back</h1>
             </div>
             <div class="login-form">
     """, unsafe_allow_html=True)
 
     # Login form
-    password = st.text_input("Password", type="password", placeholder="Enter your password")
+    username = st.text_input("", placeholder="Username", key="username")
+    password = st.text_input("", type="password", placeholder="Password", key="password")
     
-    if st.button("Login"):
+    if st.button("LOGIN"):
         if password == "admin123":  # Default password
             st.session_state.authenticated = True
             st.rerun()
         else:
-            st.markdown('<div class="error-message">Invalid password. Please try again.</div>', unsafe_allow_html=True)
+            st.markdown('<div class="error-message">Invalid credentials. Please try again.</div>', unsafe_allow_html=True)
+
+    # Remember me and forgot password
+    st.markdown("""
+        <div class="login-options">
+            <div class="remember-me">
+                <input type="checkbox" id="remember" name="remember">
+                <label for="remember">Remember me</label>
+            </div>
+            <a href="#" class="forgot-password">Forgot password?</a>
+        </div>
+    """, unsafe_allow_html=True)
 
     st.markdown("</div></div>", unsafe_allow_html=True)
 
