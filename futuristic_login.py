@@ -92,26 +92,36 @@ components.html("""
       font-family: 'Orbitron', sans-serif;
     }
     html, body {
-      height: 100%;
+      height: 100vh;
+      width: 100vw;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
       background: #0f0c29;
     }
     #tsparticles {
-      position: fixed;
+      position: absolute;
       width: 100%;
       height: 100%;
+      top: 0;
+      left: 0;
       z-index: 0;
+      pointer-events: auto;
     }
     .login-box {
-      position: relative;
-      z-index: 1;
-      margin: 0 auto;
-      top: 10vh;
+      position: absolute;
+      z-index: 2;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
       background: rgba(0,0,0,0.7);
       padding: 40px;
       border-radius: 20px;
+      width: 90%;
       max-width: 400px;
       color: white;
       box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
     }
     .login-box h2 {
       text-align: center;
@@ -302,44 +312,37 @@ components.html("""
     // Enhanced particle initialization
     try {
       tsParticles.load("tsparticles", {
-        background: { color: "#0f0c29" },
+        fullScreen: {
+          enable: true,
+          zIndex: 1
+        },
         fpsLimit: 60,
         particles: {
           number: {
-            value: 80,
+            value: 50,
             density: {
               enable: true,
               value_area: 800
             }
           },
           color: {
-            value: ["#00f0ff", "#ff00e0", "#00ff00"],
-            animation: {
-              enable: true,
-              speed: 20,
-              sync: false
-            }
+            value: ["#00f0ff", "#ff00e0", "#00ff00"]
           },
           shape: {
-            type: ["circle", "triangle", "star"],
-            options: {
-              star: {
-                sides: 5
-              }
-            }
+            type: ["circle", "triangle"]
           },
           opacity: {
-            value: 0.5,
-            random: true,
+            value: 0.6,
+            random: false,
             animation: {
               enable: true,
-              speed: 3,
+              speed: 1,
               minimumValue: 0.1,
               sync: false
             }
           },
           size: {
-            value: 3,
+            value: 4,
             random: true,
             animation: {
               enable: true,
@@ -353,225 +356,51 @@ components.html("""
             distance: 150,
             color: "#00f0ff",
             opacity: 0.4,
-            width: 1,
-            triangles: {
-              enable: true,
-              opacity: 0.1
-            }
+            width: 1
           },
           move: {
             enable: true,
             speed: 2,
             direction: "none",
-            random: true,
+            random: false,
             straight: false,
             outModes: {
-              default: "bounce",
-              bottom: "bounce",
-              left: "bounce",
-              right: "bounce",
-              top: "bounce"
+              default: "out"
             },
             attract: {
-              enable: true,
+              enable: false,
               rotateX: 600,
               rotateY: 1200
-            }
-          },
-          life: {
-            duration: {
-              value: 2,
-              sync: false
-            },
-            count: 1,
-            delay: {
-              random: {
-                enable: true,
-                minimumValue: 0.5
-              }
-            }
-          },
-          rotate: {
-            random: true,
-            direction: "random",
-            animation: {
-              enable: true,
-              speed: 5,
-              sync: false
-            }
-          },
-          tilt: {
-            direction: "random",
-            enable: true,
-            move: true,
-            value: {
-              min: 0,
-              max: 360
-            },
-            animation: {
-              enable: true,
-              speed: 6,
-              sync: false
-            }
-          },
-          roll: {
-            darken: {
-              enable: true,
-              value: 25
-            },
-            enable: true,
-            speed: {
-              min: 15,
-              max: 25
-            }
-          },
-          wobble: {
-            distance: 30,
-            enable: true,
-            move: true,
-            speed: {
-              min: -15,
-              max: 15
             }
           }
         },
         interactivity: {
-          detectsOn: "window",
+          detectsOn: "canvas",
           events: {
             onHover: {
               enable: true,
-              mode: ["grab", "bubble", "repulse"],
-              parallax: {
-                enable: true,
-                force: 60,
-                smooth: 10
-              }
+              mode: "repulse"
             },
             onClick: {
               enable: true,
-              mode: ["push", "attract"]
+              mode: "push"
             },
             resize: true
           },
           modes: {
-            grab: {
-              distance: 200,
-              links: {
-                opacity: 0.8
-              }
-            },
-            bubble: {
-              distance: 250,
-              size: 10,
-              duration: 2,
-              opacity: 0.8
-            },
             repulse: {
-              distance: 150,
+              distance: 100,
               duration: 0.4
             },
             push: {
-              quantity: 4,
-              groups: ["z5000", "z7500", "z2500", "z1000"]
-            },
-            attract: {
-              distance: 200,
-              duration: 0.4,
-              factor: 3
+              quantity: 4
             }
           }
         },
-        particles: [
-          {
-            number: {
-              value: 20,
-              density: {
-                enable: true,
-                value_area: 800
-              }
-            },
-            color: {
-              value: "#00f0ff"
-            },
-            shape: {
-              type: "circle"
-            },
-            opacity: {
-              value: 0.8
-            },
-            size: {
-              value: 3
-            },
-            move: {
-              enable: true,
-              speed: 2,
-              direction: "none",
-              outModes: "bounce"
-            }
-          },
-          {
-            number: {
-              value: 15,
-              density: {
-                enable: true,
-                value_area: 800
-              }
-            },
-            color: {
-              value: "#ff00e0"
-            },
-            shape: {
-              type: "star"
-            },
-            opacity: {
-              value: 0.7
-            },
-            size: {
-              value: 4
-            },
-            move: {
-              enable: true,
-              speed: 1.5,
-              direction: "none",
-              outModes: "bounce"
-            }
-          },
-          {
-            number: {
-              value: 10,
-              density: {
-                enable: true,
-                value_area: 800
-              }
-            },
-            color: {
-              value: "#00ff00"
-            },
-            shape: {
-              type: "triangle"
-            },
-            opacity: {
-              value: 0.6
-            },
-            size: {
-              value: 5
-            },
-            move: {
-              enable: true,
-              speed: 3,
-              direction: "none",
-              outModes: "bounce"
-            }
-          }
-        ],
-        detectRetina: true,
-        motion: {
-          disable: false,
-          reduce: {
-            factor: 4,
-            value: true
-          }
-        }
+        background: {
+          color: "#0f0c29"
+        },
+        detectRetina: true
       }).then(() => {
         logToDebug('Particles initialized successfully', 'system');
       }).catch(error => {
