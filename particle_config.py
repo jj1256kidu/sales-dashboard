@@ -5,8 +5,7 @@ This file contains the tsParticles configuration settings.
 
 PARTICLE_CONFIG = {
     "fullScreen": {
-        "enable": True,
-        "zIndex": 1
+        "enable": False
     },
     "fpsLimit": 60,
     "particles": {
@@ -14,88 +13,30 @@ PARTICLE_CONFIG = {
             "value": 100,
             "density": {
                 "enable": True,
-                "value_area": 1200
+                "value_area": 800
             }
         },
         "color": {
-            "value": ["#00f0ff", "#ff00e0", "#00ff00"],
-            "animation": {
-                "enable": True,
-                "speed": 20,
-                "sync": False
-            }
+            "value": ["#00f0ff", "#ff00e0", "#ffc400"]
         },
         "shape": {
-            "type": ["circle", "triangle", "star"],
-            "options": {
-                "star": {
-                    "sides": 5
-                }
-            }
+            "type": ["circle", "square"]
         },
         "opacity": {
-            "value": 0.9,
-            "random": False,
-            "animation": {
-                "enable": True,
-                "speed": 1,
-                "minimumValue": 0.5,
-                "sync": False
-            }
+            "value": 0.7,
+            "random": False
         },
         "size": {
-            "value": 12,
-            "random": True,
-            "animation": {
-                "enable": True,
-                "speed": 2,
-                "minimumValue": 6,
-                "sync": False
-            }
-        },
-        "links": {
-            "enable": True,
-            "distance": 150,
-            "color": "#00f0ff",
-            "opacity": 0.6,
-            "width": 2,
-            "triangles": {
-                "enable": True,
-                "opacity": 0.2
-            }
+            "value": 4,
+            "random": False
         },
         "move": {
             "enable": True,
-            "speed": 3,
+            "speed": 1,
             "direction": "none",
-            "random": True,
+            "random": False,
             "straight": False,
-            "outModes": {
-                "default": "bounce",
-                "bottom": "bounce",
-                "left": "bounce",
-                "right": "bounce",
-                "top": "bounce"
-            },
-            "attract": {
-                "enable": True,
-                "rotateX": 600,
-                "rotateY": 1200
-            }
-        },
-        "rotate": {
-            "random": True,
-            "direction": "random",
-            "animation": {
-                "enable": True,
-                "speed": 5,
-                "sync": False
-            }
-        },
-        "glow": {
-            "enable": True,
-            "color": "#00f0ff",
-            "blur": 15
+            "outModes": "bounce"
         }
     },
     "interactivity": {
@@ -103,12 +44,7 @@ PARTICLE_CONFIG = {
         "events": {
             "onHover": {
                 "enable": True,
-                "mode": ["grab", "bubble"],
-                "parallax": {
-                    "enable": True,
-                    "force": 60,
-                    "smooth": 10
-                }
+                "mode": "repulse"
             },
             "onClick": {
                 "enable": True,
@@ -117,73 +53,55 @@ PARTICLE_CONFIG = {
             "resize": True
         },
         "modes": {
-            "grab": {
-                "distance": 250,
-                "links": {
-                    "opacity": 1,
-                    "color": "#ff00e0"
-                }
-            },
-            "bubble": {
-                "distance": 250,
-                "size": 20,
-                "duration": 2,
-                "opacity": 0.8,
-                "color": "#00f0ff"
+            "repulse": {
+                "distance": 100
             },
             "push": {
-                "quantity": 8
+                "quantity": 4
             }
         }
     },
     "background": {
         "color": "#0f0c29"
     },
-    "detectRetina": True,
-    "motion": {
-        "disable": False,
-        "reduce": {
-            "factor": 4,
-            "value": True
-        }
-    }
+    "detectRetina": True
 }
 
-# Preset themes
+# Preset themes with simpler particle settings
 NEON_THEME = {
     "colors": {
         "primary": "#00f0ff",
         "secondary": "#ff00e0",
-        "accent": "#00ff00",
+        "accent": "#ffc400",
         "background": "#0f0c29"
     },
-    "particle_size": 12,
+    "particle_size": 4,
     "particle_count": 100,
-    "movement_speed": 3
+    "movement_speed": 1
 }
 
 CYBER_THEME = {
     "colors": {
-        "primary": "#0ff",
-        "secondary": "#f0f",
-        "accent": "#ff0",
+        "primary": "#00f0ff",
+        "secondary": "#ff00e0",
+        "accent": "#ffc400",
         "background": "#000033"
     },
-    "particle_size": 15,
-    "particle_count": 80,
-    "movement_speed": 4
+    "particle_size": 4,
+    "particle_count": 100,
+    "movement_speed": 1
 }
 
 MATRIX_THEME = {
     "colors": {
         "primary": "#00ff00",
-        "secondary": "#003300",
-        "accent": "#00cc00",
+        "secondary": "#00ff00",
+        "accent": "#00ff00",
         "background": "#000000"
     },
-    "particle_size": 10,
+    "particle_size": 4,
     "particle_count": 120,
-    "movement_speed": 2
+    "movement_speed": 1
 }
 
 def get_theme_config(theme_name="neon"):
