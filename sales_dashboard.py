@@ -101,220 +101,206 @@ st.markdown("""
         line-height: 1.6;
     }
 
-    /* Custom Header */
-    .custom-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        padding: 2rem;
-        border-radius: 15px;
-        margin-bottom: 2rem;
-        box-shadow: 0 4px 15px var(--shadow-color);
-        text-align: center;
+    /* Improve dropdown and select visibility */
+    .stSelectbox [data-baseweb="select"] {
+        background-color: white !important;
     }
 
-    .custom-header h1 {
-        color: white;
-        font-size: 2.2rem;
-        font-weight: 700;
-        margin: 0;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-    }
-
-    .custom-header p {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 1.2rem;
-        margin: 0.5rem 0 0;
-    }
-
-    /* Section Headers */
-    .section-header {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        padding: 2rem;
-        border-radius: 15px;
-        margin-bottom: 1.5rem;
-        box-shadow: 0 4px 15px var(--shadow-color);
-    }
-
-    .section-header h2 {
-        color: white;
-        margin: 0;
-        font-size: 2.2rem;
-        font-weight: 700;
-        text-align: center;
-        letter-spacing: 0.5px;
-        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-    }
-
-    /* Metric Cards */
-    .metric-card {
-        background: var(--card-background);
-        padding: 2rem;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px var(--shadow-color);
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        min-height: 160px;
-        transition: all 0.3s ease;
-        border: 1px solid var(--border-color);
-        position: relative;
-        overflow: hidden;
-    }
-
-    .metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 4px;
-        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-    }
-
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px var(--shadow-color);
-    }
-
-    .metric-label {
-        color: var(--text-light);
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin-bottom: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .metric-value {
-        color: var(--text-color);
-        font-size: 2rem;
-        font-weight: 700;
-        margin: 0.8rem 0;
-        line-height: 1.2;
-    }
-
-    /* Filter Section */
-    .filter-section {
-        background: var(--card-background);
-        border-radius: 15px;
-        padding: 2rem;
-        margin-bottom: 1.5rem;
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1.2rem;
-        align-items: center;
-        box-shadow: 0 4px 15px var(--shadow-color);
-        border: 1px solid var(--border-color);
-    }
-
-    .filter-section h4 {
-        color: var(--text-color);
-        margin: 0;
-        font-size: 1.2rem;
-        font-weight: 600;
-        grid-column: 1 / -1;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid var(--border-color);
-    }
-
-    /* Input fields */
-    .stTextInput > div > div > input,
-    .stSelectbox > div > div {
-        max-width: 100% !important;
-        background: var(--card-background) !important;
-        border: 2px solid var(--border-color) !important;
-        border-radius: 10px;
-        padding: 0.8rem;
+    .stSelectbox [data-baseweb="select"] > div {
+        background-color: white !important;
         color: var(--text-color) !important;
-        transition: all 0.3s ease;
-        height: 48px;
-        font-size: 1rem;
+        font-weight: 500 !important;
     }
 
-    .stTextInput > div > div > input:focus,
-    .stSelectbox > div > div:focus-within {
-        border-color: var(--primary-color) !important;
-        box-shadow: 0 0 0 4px rgba(30, 60, 114, 0.1);
+    .stSelectbox [data-baseweb="select"] > div > div {
+        color: var(--text-color) !important;
+        font-weight: 500 !important;
     }
 
-    /* Labels and text */
-    .stLabel {
+    /* Improve input field visibility */
+    .stTextInput > div > div > input {
+        background-color: white !important;
+        color: var(--text-color) !important;
+        font-weight: 500 !important;
+    }
+
+    /* Improve label visibility */
+    .stSelectbox label, .stTextInput label {
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+    }
+
+    /* Filter section improvements */
+    .filter-section {
+        background: white !important;
+        padding: 1.5rem !important;
+        border-radius: 10px !important;
+        margin-bottom: 1.5rem !important;
+    }
+
+    .filter-section label {
         color: var(--text-color) !important;
         font-weight: 600 !important;
     }
 
+    /* Dropdown menu items */
+    [data-baseweb="menu"] {
+        background-color: white !important;
+    }
+
+    [data-baseweb="menu"] div {
+        color: var(--text-color) !important;
+    }
+
+    /* Selected option in dropdowns */
+    [data-baseweb="selected-option"] {
+        color: var(--text-color) !important;
+        background-color: rgba(74, 144, 226, 0.1) !important;
+    }
+
+    /* Hover state for dropdown items */
+    [data-baseweb="menu"] div:hover {
+        background-color: rgba(74, 144, 226, 0.1) !important;
+        color: var(--text-color) !important;
+    }
+
+    /* Sidebar improvements */
+    .css-1d391kg {
+        background: var(--primary-color) !important;
+    }
+
+    .css-1d391kg .stRadio label {
+        color: white !important;
+        font-weight: 500 !important;
+    }
+
+    /* Streamlit Select boxes and Dropdowns */
+    .stSelectbox > div > div,
+    .stMultiSelect > div > div {
+        background-color: white !important;
+        color: var(--text-color) !important;
+        font-weight: 500 !important;
+        text-shadow: none !important;
+    }
+
+    /* Dropdown options */
+    .stSelectbox > div > div > div > div {
+        color: var(--text-color) !important;
+        font-weight: 500 !important;
+    }
+
+    /* Input fields */
+    .stTextInput > div > div > input {
+        color: var(--text-color) !important;
+        font-weight: 500 !important;
+        background-color: white !important;
+    }
+
+    /* Labels for inputs and dropdowns */
+    .stSelectbox label,
+    .stTextInput label,
+    .stMultiSelect label {
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+    }
+
+    /* Radio buttons */
+    .stRadio > div {
+        color: var(--text-color) !important;
+        font-weight: 500 !important;
+    }
+
+    /* Buttons */
+    .stButton > button {
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+        background-color: white !important;
+        border: 2px solid var(--border-color) !important;
+    }
+
+    /* Dataframe */
+    .dataframe {
+        color: var(--text-color) !important;
+    }
+
+    .dataframe th {
+        background: var(--primary-color) !important;
+        color: white !important;
+        font-weight: 600 !important;
+    }
+
+    .dataframe td {
+        color: var(--text-color) !important;
+        font-weight: 500 !important;
+    }
+
+    /* Metric labels */
+    .metric-label {
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+        text-shadow: none !important;
+    }
+
+    /* Tabs */
+    .stTabs [data-baseweb="tab"] {
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
+    }
+
+    /* Markdown text */
     .stMarkdown {
         color: var(--text-color) !important;
     }
 
-    /* Dataframe Styling */
-    .dataframe {
-        background: var(--card-background);
-        border-radius: 15px;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 4px 15px var(--shadow-color);
-        margin: 1.5rem 0;
-        overflow: hidden;
+    /* Headers */
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--text-color) !important;
+        font-weight: 600 !important;
     }
 
-    .dataframe th {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-        color: white;
-        padding: 1.2rem;
-        font-weight: 600;
-        font-size: 1.2rem;
+    /* Specific text elements */
+    .element-container, .stMarkdown, .stText {
+        color: var(--text-color) !important;
     }
 
-    .dataframe td {
-        color: var(--text-color);
-        padding: 1.2rem;
-        font-size: 1rem;
-        border-bottom: 1px solid var(--border-color);
+    /* Placeholder text */
+    ::placeholder {
+        color: var(--text-muted) !important;
+        opacity: 1 !important;
     }
 
-    .dataframe tr:hover {
-        background-color: rgba(30, 60, 114, 0.05);
+    /* Dropdown arrows and icons */
+    [data-baseweb="select"] svg {
+        color: var(--text-color) !important;
     }
 
-    /* Info boxes and containers */
-    .info-box {
-        background: var(--card-background);
-        padding: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px var(--shadow-color);
-        border: 1px solid var(--border-color);
+    /* Hover states for interactive elements */
+    .stSelectbox > div > div:hover,
+    .stMultiSelect > div > div:hover,
+    .stTextInput > div > div > input:hover {
+        border-color: var(--primary-color) !important;
     }
 
-    .info-box h4 {
-        color: var(--text-color);
-        margin-bottom: 1rem;
-        font-size: 1.2rem;
-        font-weight: 600;
+    /* Focus states */
+    .stSelectbox > div > div:focus-within,
+    .stMultiSelect > div > div:focus-within,
+    .stTextInput > div > div > input:focus {
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 2px rgba(30, 60, 114, 0.2) !important;
     }
 
-    .info-box ul {
-        color: var(--text-light);
-        margin: 0;
-        padding-left: 1.5rem;
-    }
-
-    .info-box li {
-        margin-bottom: 0.5rem;
-    }
-
-    /* Navigation */
-    .css-1d391kg {
-        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-    }
-
-    .css-1d391kg h1 {
-        color: white;
+    /* Selected options in dropdowns */
+    [data-baseweb="select"] [data-baseweb="selected-option"] {
+        background-color: rgba(74, 144, 226, 0.1) !important;
+        color: var(--text-color) !important;
     }
 
     /* Hide Streamlit branding */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
+
 </style>
 """, unsafe_allow_html=True)
 
