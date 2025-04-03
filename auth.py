@@ -3,14 +3,6 @@ from typing import Optional
 import random
 import time
 
-# Set page config at the very start
-st.set_page_config(
-    page_title="Futuristic Login",
-    page_icon="🔐",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
-
 # Initialize session state
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
