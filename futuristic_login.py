@@ -303,25 +303,275 @@ components.html("""
     try {
       tsParticles.load("tsparticles", {
         background: { color: "#0f0c29" },
+        fpsLimit: 60,
         particles: {
-          number: { value: 100 },
-          color: { value: ["#00f0ff", "#ff00e0", "#ffc400"] },
-          shape: { type: ["circle", "square"] },
-          opacity: { value: 0.7 },
-          size: { value: 4 },
-          move: { enable: true, speed: 1, outModes: "bounce" }
-        },
-        interactivity: {
-          events: {
-            onHover: { enable: true, mode: "repulse" },
-            onClick: { enable: true, mode: "push" }
+          number: {
+            value: 80,
+            density: {
+              enable: true,
+              value_area: 800
+            }
           },
-          modes: {
-            repulse: { distance: 100 },
-            push: { quantity: 4 }
+          color: {
+            value: ["#00f0ff", "#ff00e0", "#00ff00"],
+            animation: {
+              enable: true,
+              speed: 20,
+              sync: false
+            }
+          },
+          shape: {
+            type: ["circle", "triangle", "star"],
+            options: {
+              star: {
+                sides: 5
+              }
+            }
+          },
+          opacity: {
+            value: 0.5,
+            random: true,
+            animation: {
+              enable: true,
+              speed: 3,
+              minimumValue: 0.1,
+              sync: false
+            }
+          },
+          size: {
+            value: 3,
+            random: true,
+            animation: {
+              enable: true,
+              speed: 2,
+              minimumValue: 0.5,
+              sync: false
+            }
+          },
+          links: {
+            enable: true,
+            distance: 150,
+            color: "#00f0ff",
+            opacity: 0.4,
+            width: 1,
+            triangles: {
+              enable: true,
+              opacity: 0.1
+            }
+          },
+          move: {
+            enable: true,
+            speed: 2,
+            direction: "none",
+            random: true,
+            straight: false,
+            outModes: {
+              default: "bounce",
+              bottom: "bounce",
+              left: "bounce",
+              right: "bounce",
+              top: "bounce"
+            },
+            attract: {
+              enable: true,
+              rotateX: 600,
+              rotateY: 1200
+            }
+          },
+          life: {
+            duration: {
+              value: 2,
+              sync: false
+            },
+            count: 1,
+            delay: {
+              random: {
+                enable: true,
+                minimumValue: 0.5
+              }
+            }
+          },
+          rotate: {
+            random: true,
+            direction: "random",
+            animation: {
+              enable: true,
+              speed: 5,
+              sync: false
+            }
+          },
+          tilt: {
+            direction: "random",
+            enable: true,
+            move: true,
+            value: {
+              min: 0,
+              max: 360
+            },
+            animation: {
+              enable: true,
+              speed: 6,
+              sync: false
+            }
+          },
+          roll: {
+            darken: {
+              enable: true,
+              value: 25
+            },
+            enable: true,
+            speed: {
+              min: 15,
+              max: 25
+            }
+          },
+          wobble: {
+            distance: 30,
+            enable: true,
+            move: true,
+            speed: {
+              min: -15,
+              max: 15
+            }
           }
         },
-        detectRetina: true
+        interactivity: {
+          detectsOn: "window",
+          events: {
+            onHover: {
+              enable: true,
+              mode: ["grab", "bubble", "repulse"],
+              parallax: {
+                enable: true,
+                force: 60,
+                smooth: 10
+              }
+            },
+            onClick: {
+              enable: true,
+              mode: ["push", "attract"]
+            },
+            resize: true
+          },
+          modes: {
+            grab: {
+              distance: 200,
+              links: {
+                opacity: 0.8
+              }
+            },
+            bubble: {
+              distance: 250,
+              size: 10,
+              duration: 2,
+              opacity: 0.8
+            },
+            repulse: {
+              distance: 150,
+              duration: 0.4
+            },
+            push: {
+              quantity: 4,
+              groups: ["z5000", "z7500", "z2500", "z1000"]
+            },
+            attract: {
+              distance: 200,
+              duration: 0.4,
+              factor: 3
+            }
+          }
+        },
+        particles: [
+          {
+            number: {
+              value: 20,
+              density: {
+                enable: true,
+                value_area: 800
+              }
+            },
+            color: {
+              value: "#00f0ff"
+            },
+            shape: {
+              type: "circle"
+            },
+            opacity: {
+              value: 0.8
+            },
+            size: {
+              value: 3
+            },
+            move: {
+              enable: true,
+              speed: 2,
+              direction: "none",
+              outModes: "bounce"
+            }
+          },
+          {
+            number: {
+              value: 15,
+              density: {
+                enable: true,
+                value_area: 800
+              }
+            },
+            color: {
+              value: "#ff00e0"
+            },
+            shape: {
+              type: "star"
+            },
+            opacity: {
+              value: 0.7
+            },
+            size: {
+              value: 4
+            },
+            move: {
+              enable: true,
+              speed: 1.5,
+              direction: "none",
+              outModes: "bounce"
+            }
+          },
+          {
+            number: {
+              value: 10,
+              density: {
+                enable: true,
+                value_area: 800
+              }
+            },
+            color: {
+              value: "#00ff00"
+            },
+            shape: {
+              type: "triangle"
+            },
+            opacity: {
+              value: 0.6
+            },
+            size: {
+              value: 5
+            },
+            move: {
+              enable: true,
+              speed: 3,
+              direction: "none",
+              outModes: "bounce"
+            }
+          }
+        ],
+        detectRetina: true,
+        motion: {
+          disable: false,
+          reduce: {
+            factor: 4,
+            value: true
+          }
+        }
       }).then(() => {
         logToDebug('Particles initialized successfully', 'system');
       }).catch(error => {
