@@ -85,51 +85,32 @@ def show_login_page():
             
             /* Enhanced login container with modern glass effect */
             .login-container {
-                max-width: 900px;
-                margin: 2rem auto;
-                padding: 0;
+                max-width: 450px;
+                margin: 4rem auto;
+                padding: 2.5rem;
                 background: rgba(255, 255, 255, 0.05);
                 backdrop-filter: blur(10px);
                 border-radius: 24px;
                 box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
                 border: 1px solid rgba(255, 255, 255, 0.1);
-                overflow: hidden;
-                display: flex;
+                text-align: center;
             }
             
-            /* Left side - Login form */
-            .login-form {
-                flex: 1;
-                padding: 2.5rem;
-                position: relative;
+            /* Welcome text */
+            .welcome-title {
+                color: #fff;
+                font-size: 2.8em;
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+                line-height: 1.2;
             }
             
-            /* Right side - Welcome section */
-            .welcome-section {
-                flex: 1.2;
-                padding: 3rem;
-                background: rgba(255, 255, 255, 0.03);
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: flex-start;
-                position: relative;
-                overflow: hidden;
-            }
-            
-            .welcome-section::before {
-                content: '';
-                position: absolute;
-                top: -50%;
-                left: -50%;
-                width: 200%;
-                height: 200%;
-                background: radial-gradient(
-                    circle,
-                    rgba(142, 84, 233, 0.1) 0%,
-                    transparent 50%
-                );
-                animation: rotate 20s linear infinite;
+            .welcome-subtitle {
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 1em;
+                line-height: 1.6;
+                margin-bottom: 2rem;
+                padding: 0 1rem;
             }
             
             /* Logo style */
@@ -137,29 +118,11 @@ def show_login_page():
                 color: rgba(255, 255, 255, 0.9);
                 font-size: 1.5em;
                 font-weight: 700;
-                margin-bottom: 3rem;
+                margin-bottom: 2rem;
                 display: flex;
                 align-items: center;
+                justify-content: center;
                 gap: 0.5rem;
-            }
-            
-            /* Welcome text */
-            .welcome-title {
-                color: #fff;
-                font-size: 3.5em;
-                font-weight: 700;
-                margin-bottom: 1rem;
-                line-height: 1.2;
-                position: relative;
-                z-index: 1;
-            }
-            
-            .welcome-subtitle {
-                color: rgba(255, 255, 255, 0.7);
-                font-size: 1.1em;
-                line-height: 1.6;
-                position: relative;
-                z-index: 1;
             }
             
             /* Modern input fields */
@@ -167,10 +130,13 @@ def show_login_page():
                 background: rgba(255,255,255,0.05) !important;
                 border: 2px solid rgba(255,255,255,0.1) !important;
                 border-radius: 12px !important;
-                padding: 12px 20px !important;
+                padding: 8px 16px !important;
                 color: white !important;
                 transition: all 0.3s ease !important;
-                margin-bottom: 1rem !important;
+                margin-bottom: 0.75rem !important;
+                max-width: 300px !important;
+                margin-left: auto !important;
+                margin-right: auto !important;
             }
             
             .stTextInput > div > div:hover,
@@ -182,9 +148,10 @@ def show_login_page():
             
             .stTextInput > label {
                 color: rgba(255,255,255,0.8) !important;
-                font-size: 1rem !important;
+                font-size: 0.9rem !important;
                 font-weight: 500 !important;
-                margin-bottom: 0.5rem !important;
+                margin-bottom: 0.25rem !important;
+                text-align: center !important;
             }
             
             /* Enhanced button */
@@ -192,14 +159,16 @@ def show_login_page():
                 background: linear-gradient(45deg, #8E54E9, #4263EB);
                 color: white;
                 border: none;
-                padding: 0.8rem 2rem;
+                padding: 0.7rem 2rem;
                 border-radius: 12px;
                 font-weight: 600;
-                font-size: 1rem;
+                font-size: 0.95rem;
                 letter-spacing: 0.5px;
-                width: 100%;
+                width: 300px;
                 transition: all 0.3s ease;
-                margin-top: 1rem;
+                margin-top: 0.5rem;
+                margin-left: auto;
+                margin-right: auto;
             }
             
             .stButton > button:hover {
@@ -217,6 +186,9 @@ def show_login_page():
                 border-radius: 12px;
                 border: 1px solid rgba(255,107,107,0.2);
                 animation: shake 0.5s ease-in-out;
+                max-width: 300px;
+                margin-left: auto;
+                margin-right: auto;
             }
             
             /* Credentials info */
@@ -224,10 +196,13 @@ def show_login_page():
                 color: rgba(255,255,255,0.8);
                 text-align: center;
                 margin-top: 1.5rem;
-                padding: 1.2rem;
+                padding: 1rem;
                 background: rgba(255,255,255,0.05);
                 border-radius: 12px;
                 border: 1px solid rgba(255,255,255,0.1);
+                max-width: 300px;
+                margin-left: auto;
+                margin-right: auto;
             }
             
             .credentials-info code {
@@ -257,10 +232,11 @@ def show_login_page():
 
     st.markdown("""
         <div class="login-container">
-            <div class="login-form">
-                <div class="logo">
-                    📊 Sales Dashboard
-                </div>
+            <div class="logo">
+                📊 Sales Dashboard
+            </div>
+            <h1 class="welcome-title">Welcome.</h1>
+            <p class="welcome-subtitle">Access your sales dashboard to track performance, analyze trends, and make data-driven decisions.</p>
     """, unsafe_allow_html=True)
 
     with st.form("login_form"):
@@ -288,10 +264,5 @@ def show_login_page():
                 """, unsafe_allow_html=True)
 
     st.markdown("""
-            </div>
-            <div class="welcome-section">
-                <h1 class="welcome-title">Welcome.</h1>
-                <p class="welcome-subtitle">Access your sales dashboard to track performance, analyze trends, and make data-driven decisions.</p>
-            </div>
         </div>
     """, unsafe_allow_html=True) 
