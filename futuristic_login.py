@@ -119,6 +119,10 @@ st.markdown("""
     .block-container {
         padding-top: 5rem;
     }
+    .stFormSubmitButton>button {
+        width: 100%;
+        margin-top: 1rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -153,24 +157,35 @@ tsParticles.load("tsparticles", {
 # Login logic
 if st.session_state.authenticated:
     st.success(f"🎉 Welcome back, {st.session_state.username}!")
-    if st.button("Logout"):
+    if st.button("Logout", key="logout_button"):
         st.session_state.authenticated = False
         st.session_state.username = None
         st.rerun()
 else:
-    with st.form("login_form"):
+    with st.form("login_form", clear_on_submit=True):
         st.markdown("<h2 style='text-align: center; color: #00f0ff;'>Welcome Back</h2>", unsafe_allow_html=True)
         
-        username = st.text_input("Username", placeholder="Enter your username")
-        password = st.text_input("Password", type="password", placeholder="Enter your password")
+        username = st.text_input(
+            label="Username",
+            placeholder="Enter your username",
+            key="username_input",
+            label_visibility="collapsed"
+        )
+        password = st.text_input(
+            label="Password",
+            type="password",
+            placeholder="Enter your password",
+            key="password_input",
+            label_visibility="collapsed"
+        )
 
         col1, col2 = st.columns(2)
         with col1:
-            remember = st.checkbox("Remember me", value=True)
+            remember = st.checkbox("Remember me", value=True, key="remember_checkbox")
         with col2:
             st.markdown('<div style="text-align: right;"><a href="#" style="color: #a0cbe8;">Forgot password?</a></div>', unsafe_allow_html=True)
         
-        login = st.form_submit_button("LOGIN")
+        login = st.form_submit_button("LOGIN", use_container_width=True)
         if login:
             result = handle_login(username, password)
             if result == "success":
