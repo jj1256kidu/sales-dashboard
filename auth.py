@@ -15,10 +15,7 @@ if "username" not in st.session_state:
 
 # Hardcoded users (in a real app, this would be in a database)
 USERS = {
-    "admin": {
-        "password": "admin123",
-        "role": "admin"
-    }
+    "admin": "admin123"  # Simplified user structure
 }
 
 def hash_password(password: str) -> str:
@@ -35,7 +32,7 @@ def get_current_user() -> Optional[str]:
 
 def authenticate(username: str, password: str) -> bool:
     """Authenticate a user"""
-    if username in USERS and USERS[username]["password"] == password:
+    if username in USERS and USERS[username] == password:  # Simplified check
         st.session_state.authenticated = True
         st.session_state.username = username
         return True
@@ -47,12 +44,12 @@ def logout():
     st.session_state.username = None
 
 def show_login_page():
-    """Show the login page with futuristic design"""
+    """Show the login page with cyberpunk design"""
     st.markdown("""
         <style>
             /* Override Streamlit defaults */
             .stApp {
-                background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%) !important;
+                background: #0B0B1E !important;
             }
             
             .block-container {
@@ -78,34 +75,43 @@ def show_login_page():
 
             /* Custom styles for form elements */
             [data-testid="stTextInput"] > div > div > input {
-                background-color: rgba(255, 255, 255, 0.1) !important;
-                border: 1px solid rgba(255, 255, 255, 0.2) !important;
-                border-radius: 8px !important;
-                color: white !important;
+                background-color: #000 !important;
+                border: 2px solid #00F5FF !important;
+                border-radius: 25px !important;
+                color: #00F5FF !important;
                 font-size: 1em !important;
-                padding: 12px 15px !important;
+                padding: 12px 25px !important;
+                font-family: 'Orbitron', sans-serif !important;
+                box-shadow: 0 0 10px rgba(0, 245, 255, 0.3) !important;
             }
 
             [data-testid="stTextInput"] > div > div > input:focus {
-                border-color: #4A90E2 !important;
-                box-shadow: 0 0 10px rgba(74, 144, 226, 0.3) !important;
+                border-color: #00F5FF !important;
+                box-shadow: 0 0 20px rgba(0, 245, 255, 0.5) !important;
+            }
+
+            [data-testid="stTextInput"] > div > div > input::placeholder {
+                color: rgba(0, 245, 255, 0.5) !important;
             }
 
             [data-testid="stButton"] > button {
                 width: 100% !important;
-                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%) !important;
+                background: linear-gradient(90deg, #00F5FF, #FF00FF) !important;
                 color: white !important;
                 font-weight: 600 !important;
                 padding: 12px !important;
                 font-size: 1.1em !important;
-                border-radius: 8px !important;
+                border-radius: 25px !important;
                 border: none !important;
                 transition: all 0.3s ease !important;
+                font-family: 'Orbitron', sans-serif !important;
+                text-transform: uppercase !important;
+                letter-spacing: 2px !important;
             }
 
             [data-testid="stButton"] > button:hover {
                 transform: translateY(-2px) !important;
-                box-shadow: 0 5px 15px rgba(74, 144, 226, 0.4) !important;
+                box-shadow: 0 0 30px rgba(0, 245, 255, 0.5) !important;
             }
 
             /* Base layout */
@@ -115,6 +121,7 @@ def show_login_page():
                 align-items: center;
                 min-height: 100vh;
                 padding: 20px;
+                font-family: 'Orbitron', sans-serif;
             }
 
             /* Container and login box */
@@ -127,120 +134,121 @@ def show_login_page():
             }
 
             .login-box {
-                background: rgba(255, 255, 255, 0.1);
-                backdrop-filter: blur(10px);
-                -webkit-backdrop-filter: blur(10px);
-                border-radius: 15px;
-                padding: 30px;
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                border: 1px solid rgba(255, 255, 255, 0.1);
+                background: rgba(0, 0, 0, 0.8);
+                border-radius: 25px;
+                padding: 40px;
+                box-shadow: 0 0 50px rgba(0, 245, 255, 0.3);
+                border: 2px solid #00F5FF;
             }
 
             /* Title */
             .login-box h1 {
-                color: white;
+                color: #00F5FF;
                 text-align: center;
                 margin-bottom: 30px;
-                font-size: 2em;
-                font-weight: 600;
-                text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+                font-size: 2.5em;
+                font-weight: 700;
+                text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+                font-family: 'Orbitron', sans-serif;
             }
 
-            /* Error message */
-            [data-testid="stAlert"] {
-                background-color: rgba(255, 0, 0, 0.1) !important;
-                border: 1px solid rgba(255, 0, 0, 0.2) !important;
-                color: #ff4444 !important;
-                padding: 10px !important;
-                border-radius: 5px !important;
-                margin-bottom: 20px !important;
-                text-align: center !important;
-                font-size: 0.9em !important;
-            }
-
-            /* Credentials info */
-            .credentials-info {
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 8px;
-                padding: 15px;
+            /* Remember me and Forgot password */
+            .options {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
                 margin-top: 20px;
+                color: #00F5FF;
                 font-size: 0.9em;
-                color: rgba(255, 255, 255, 0.7);
             }
 
-            /* Particle effect */
-            .particles {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 0;
-                pointer-events: none;
+            .remember-me {
+                display: flex;
+                align-items: center;
+                gap: 5px;
             }
 
+            .remember-me input[type="checkbox"] {
+                accent-color: #00F5FF;
+            }
+
+            .forgot-password {
+                color: #00F5FF;
+                text-decoration: none;
+                transition: all 0.3s ease;
+            }
+
+            .forgot-password:hover {
+                text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+            }
+
+            /* Particles */
             .particle {
-                position: absolute;
-                width: 3px;
-                height: 3px;
-                background: rgba(255, 255, 255, 0.5);
+                position: fixed;
+                width: 5px;
+                height: 5px;
                 border-radius: 50%;
-                animation: float 20s infinite linear;
+                animation: particle-animation 20s infinite linear;
             }
 
-            @keyframes float {
+            @keyframes particle-animation {
                 0% {
-                    transform: translateY(100vh) scale(0);
+                    transform: translateY(100vh) translateX(0) scale(0);
                     opacity: 0;
                 }
                 50% {
-                    opacity: 0.5;
+                    opacity: 1;
                 }
                 100% {
-                    transform: translateY(-100vh) scale(1);
+                    transform: translateY(-100vh) translateX(100px) scale(1);
                     opacity: 0;
                 }
             }
+
+            /* Generate multiple particles with different colors */
+            .particle:nth-child(3n) { background: #00F5FF; }
+            .particle:nth-child(3n+1) { background: #FF00FF; }
+            .particle:nth-child(3n+2) { background: #FFD700; }
         </style>
+
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap" rel="stylesheet">
 
         <div class="main">
             <div class="particles">
-                <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
-                <div class="particle" style="left: 20%; animation-delay: 2s;"></div>
-                <div class="particle" style="left: 30%; animation-delay: 4s;"></div>
-                <div class="particle" style="left: 40%; animation-delay: 6s;"></div>
-                <div class="particle" style="left: 50%; animation-delay: 8s;"></div>
-                <div class="particle" style="left: 60%; animation-delay: 10s;"></div>
-                <div class="particle" style="left: 70%; animation-delay: 12s;"></div>
-                <div class="particle" style="left: 80%; animation-delay: 14s;"></div>
-                <div class="particle" style="left: 90%; animation-delay: 16s;"></div>
-                <div class="particle" style="left: 95%; animation-delay: 18s;"></div>
+                ${Array(30).fill().map((_, i) => `
+                    <div class="particle" style="
+                        left: ${Math.random() * 100}vw;
+                        animation-delay: ${Math.random() * 20}s;
+                        animation-duration: ${15 + Math.random() * 10}s;
+                    "></div>
+                `).join('')}
             </div>
             <div class="container">
                 <div class="login-box">
-                    <h1>Login</h1>
+                    <h1>Welcome Back</h1>
     """, unsafe_allow_html=True)
 
     # Create columns for centering
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        username = st.text_input("Username", key="login_username")
-        password = st.text_input("Password", type="password", key="login_password")
+        username = st.text_input("", placeholder="Username", key="login_username")
+        password = st.text_input("", placeholder="Password", type="password", key="login_password")
 
-        if st.button("Login", key="login_button"):
+        if st.button("LOGIN", key="login_button"):
             if authenticate(username, password):
                 st.rerun()
             else:
                 st.error("Invalid username or password")
 
-        # Show credentials info
+        # Remember me and Forgot password
         st.markdown("""
-            <div class="credentials-info">
-                <strong>Demo Credentials:</strong><br>
-                Username: admin<br>
-                Password: admin123
+            <div class="options">
+                <label class="remember-me">
+                    <input type="checkbox" checked>
+                    Remember me
+                </label>
+                <a href="#" class="forgot-password">Forgot password?</a>
             </div>
         """, unsafe_allow_html=True)
 
