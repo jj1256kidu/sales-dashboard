@@ -145,49 +145,51 @@ components.html(f"""
             justify-content: center;
             align-items: center;
             height: 100vh;
-            padding: 20px;
+            padding: 0;
         }}
 
         .login-box {{
             background: rgba(0, 0, 0, 0.7);
             border-radius: 20px;
-            padding: 40px 30px;
+            padding: 15px 20px;
             width: 100%;
             max-width: 400px;
             box-shadow: 0 0 25px rgba(0, 255, 255, 0.2);
             backdrop-filter: blur(10px);
+            margin: 0;
         }}
 
         .login-box h2 {{
             text-align: center;
             color: #00f0ff;
-            margin-bottom: 20px;
-            font-size: 24px;
+            margin: 0 0 12px 0;
+            font-size: 20px;
+            line-height: 1;
         }}
 
         .input-wrapper {{
             position: relative;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }}
 
         .input-wrapper i {{
             position: absolute;
             top: 50%;
-            left: 15px;
+            left: 12px;
             transform: translateY(-50%);
             color: #7efcff;
-            font-size: 14px;
+            font-size: 12px;
         }}
 
         .input-wrapper input {{
             width: 100%;
-            height: 40px;
-            padding: 0 15px 0 40px;
+            height: 36px;
+            padding: 0 12px 0 32px;
             border: 1px solid #00f0ff;
             background: transparent;
             color: white;
-            border-radius: 20px;
-            font-size: 14px;
+            border-radius: 16px;
+            font-size: 12px;
             outline: none;
             transition: box-shadow 0.3s;
         }}
@@ -198,16 +200,16 @@ components.html(f"""
 
         .login-box button {{
             width: 100%;
-            height: 42px;
+            height: 36px;
             background: linear-gradient(135deg, #00f0ff, #ff00e0);
             color: white;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 12px;
             border: none;
-            border-radius: 20px;
+            border-radius: 16px;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 5px;
+            margin-top: 2px;
         }}
 
         .login-box button:hover {{
@@ -218,9 +220,9 @@ components.html(f"""
         .options {{
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
+            font-size: 11px;
             color: #a0cbe8;
-            margin-top: 8px;
+            margin-top: 5px;
         }}
 
         .options a {{
@@ -230,7 +232,7 @@ components.html(f"""
 
         @media (max-width: 480px) {{
             .login-box {{
-                padding: 30px 20px;
+                padding: 12px 15px;
             }}
         }}
     </style>
