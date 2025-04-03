@@ -813,7 +813,8 @@ def process_data(df):
     # Convert Amount to Lakhs
     df['Amount_Lacs'] = df['Amount'] / 100000
     
-    # Create Is_Won column
+    # Convert Sales Stage to string and create Is_Won column
+    df['Sales Stage'] = df['Sales Stage'].astype(str)
     df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
     
     # Calculate Weighted Amount
