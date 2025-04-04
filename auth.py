@@ -85,7 +85,7 @@ def load_users():
     except FileNotFoundError:
         # Create default admin user if file doesn't exist
         default_users = {
-            ""jobin.john@kritikalvision.ai"": {
+            "jobin.john@kritikalvision.ai": {
                 "password": hashlib.sha256(""kspl@jjsales123"".encode()).hexdigest(),
                 "role": "admin"
             }
