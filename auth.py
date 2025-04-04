@@ -15,68 +15,6 @@ def init_session_state():
     if "sales_target" not in st.session_state:
         st.session_state.sales_target = 0.0
 
-def check_password():
-    """Check if the user has entered the correct password"""
-    st.markdown("""
-        <div style='
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        '>
-            <h1 style='
-                color: white;
-                margin: 0;
-                text-align: center;
-                font-size: 2.2em;
-                font-weight: 600;
-                letter-spacing: 0.5px;
-                text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-            '>Sales Dashboard Login</h1>
-        </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
-        <style>
-        .stTextInput > div > div > input {
-            background-color: white;
-            border-radius: 8px;
-            padding: 10px;
-            font-size: 1.1em;
-            border: 2px solid #e0e0e0;
-            transition: border-color 0.3s ease;
-        }
-        .stTextInput > div > div > input:focus {
-            border-color: #2a5298;
-            box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.2);
-        }
-        .stButton > button {
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 1.1em;
-            font-weight: 600;
-            width: 100%;
-            margin-top: 10px;
-            transition: transform 0.2s ease;
-        }
-        .stButton > button:hover {
-            transform: translateY(-2px);
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    password = st.text_input("Password", type="password")
-
-    if password == "admin123":  # Replace with your desired password
-        st.session_state.authenticated = True
-        st.rerun()
-    elif password:
-        st.error("Incorrect password. Please try again.")
-
 # Load users from JSON file
 def load_users():
     try:
@@ -86,7 +24,7 @@ def load_users():
         # Create default admin user if file doesn't exist
         default_users = {
             "jobin.john@kritikalvision.ai": {
-                "password": hashlib.sha256("kspl@jjsales123".encode()).hexdigest()
+                "password": hashlib.sha256("kspl@jjsales123".encode()).hexdigest(),
                 "role": "admin"
             }
         }
@@ -108,18 +46,16 @@ def show_login_page():
             section[data-testid="stSidebar"] {display: none !important;}
             #MainMenu {visibility: hidden;}
             footer {visibility: hidden;}
-            
-            /* Override Streamlit defaults */
+
             .stApp {
                 background: #0B0B1E !important;
             }
-            
+
             .block-container {
                 padding: 0 !important;
                 max-width: 100% !important;
             }
 
-            /* Custom styles for form elements */
             [data-testid="stTextInput"] > div > div > input {
                 background-color: #000 !important;
                 border: 2px solid #00F5FF !important;
@@ -160,7 +96,6 @@ def show_login_page():
                 box-shadow: 0 0 30px rgba(0, 245, 255, 0.5) !important;
             }
 
-            /* Base layout */
             .main {
                 display: flex;
                 justify-content: center;
@@ -170,7 +105,6 @@ def show_login_page():
                 font-family: 'Orbitron', sans-serif;
             }
 
-            /* Container and login box */
             .container {
                 width: 100%;
                 max-width: 400px;
@@ -187,7 +121,6 @@ def show_login_page():
                 border: 2px solid #00F5FF;
             }
 
-            /* Title */
             .login-box h1 {
                 color: #00F5FF;
                 text-align: center;
@@ -198,7 +131,6 @@ def show_login_page():
                 font-family: 'Orbitron', sans-serif;
             }
 
-            /* Remember me and Forgot password */
             .options {
                 display: flex;
                 justify-content: space-between;
@@ -228,7 +160,6 @@ def show_login_page():
                 text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
             }
 
-            /* Particles */
             .particles {
                 position: fixed;
                 top: 0;
@@ -261,82 +192,6 @@ def show_login_page():
                 }
             }
 
-            /* Generate multiple particles with different colors */
             .particle:nth-child(3n) { background: #00F5FF; }
             .particle:nth-child(3n+1) { background: #FF00FF; }
-            .particle:nth-child(3n+2) { background: #FFD700; }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # Generate particles HTML
-    particles_html = ""
-    for i in range(30):
-        left = random.randint(0, 100)
-        delay = random.randint(0, 20)
-        duration = random.randint(15, 25)
-        particles_html += f'<div class="particle" style="left: {left}vw; animation-delay: {delay}s; animation-duration: {duration}s;"></div>'
-
-    # Create the main container with particles
-    st.markdown(f"""
-        <div class="main">
-            <div class="particles">
-                {particles_html}
-            </div>
-            <div class="container">
-                <div class="login-box">
-                    <h1>Welcome Back</h1>
-                    <div id="login-form">
-    """, unsafe_allow_html=True)
-
-    # Create columns for centering the form
-    col1, col2, col3 = st.columns([1, 2, 1])
-
-    with col2:
-        username = st.text_input("", value="", placeholder="Username", key="login_username", label_visibility="collapsed")
-        password = st.text_input("", value="", placeholder="Password", type="password", key="login_password", label_visibility="collapsed")
-
-        if st.button("LOGIN", key="login_button"):
-            if verify_password(username, password):
-                st.session_state["authenticated"] = True
-                st.session_state["username"] = username
-                st.success("Login successful!")
-                st.rerun()
-            else:
-                st.error("Invalid username or password")
-
-        # Remember me and Forgot password
-        st.markdown("""
-            <div class="options">
-                <label class="remember-me">
-                    <input type="checkbox" checked>
-                    Remember me
-                </label>
-                <a href="#" class="forgot-password">Forgot password?</a>
-            </div>
-        """, unsafe_allow_html=True)
-
-    # Close the containers
-    st.markdown("""
-                    </div>
-                </div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-def is_authenticated():
-    return st.session_state.get("authenticated", False)
-
-def get_current_user():
-    return st.session_state.get("username") if is_authenticated() else None
-
-def logout():
-    # Clear all session state
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    # Reinitialize authentication state
-    st.session_state["authenticated"] = False
-    st.session_state["username"] = None
-
-def hash_password(password: str) -> str:
-    """Hash a password using SHA-256"""
-    return hashlib.sha256(password.encode()).hexdigest()
+            .particle:nth-child(3n+2) { background: #
