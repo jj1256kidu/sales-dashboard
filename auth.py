@@ -85,8 +85,8 @@ def load_users():
     except FileNotFoundError:
         # Create default admin user if file doesn't exist
         default_users = {
-            "admin": {
-                "password": hashlib.sha256("admin123".encode()).hexdigest(),
+            ""jobin.john@kritikalvision.ai"": {
+                "password": hashlib.sha256(""kspl@jjsales123"".encode()).hexdigest(),
                 "role": "admin"
             }
         }
@@ -340,16 +340,3 @@ def logout():
 def hash_password(password: str) -> str:
     """Hash a password using SHA-256"""
     return hashlib.sha256(password.encode()).hexdigest()
-
-def authenticate(username: str, password: str) -> bool:
-    """Authenticate a user"""
-    if username in USERS and USERS[username] == password:  # Simplified check
-        st.session_state.authenticated = True
-        st.session_state.username = username
-        return True
-    return False
-
-# Hardcoded users (in a real app, this would be in a database)
-USERS = {
-    "admin": "admin123"  # Simplified user structure
-} 
