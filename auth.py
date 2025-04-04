@@ -86,7 +86,7 @@ def load_users():
         # Create default admin user if file doesn't exist
         default_users = {
             "jobin.john@kritikalvision.ai": {
-                "password": hashlib.sha256(""kspl@jjsales123"".encode()).hexdigest(),
+                "password": hashlib.sha256("kspl@jjsales123".encode()).hexdigest()
                 "role": "admin"
             }
         }
