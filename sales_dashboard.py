@@ -108,6 +108,8 @@ if 'last_attempt' not in st.session_state:
     st.session_state.last_attempt = 0
 if 'locked_until' not in st.session_state:
     st.session_state.locked_until = 0
+if 'is_logged_in' not in st.session_state:
+    st.session_state.is_logged_in = False
 
 def load_data():
     """Load and process the sales data"""
