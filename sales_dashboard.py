@@ -116,6 +116,19 @@ def load_data():
         # Read the Excel file
         df = pd.read_excel("sales_data.xlsx")
         
+        # Check if dataframe is empty
+        if df.empty:
+            st.warning("The data file is empty. Please upload valid data.")
+            return pd.DataFrame()
+            
+        # Check for required columns
+        required_columns = ['Expected Close Date', 'Year in FY', 'Probability', 
+                          'Sales Stage', 'Amount', 'Sales Owner']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            st.error(f"Missing required columns: {', '.join(missing_columns)}")
+            return pd.DataFrame()
+        
         # Process dates and calculate time-based columns
         df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
         df['Month'] = df['Expected Close Date'].dt.strftime('%B')
@@ -167,12 +180,19 @@ def main():
     # Load data
     df = load_data()
 
+    # Show appropriate view based on selection
     if page == "Data Input":
         show_data_input_view(df)
     elif page == "Overview":
-        show_overview_view(df)
+        if not df.empty:
+            show_overview_view(df)
+        else:
+            st.warning("Please upload data first to view the Overview.")
     elif page == "Sales Team":
-        show_sales_team_view(df)
+        if not df.empty:
+            show_sales_team_view(df)
+        else:
+            st.warning("Please upload data first to view the Sales Team data.")
     elif page == "Meeting Data":
         show_meeting_data_view()
 
@@ -265,6 +285,79 @@ def show_meeting_data_view():
                     st.error(f"Error reading file: {str(e)}")
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
+
+            # Read the current week's data from Raw_Data sheet
+            current_df = pd.read_excel(
+                selected_file,
+                sheet_name="Raw_Data",
+                skiprows=2
+            )
+            
+            # Get the previous week's file
+            if len(files) > 1:
+                previous_file = files[1]  # Second most recent file
+                previous_df = pd.read_excel(
+                    previous_file,
+                    sheet_name="Raw_Data",
+                    skiprows=2
+                )
+                
+                # Compare the data
+                st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📊 Data Comparison</h4>', unsafe_allow_html=True)
+                
+                # Create two columns for side-by-side comparison
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown(f"<h5>Current Week ({os.path.basename(selected_file)})</h5>", unsafe_allow_html=True)
+                    st.dataframe(
+                        current_df,
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                
+                with col2:
+                    st.markdown(f"<h5>Previous Week ({os.path.basename(previous_file)})</h5>", unsafe_allow_html=True)
+                    st.dataframe(
+                        previous_df,
+                        use_container_width=True,
+                        hide_index=True
+                    )
+                
+                # Calculate and display differences
+                st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📈 Key Differences</h4>', unsafe_allow_html=True)
+                
+                # Get numeric columns for comparison
+                numeric_cols = current_df.select_dtypes(include=['int64', 'float64']).columns
+                
+                if len(numeric_cols) > 0:
+                    # Calculate differences
+                    differences = pd.DataFrame()
+                    for col in numeric_cols:
+                        if col in previous_df.columns:
+                            differences[f'{col}_Current'] = current_df[col]
+                            differences[f'{col}_Previous'] = previous_df[col]
+                            differences[f'{col}_Change'] = current_df[col] - previous_df[col]
+                            differences[f'{col}_%_Change'] = ((current_df[col] - previous_df[col]) / previous_df[col] * 100).round(2)
+                    
+                    if not differences.empty:
+                        st.dataframe(
+                            differences,
+                            use_container_width=True,
+                            hide_index=True
+                        )
+                    else:
+                        st.info("No numeric columns found for comparison.")
+                else:
+                    st.info("No numeric columns found for comparison.")
+            else:
+                st.warning("No previous week's data available for comparison.")
+                st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📋 Current Week Data</h4>', unsafe_allow_html=True)
+                st.dataframe(
+                    current_df,
+                    use_container_width=True,
+                    hide_index=True
+                )
 
 if __name__ == "__main__":
     main()
