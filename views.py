@@ -889,7 +889,7 @@ def show_sales_team_view(df):
         </div>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns(9)
     with col1:
         filters = {
             'selected_member': st.selectbox(
@@ -935,9 +935,6 @@ def show_sales_team_view(df):
         filters['status_filter'] = st.selectbox("🎯 Status", options=status_options)
     with col8:
         filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All Focus"] + sorted(df['KritiKal Focus Areas'].dropna().unique().tolist()))
-    
-    # Add practice filter
-    col9 = st.columns(1)[0]
     with col9:
         practices = ["All Practices"] + sorted(df['Practice'].dropna().unique().tolist())
         filters['practice_filter'] = st.selectbox("🏢 Practice", options=practices)
