@@ -95,6 +95,14 @@ if 'current_view' not in st.session_state:
     st.session_state.current_view = 'data_input'
 if 'sales_target' not in st.session_state:
     st.session_state.sales_target = 0.0
+if 'login_attempts' not in st.session_state:
+    st.session_state.login_attempts = 0
+if 'last_attempt' not in st.session_state:
+    st.session_state.last_attempt = 0
+if 'locked_until' not in st.session_state:
+    st.session_state.locked_until = 0
+if 'is_logged_in' not in st.session_state:
+    st.session_state.is_logged_in = False
 
 def main():
     # Check authentication
