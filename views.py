@@ -909,7 +909,9 @@ def show_sales_team_view(df):
     with col4:
         filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
     with col5:
-        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
+        # Get unique years from 'Year in FY' column
+        available_years = sorted(df['Year in FY'].dropna().unique().tolist())
+        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + available_years)
     with col6:
         probability_options = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%", "Custom Range"]
         filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_options)
