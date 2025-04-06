@@ -422,7 +422,11 @@ def show_data_input():
     
     with col1:
         st.markdown("### Current Week Data")
-        uploaded_file = st.file_uploader("Upload Current Week Data", type=['xlsx', 'xls'])
+        uploaded_file = st.file_uploader(
+            "Upload Current Week Data", 
+            type=['xlsx', 'xls'],
+            key="current_week_uploader"  # Added unique key
+        )
         if uploaded_file is not None:
             try:
                 # Read all sheets from the Excel file
@@ -448,7 +452,11 @@ def show_data_input():
     
     with col2:
         st.markdown("### Previous Week Data")
-        previous_week_file = st.file_uploader("Upload Previous Week Data", type=['xlsx', 'xls'])
+        previous_week_file = st.file_uploader(
+            "Upload Previous Week Data", 
+            type=['xlsx', 'xls'],
+            key="previous_week_uploader"  # Added unique key
+        )
         if previous_week_file is not None:
             try:
                 # Read all sheets from the previous week Excel file
