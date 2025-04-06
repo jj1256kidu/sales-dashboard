@@ -4,13 +4,6 @@ import numpy as np
 from pathlib import Path
 import os
 
-# Page configuration
-st.set_page_config(
-    page_title="Quarterly Summary Dashboard",
-    page_icon="📊",
-    layout="wide"
-)
-
 # Custom CSS for styling
 st.markdown("""
     <style>
