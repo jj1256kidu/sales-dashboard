@@ -425,7 +425,7 @@ def show_data_input():
         uploaded_file = st.file_uploader(
             "Upload Current Week Data", 
             type=['xlsx', 'xls'],
-            key="current_week_uploader"  # Added unique key
+            key="current_week_uploader"
         )
         if uploaded_file is not None:
             try:
@@ -455,7 +455,7 @@ def show_data_input():
         previous_week_file = st.file_uploader(
             "Upload Previous Week Data", 
             type=['xlsx', 'xls'],
-            key="previous_week_uploader"  # Added unique key
+            key="previous_week_uploader"
         )
         if previous_week_file is not None:
             try:
@@ -1607,7 +1607,7 @@ def main():
     if 'sales_target' not in st.session_state:
         st.session_state.sales_target = 0.0  # Default target in Lakhs
     
-    # Sidebar for file uploads and navigation
+    # Sidebar for navigation only
     with st.sidebar:
         st.title("Navigation")
         selected = st.radio(
@@ -1616,61 +1616,6 @@ def main():
             key="navigation"
         )
         st.session_state.current_view = selected.lower().replace(" ", "_")
-        
-        # Single data input area
-        st.markdown("""
-            <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
-                <h3 style='color: #2a5298; margin: 0; font-size: 1.2em; font-weight: 600;'>📤 Upload Data</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Current week data upload
-        uploaded_file = st.file_uploader("Upload Current Week Data", type=['xlsx', 'xls'])
-        if uploaded_file is not None:
-            try:
-                # Read all sheets from the Excel file
-                excel_file = pd.ExcelFile(uploaded_file)
-                sheet_names = excel_file.sheet_names
-                
-                # Show sheet selection dropdown
-                selected_sheet = st.selectbox(
-                    "Select Current Week Sheet",
-                    options=sheet_names,
-                    key="current_sheet_select"
-                )
-                
-                # Load the selected sheet
-                df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
-                st.session_state.df = df
-                st.session_state.raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
-                st.session_state.selected_sheet = selected_sheet
-                st.success(f"Successfully loaded current week sheet '{selected_sheet}' with {len(df):,} records")
-                
-            except Exception as e:
-                st.error(f"Error reading current week file: {str(e)}")
-        
-        # Previous week data upload
-        previous_week_file = st.file_uploader("Upload Previous Week Data", type=['xlsx', 'xls'])
-        if previous_week_file is not None:
-            try:
-                # Read all sheets from the previous week Excel file
-                previous_excel_file = pd.ExcelFile(previous_week_file)
-                previous_sheet_names = previous_excel_file.sheet_names
-                
-                # Show sheet selection dropdown for previous week
-                selected_previous_sheet = st.selectbox(
-                    "Select Previous Week Sheet",
-                    options=previous_sheet_names,
-                    key="previous_sheet_select"
-                )
-                
-                # Load the selected sheet
-                previous_df = pd.read_excel(previous_week_file, sheet_name=selected_previous_sheet)
-                st.session_state.previousweek_raw_data = {sheet: pd.read_excel(previous_week_file, sheet_name=sheet) for sheet in previous_sheet_names}
-                st.success(f"Successfully loaded previous week sheet '{selected_previous_sheet}' with {len(previous_df):,} records")
-                
-            except Exception as e:
-                st.error(f"Error reading previous week file: {str(e)}")
     
     # Main content based on selected view
     if st.session_state.current_view == "data_input":
