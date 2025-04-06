@@ -240,6 +240,61 @@ def show_meeting_data_view():
                 f.write(uploaded_file.getbuffer())
             
             st.success(f"File saved successfully as {filename}")
+            
+            # Push to GitHub
+            try:
+                import git
+                from git.exc import GitCommandError, InvalidGitRepositoryError
+                
+                try:
+                    # Initialize repository if it doesn't exist
+                    if not os.path.exists('.git'):
+                        repo = git.Repo.init('.')
+                        st.info("Initialized new Git repository")
+                    else:
+                        repo = git.Repo('.')
+                    
+                    # Configure git if needed
+                    if not repo.heads:
+                        repo.git.add('data/')
+                        repo.index.commit('Initial commit')
+                        st.info("Created initial commit")
+                    
+                    # Add and commit the new file
+                    repo.git.add('data/')
+                    repo.index.commit(f'Add meeting data for {current_date}')
+                    
+                    # Try to get remote, add if it doesn't exist
+                    try:
+                        origin = repo.remote(name='origin')
+                    except ValueError:
+                        # Get GitHub URL from user
+                        github_url = st.text_input("Please enter your GitHub repository URL (e.g., https://github.com/username/repo.git):")
+                        if github_url:
+                            origin = repo.create_remote('origin', github_url)
+                            st.success("Added remote repository")
+                        else:
+                            st.warning("Please provide a GitHub repository URL to enable automatic pushing")
+                            return
+                    
+                    # Push to remote
+                    try:
+                        origin.push()
+                        st.success("Data successfully pushed to GitHub")
+                    except GitCommandError as push_error:
+                        st.warning(f"Could not push to GitHub: {str(push_error)}")
+                        st.info("Make sure you have the correct permissions and the remote repository exists")
+                
+                except InvalidGitRepositoryError:
+                    st.warning("Not a valid Git repository. Please initialize Git in your project directory.")
+                except Exception as git_error:
+                    st.warning(f"Git operation failed: {str(git_error)}")
+            
+            except ImportError:
+                st.warning("GitPython is not installed. Please run 'pip install gitpython' to enable automatic GitHub pushing")
+            except Exception as e:
+                st.warning(f"Could not push to GitHub: {str(e)}")
+            
         except Exception as e:
             st.error(f"Error saving file: {str(e)}")
 
@@ -262,102 +317,91 @@ def show_meeting_data_view():
 
         if selected_file:
             try:
-                # Read the Excel file
-                df = pd.read_excel(
+                # Read the current week's data from Raw_Data sheet
+                current_df = pd.read_excel(
                     selected_file,
-                    sheet_name="Quarter Summary Dashboard",
-                    skiprows=2,
-                    usecols="B:T"
-                )
-                
-                # Display the data
-                st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📋 Meeting Data</h4>', unsafe_allow_html=True)
-                st.dataframe(
-                    df,
-                    use_container_width=True,
-                    hide_index=True
-                )
-                
-            except ValueError as e:
-                if "Worksheet named" in str(e):
-                    st.error("The selected file does not contain a sheet named 'Quarter Summary Dashboard'.")
-                else:
-                    st.error(f"Error reading file: {str(e)}")
-            except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
-
-            # Read the current week's data from Raw_Data sheet
-            current_df = pd.read_excel(
-                selected_file,
-                sheet_name="Raw_Data",
-                skiprows=2
-            )
-            
-            # Get the previous week's file
-            if len(files) > 1:
-                previous_file = files[1]  # Second most recent file
-                previous_df = pd.read_excel(
-                    previous_file,
                     sheet_name="Raw_Data",
                     skiprows=2
                 )
                 
-                # Compare the data
-                st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📊 Data Comparison</h4>', unsafe_allow_html=True)
-                
-                # Create two columns for side-by-side comparison
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.markdown(f"<h5>Current Week ({os.path.basename(selected_file)})</h5>", unsafe_allow_html=True)
-                    st.dataframe(
-                        current_df,
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                
-                with col2:
-                    st.markdown(f"<h5>Previous Week ({os.path.basename(previous_file)})</h5>", unsafe_allow_html=True)
-                    st.dataframe(
-                        previous_df,
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                
-                # Calculate and display differences
-                st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📈 Key Differences</h4>', unsafe_allow_html=True)
-                
-                # Get numeric columns for comparison
-                numeric_cols = current_df.select_dtypes(include=['int64', 'float64']).columns
-                
-                if len(numeric_cols) > 0:
-                    # Calculate differences
-                    differences = pd.DataFrame()
-                    for col in numeric_cols:
-                        if col in previous_df.columns:
-                            differences[f'{col}_Current'] = current_df[col]
-                            differences[f'{col}_Previous'] = previous_df[col]
-                            differences[f'{col}_Change'] = current_df[col] - previous_df[col]
-                            differences[f'{col}_%_Change'] = ((current_df[col] - previous_df[col]) / previous_df[col] * 100).round(2)
-                    
-                    if not differences.empty:
-                        st.dataframe(
-                            differences,
-                            use_container_width=True,
-                            hide_index=True
-                        )
-                    else:
-                        st.info("No numeric columns found for comparison.")
-                else:
-                    st.info("No numeric columns found for comparison.")
-            else:
-                st.warning("No previous week's data available for comparison.")
+                # Display current week's data
                 st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📋 Current Week Data</h4>', unsafe_allow_html=True)
                 st.dataframe(
                     current_df,
                     use_container_width=True,
                     hide_index=True
                 )
+                
+                # Get the previous week's file
+                if len(files) > 1:
+                    previous_file = files[1]  # Second most recent file
+                    try:
+                        previous_df = pd.read_excel(
+                            previous_file,
+                            sheet_name="Raw_Data",
+                            skiprows=2
+                        )
+                        
+                        # Compare the data
+                        st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📊 Data Comparison</h4>', unsafe_allow_html=True)
+                        
+                        # Create two columns for side-by-side comparison
+                        col1, col2 = st.columns(2)
+                        
+                        with col1:
+                            st.markdown(f"<h5>Current Week ({os.path.basename(selected_file)})</h5>", unsafe_allow_html=True)
+                            st.dataframe(
+                                current_df,
+                                use_container_width=True,
+                                hide_index=True
+                            )
+                        
+                        with col2:
+                            st.markdown(f"<h5>Previous Week ({os.path.basename(previous_file)})</h5>", unsafe_allow_html=True)
+                            st.dataframe(
+                                previous_df,
+                                use_container_width=True,
+                                hide_index=True
+                            )
+                        
+                        # Calculate and display differences
+                        st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📈 Key Differences</h4>', unsafe_allow_html=True)
+                        
+                        # Get numeric columns for comparison
+                        numeric_cols = current_df.select_dtypes(include=['int64', 'float64']).columns
+                        
+                        if len(numeric_cols) > 0:
+                            # Calculate differences
+                            differences = pd.DataFrame()
+                            for col in numeric_cols:
+                                if col in previous_df.columns:
+                                    differences[f'{col}_Current'] = current_df[col]
+                                    differences[f'{col}_Previous'] = previous_df[col]
+                                    differences[f'{col}_Change'] = current_df[col] - previous_df[col]
+                                    differences[f'{col}_%_Change'] = ((current_df[col] - previous_df[col]) / previous_df[col] * 100).round(2)
+                            
+                            if not differences.empty:
+                                st.dataframe(
+                                    differences,
+                                    use_container_width=True,
+                                    hide_index=True
+                                )
+                            else:
+                                st.info("No numeric columns found for comparison.")
+                        else:
+                            st.info("No numeric columns found for comparison.")
+                    except Exception as prev_error:
+                        st.warning(f"Could not read previous week's data: {str(prev_error)}")
+                else:
+                    st.info("This is your first data upload. Comparison will be available after your next upload.")
+                
+            except ValueError as e:
+                if "Worksheet named" in str(e):
+                    st.error("The selected file does not contain a sheet named 'Raw_Data'.")
+                else:
+                    st.error(f"Error reading file: {str(e)}")
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":
     main()
