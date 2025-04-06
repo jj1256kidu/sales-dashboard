@@ -907,11 +907,8 @@ def show_sales_team_view(df):
             'October', 'November', 'December', 'January', 'February', 'March'
         ]
         
-        # Get available months from data and sort them according to fiscal year order
-        available_months = df['Month'].dropna().unique().tolist()
-        available_months.sort(key=lambda x: fiscal_months.index(x) if x in fiscal_months else len(fiscal_months))
-        
-        filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months)
+        # Show all fiscal months regardless of data
+        filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + fiscal_months)
     with col4:
         filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
     with col5:
