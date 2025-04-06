@@ -266,34 +266,34 @@ st.markdown("""
 # Cache data processing functions
 @st.cache_data
 def process_data(df):
-    """Process and prepare data for the dashboard"""
-    df = df.copy()
+    """Process and clean the data"""
+    if df is None:
+        return None
     
-    # Convert dates and calculate time-based columns at once
-    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
-    df['Month'] = df['Expected Close Date'].dt.strftime('%B')
-    df['Year'] = df['Expected Close Date'].dt.year
-    df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
+    # Make a copy of the DataFrame
+    processed_df = df.copy()
     
-    # Convert probability and calculate numeric values at once with safe null handling
-    def convert_probability(x):
-        try:
-            if pd.isna(x):
-                return 0
-            if isinstance(x, str):
-                x = x.rstrip('%')
-            return float(x)
-        except:
-            return 0
+    # Convert date columns
+    if 'Expected Close Date' in processed_df.columns:
+        processed_df['Expected Close Date'] = pd.to_datetime(processed_df['Expected Close Date'])
     
-    df['Probability_Num'] = df['Probability'].apply(convert_probability)
+    # Convert amount to numeric
+    if 'Amount' in processed_df.columns:
+        processed_df['Amount'] = pd.to_numeric(processed_df['Amount'], errors='coerce')
     
-    # Pre-calculate common flags and metrics with safe null handling
-    df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
-    df['Amount_Lacs'] = df['Amount'].fillna(0).div(100000).round(0).astype(int)
-    df['Weighted_Amount'] = (df['Amount_Lacs'] * df['Probability_Num'] / 100).round(0).astype(int)
+    # Convert probability to numeric
+    if 'Probability' in processed_df.columns:
+        processed_df['Probability'] = pd.to_numeric(processed_df['Probability'], errors='coerce')
+        processed_df['Probability'] = processed_df['Probability'].fillna(0)
     
-    return df
+    # Clean text columns
+    text_columns = ['Practice', 'Team', 'Sales Stage', 'Notes']
+    for col in text_columns:
+        if col in processed_df.columns:
+            processed_df[col] = processed_df[col].astype(str).str.strip()
+            processed_df[col] = processed_df[col].replace('nan', '')
+    
+    return processed_df
 
 @st.cache_data
 def calculate_team_metrics(df):
@@ -373,24 +373,50 @@ def filter_dataframe(df, filters):
     
     return df[mask]
 
-def show_data_input_view():
+def show_data_input_view(df):
     """Display the data input view"""
     st.title("Data Input")
     
     # File upload section
-    st.markdown("### Upload Data File")
-    uploaded_file = st.file_uploader("Choose an Excel file", type=["xlsx", "xls"])
+    st.markdown("### Upload Excel File")
+    uploaded_file = st.file_uploader(
+        "Choose an Excel file",
+        type=['xlsx', 'xls'],
+        key="file_uploader"
+    )
     
     if uploaded_file is not None:
         try:
-            df = pd.read_excel(uploaded_file)
-            st.session_state.df = df
-            st.success("File uploaded successfully!")
+            # Read the uploaded file
+            new_df = pd.read_excel(uploaded_file)
+            
+            # Validate required columns
+            required_columns = ['Practice', 'Team', 'Sales Stage', 'Amount', 'Expected Close Date']
+            missing_columns = [col for col in required_columns if col not in new_df.columns]
+            
+            if missing_columns:
+                st.error(f"Missing required columns: {', '.join(missing_columns)}")
+            else:
+                # Process dates
+                if 'Expected Close Date' in new_df.columns:
+                    new_df['Expected Close Date'] = pd.to_datetime(new_df['Expected Close Date'])
+                
+                # Convert amount to numeric
+                if 'Amount' in new_df.columns:
+                    new_df['Amount'] = pd.to_numeric(new_df['Amount'], errors='coerce')
+                
+                # Update session state
+                st.session_state.df = new_df
+                st.success("File uploaded successfully!")
+                
+                # Display preview
+                st.markdown("### Data Preview")
+                st.dataframe(new_df.head(), use_container_width=True)
         except Exception as e:
             st.error(f"Error reading file: {str(e)}")
     
     # Manual input section
-    st.markdown("### Manual Data Input")
+    st.markdown("### Manual Input")
     with st.form("manual_input_form"):
         col1, col2 = st.columns(2)
         
@@ -399,47 +425,53 @@ def show_data_input_view():
             team = st.text_input("Team")
             sales_stage = st.selectbox(
                 "Sales Stage",
-                options=["Prospecting", "Qualification", "Needs Analysis", "Value Proposition", "Negotiation", "Closed Won", "Closed Lost"]
+                options=['Prospecting', 'Qualification', 'Needs Analysis', 'Value Proposition', 'Negotiation', 'Closed Won', 'Closed Lost']
             )
-            amount = st.number_input("Amount", min_value=0)
+            amount = st.number_input("Amount (in Lakhs)", min_value=0.0, step=0.1)
         
         with col2:
             expected_close_date = st.date_input("Expected Close Date")
             probability = st.slider("Probability (%)", min_value=0, max_value=100, value=50)
             notes = st.text_area("Notes")
         
-        submit_button = st.form_submit_button("Add Data")
-    
-    if submit_button:
-        # Create new row
-        new_row = {
-            "Practice": practice,
-            "Team": team,
-            "Sales Stage": sales_stage,
-            "Amount": amount,
-            "Expected Close Date": expected_close_date,
-            "Probability": probability,
-            "Notes": notes
-        }
+        submit_button = st.form_submit_button("Add Entry")
         
-        # Add to dataframe
-        if 'df' not in st.session_state:
-            st.session_state.df = pd.DataFrame(columns=new_row.keys())
-        
-        st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([new_row])], ignore_index=True)
-        st.success("Data added successfully!")
+        if submit_button:
+            # Validate input
+            if not all([practice, team, sales_stage, amount, expected_close_date]):
+                st.error("Please fill in all required fields")
+            else:
+                # Create new row
+                new_row = {
+                    'Practice': practice,
+                    'Team': team,
+                    'Sales Stage': sales_stage,
+                    'Amount': amount * 100000,  # Convert to rupees
+                    'Expected Close Date': pd.Timestamp(expected_close_date),
+                    'Probability': probability,
+                    'Notes': notes
+                }
+                
+                # Add to DataFrame
+                if df is None:
+                    df = pd.DataFrame([new_row])
+                else:
+                    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+                
+                # Update session state
+                st.session_state.df = df
+                st.success("Entry added successfully!")
     
     # Display current data
-    if 'df' in st.session_state and not st.session_state.df.empty:
+    if df is not None:
         st.markdown("### Current Data")
-        st.dataframe(st.session_state.df, use_container_width=True)
+        st.dataframe(df, use_container_width=True)
         
         # Download button
-        csv = st.session_state.df.to_csv(index=False)
         st.download_button(
-            label="Download Data",
-            data=csv,
-            file_name="sales_data.csv",
+            label="Download Current Data",
+            data=df.to_csv(index=False).encode('utf-8'),
+            file_name="current_sales_data.csv",
             mime="text/csv"
         )
 
