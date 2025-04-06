@@ -772,6 +772,153 @@ def show_detailed_data_view(st):
     else:
         st.warning("No data available for the selected filters")
 
+def show_week_over_week_delta():
+    st.markdown("""
+        <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
+            <h3 style='color: #2a5298; margin: 0; font-size: 1.2em; font-weight: 600;'>📊 Week-over-Week Delta Analysis</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    if 'raw_data' not in st.session_state or 'previousweek_raw_data' not in st.session_state:
+        st.warning("Please upload both current week and previous week data to view delta analysis")
+        return
+    
+    current_df = st.session_state.raw_data
+    previous_df = st.session_state.previousweek_raw_data
+    
+    # Get sheet names from both files
+    current_sheets = list(current_df.keys()) if isinstance(current_df, dict) else ['Sheet1']
+    previous_sheets = list(previous_df.keys()) if isinstance(previous_df, dict) else ['Sheet1']
+    
+    # Create sheet selection dropdowns
+    col1, col2 = st.columns(2)
+    with col1:
+        current_sheet = st.selectbox("Select Current Week Sheet", options=current_sheets)
+    with col2:
+        previous_sheet = st.selectbox("Select Previous Week Sheet", options=previous_sheets)
+    
+    # Get the selected sheets
+    current_data = current_df[current_sheet] if isinstance(current_df, dict) else current_df
+    previous_data = previous_df[previous_sheet] if isinstance(previous_df, dict) else previous_df
+    
+    # Ensure both dataframes have the same structure
+    required_columns = ['Organization Name', 'Opportunity Name', 'Deal Value', 'Status', 'Sales Team Member', 'Practice', 'Quarter']
+    for col in required_columns:
+        if col not in current_data.columns or col not in previous_data.columns:
+            st.error(f"Required column '{col}' not found in one or both datasets")
+            return
+    
+    # Quarter filter
+    quarters = sorted(current_data['Quarter'].unique())
+    selected_quarter = st.selectbox("Select Quarter", options=["All Quarters"] + quarters.tolist())
+    
+    # Filter data by selected quarter
+    if selected_quarter != "All Quarters":
+        current_data = current_data[current_data['Quarter'] == selected_quarter]
+        previous_data = previous_data[previous_data['Quarter'] == selected_quarter]
+    
+    # Sales Owner Commitment Table
+    st.markdown("### Sales Owner Commitment Table")
+    
+    # Calculate metrics for each sales owner
+    current_owner_metrics = current_data.groupby('Sales Team Member').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Committed').sum()
+    }).reset_index()
+    
+    previous_owner_metrics = previous_data.groupby('Sales Team Member').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Committed').sum()
+    }).reset_index()
+    
+    # Merge current and previous data
+    owner_comparison = pd.merge(
+        current_owner_metrics,
+        previous_owner_metrics,
+        on='Sales Team Member',
+        suffixes=('_current', '_previous'),
+        how='outer'
+    ).fillna(0)
+    
+    # Calculate deltas
+    owner_comparison['Delta'] = owner_comparison['Deal Value_current'] - owner_comparison['Deal Value_previous']
+    owner_comparison['Delta %'] = (owner_comparison['Delta'] / owner_comparison['Deal Value_previous'] * 100).round(1)
+    
+    # Add total row
+    total_row = pd.DataFrame({
+        'Sales Team Member': ['Total'],
+        'Deal Value_current': [owner_comparison['Deal Value_current'].sum()],
+        'Deal Value_previous': [owner_comparison['Deal Value_previous'].sum()],
+        'Delta': [owner_comparison['Delta'].sum()],
+        'Delta %': [(owner_comparison['Delta'].sum() / owner_comparison['Deal Value_previous'].sum() * 100).round(1)]
+    })
+    owner_comparison = pd.concat([owner_comparison, total_row], ignore_index=True)
+    
+    # Format the table
+    owner_comparison['Deal Value_current'] = owner_comparison['Deal Value_current'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    owner_comparison['Deal Value_previous'] = owner_comparison['Deal Value_previous'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    owner_comparison['Delta'] = owner_comparison['Delta'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    owner_comparison['Delta %'] = owner_comparison['Delta %'].apply(lambda x: f"{x}%")
+    
+    # Display the table with styling
+    st.dataframe(
+        owner_comparison.style.applymap(
+            lambda x: 'color: red' if x.startswith('₹-') else 'color: green',
+            subset=['Delta']
+        )
+    )
+    
+    # Function Overview Commitment Table
+    st.markdown("### Function Overview Commitment Table")
+    
+    # Calculate metrics for each function
+    current_function_metrics = current_data.groupby('Practice').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Committed').sum()
+    }).reset_index()
+    
+    previous_function_metrics = previous_data.groupby('Practice').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Committed').sum()
+    }).reset_index()
+    
+    # Merge current and previous data
+    function_comparison = pd.merge(
+        current_function_metrics,
+        previous_function_metrics,
+        on='Practice',
+        suffixes=('_current', '_previous'),
+        how='outer'
+    ).fillna(0)
+    
+    # Calculate deltas
+    function_comparison['Delta'] = function_comparison['Deal Value_current'] - function_comparison['Deal Value_previous']
+    function_comparison['Delta %'] = (function_comparison['Delta'] / function_comparison['Deal Value_previous'] * 100).round(1)
+    
+    # Add total row
+    total_row = pd.DataFrame({
+        'Practice': ['Total'],
+        'Deal Value_current': [function_comparison['Deal Value_current'].sum()],
+        'Deal Value_previous': [function_comparison['Deal Value_previous'].sum()],
+        'Delta': [function_comparison['Delta'].sum()],
+        'Delta %': [(function_comparison['Delta'].sum() / function_comparison['Deal Value_previous'].sum() * 100).round(1)]
+    })
+    function_comparison = pd.concat([function_comparison, total_row], ignore_index=True)
+    
+    # Format the table
+    function_comparison['Deal Value_current'] = function_comparison['Deal Value_current'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    function_comparison['Deal Value_previous'] = function_comparison['Deal Value_previous'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    function_comparison['Delta'] = function_comparison['Delta'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    function_comparison['Delta %'] = function_comparison['Delta %'].apply(lambda x: f"{x}%")
+    
+    # Display the table with styling
+    st.dataframe(
+        function_comparison.style.applymap(
+            lambda x: 'color: red' if x.startswith('₹-') else 'color: green',
+            subset=['Delta']
+        )
+    )
+
 def main():
     """Main function to handle navigation and view selection"""
     # Initialize session state
