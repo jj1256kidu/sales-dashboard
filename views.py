@@ -434,8 +434,8 @@ def show_sales_team_view(st):
     
     df = st.session_state.df
     
-    # First row of filters
-    col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns(9)
+    # First row of filters with adjusted column sizes
+    col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns([1.2, 1.2, 1.2, 1, 1, 1, 1, 1.2, 1.2])
     
     with col1:
         # Sales Owner (Team Member) filter
