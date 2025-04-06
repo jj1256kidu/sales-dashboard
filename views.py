@@ -748,6 +748,7 @@ def show_data_input_view():
             mime="text/csv"
         )
 
+@require_authentication()
 def show_overview_view():
     """Display the overview section with key metrics and charts"""
     if st.session_state.df is None:
@@ -798,8 +799,8 @@ def show_overview_view():
     
     st.dataframe(practice_metrics)
     
-    # KritiKal Focus Areas
-    st.subheader("KritiKal Focus Areas")
+    # Focus Areas Distribution
+    st.subheader("Focus Areas Distribution")
     focus_areas = df.groupby("Practice")["Amount"].sum().sort_values(ascending=False)
     
     fig = go.Figure(data=[go.Pie(
