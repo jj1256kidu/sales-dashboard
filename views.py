@@ -434,108 +434,216 @@ def show_sales_team_view(st):
     
     df = st.session_state.df
     
+    # Initialize session state for filters if not exists
+    if 'filters' not in st.session_state:
+        st.session_state.filters = {
+            'team_members': [],
+            'practices': [],
+            'months': [],
+            'quarters': [],
+            'years': [],
+            'probabilities': [],
+            'statuses': [],
+            'focus': [],
+            'search': '',
+            'date_range': None
+        }
+    
+    # Reset filters button
+    if st.button("🔄 Reset All Filters", key="reset_filters"):
+        st.session_state.filters = {
+            'team_members': [],
+            'practices': [],
+            'months': [],
+            'quarters': [],
+            'years': [],
+            'probabilities': [],
+            'statuses': [],
+            'focus': [],
+            'search': '',
+            'date_range': None
+        }
+        st.experimental_rerun()
+    
     # First row of filters
     col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns(9)
     
     with col1:
-        # Sales Owner (Team Member) filter
+        # Sales Owner (Team Member) filter - Multi-select
         team_members = sorted(df['Sales Team Member'].unique())
-        selected_team = st.selectbox("👤 Sales Owner", ["All Team Members"] + list(team_members))
+        selected_team = st.multiselect(
+            "👤 Sales Owner",
+            options=team_members,
+            default=st.session_state.filters['team_members'],
+            key="team_filter"
+        )
+        st.session_state.filters['team_members'] = selected_team
     
     with col2:
         # Search
-        search_term = st.text_input("🔍 Search", placeholder="Search...")
+        search_term = st.text_input(
+            "🔍 Search",
+            value=st.session_state.filters['search'],
+            placeholder="Search...",
+            key="search_filter"
+        )
+        st.session_state.filters['search'] = search_term
     
     with col3:
-        try:
-            # Practice filter
-            if 'Practice' in df.columns:
-                practices = sorted(df['Practice'].dropna().unique())
-                selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + list(practices))
-            else:
-                st.error("Practice column not found in the data")
-                selected_practice = "All Practices"
-        except Exception as e:
-            st.error(f"Error loading practice filter: {str(e)}")
-            selected_practice = "All Practices"
+        # Practice filter - Multi-select
+        if 'Practice' in df.columns:
+            practices = sorted(df['Practice'].dropna().unique())
+            selected_practice = st.multiselect(
+                "🏢 Practice",
+                options=practices,
+                default=st.session_state.filters['practices'],
+                key="practice_filter"
+            )
+            st.session_state.filters['practices'] = selected_practice
+        else:
+            st.error("Practice column not found in the data")
     
     with col4:
-        # Month filter
-        months = ["All Months", "April", "May", "June", "July", "August", "September",
+        # Month filter - Multi-select
+        months = ["April", "May", "June", "July", "August", "September",
                  "October", "November", "December", "January", "February", "March"]
-        selected_month = st.selectbox("📅 Month", months)
+        selected_month = st.multiselect(
+            "📅 Month",
+            options=months,
+            default=st.session_state.filters['months'],
+            key="month_filter"
+        )
+        st.session_state.filters['months'] = selected_month
     
     with col5:
-        # Quarter filter
-        quarters = ["All Quarters", "Q1", "Q2", "Q3", "Q4"]
-        selected_quarter = st.selectbox("📊 Quarter", quarters)
+        # Quarter filter - Multi-select
+        quarters = ["Q1", "Q2", "Q3", "Q4"]
+        selected_quarter = st.multiselect(
+            "📊 Quarter",
+            options=quarters,
+            default=st.session_state.filters['quarters'],
+            key="quarter_filter"
+        )
+        st.session_state.filters['quarters'] = selected_quarter
     
     with col6:
-        # Year filter
+        # Year filter - Multi-select
         years = sorted(df['Date'].dt.year.unique())
-        selected_year = st.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
+        selected_year = st.multiselect(
+            "📆 Year",
+            options=[str(year) for year in years],
+            default=st.session_state.filters['years'],
+            key="year_filter"
+        )
+        st.session_state.filters['years'] = selected_year
     
     with col7:
-        # Probability filter
-        probabilities = ["All Probability", "High", "Medium", "Low"]
-        selected_probability = st.selectbox("📈 Probability", probabilities)
+        # Probability filter - Multi-select
+        probabilities = ["High", "Medium", "Low"]
+        selected_probability = st.multiselect(
+            "📈 Probability",
+            options=probabilities,
+            default=st.session_state.filters['probabilities'],
+            key="probability_filter"
+        )
+        st.session_state.filters['probabilities'] = selected_probability
     
     with col8:
-        # Status filter
+        # Status filter - Multi-select
         statuses = sorted(df['Status'].unique())
-        selected_status = st.selectbox("🎯 Status", ["All Status"] + list(statuses))
+        selected_status = st.multiselect(
+            "🎯 Status",
+            options=statuses,
+            default=st.session_state.filters['statuses'],
+            key="status_filter"
+        )
+        st.session_state.filters['statuses'] = selected_status
     
     with col9:
-        # Focus filter
-        focus_options = ["All Focus", "New Business", "Existing Business"]
-        selected_focus = st.selectbox("🎯 Focus", focus_options)
+        # Focus filter - Multi-select
+        focus_options = ["New Business", "Existing Business"]
+        selected_focus = st.multiselect(
+            "🎯 Focus",
+            options=focus_options,
+            default=st.session_state.filters['focus'],
+            key="focus_filter"
+        )
+        st.session_state.filters['focus'] = selected_focus
+    
+    # Date range picker
+    st.markdown("### Date Range")
+    col1, col2 = st.columns(2)
+    with col1:
+        start_date = st.date_input(
+            "Start Date",
+            value=df['Date'].min(),
+            key="start_date"
+        )
+    with col2:
+        end_date = st.date_input(
+            "End Date",
+            value=df['Date'].max(),
+            key="end_date"
+        )
+    st.session_state.filters['date_range'] = (start_date, end_date)
     
     # Apply filters
     filtered_df = df.copy()
     
     # Apply Sales Owner filter
-    if selected_team != "All Team Members":
-        filtered_df = filtered_df[filtered_df['Sales Team Member'] == selected_team]
+    if st.session_state.filters['team_members']:
+        filtered_df = filtered_df[filtered_df['Sales Team Member'].isin(st.session_state.filters['team_members'])]
     
     # Apply Practice filter
-    if selected_practice != "All Practices":
-        filtered_df = filtered_df[filtered_df['Practice'] == selected_practice]
+    if st.session_state.filters['practices']:
+        filtered_df = filtered_df[filtered_df['Practice'].isin(st.session_state.filters['practices'])]
     
     # Apply Month filter
-    if selected_month != "All Months":
+    if st.session_state.filters['months']:
         month_map = {
             "January": 1, "February": 2, "March": 3, "April": 4,
             "May": 5, "June": 6, "July": 7, "August": 8,
             "September": 9, "October": 10, "November": 11, "December": 12
         }
-        filtered_df = filtered_df[filtered_df['Date'].dt.month == month_map[selected_month]]
+        month_numbers = [month_map[month] for month in st.session_state.filters['months']]
+        filtered_df = filtered_df[filtered_df['Date'].dt.month.isin(month_numbers)]
     
     # Apply Quarter filter
-    if selected_quarter != "All Quarters":
+    if st.session_state.filters['quarters']:
         quarter_map = {"Q1": [1, 2, 3], "Q2": [4, 5, 6], 
                       "Q3": [7, 8, 9], "Q4": [10, 11, 12]}
-        if selected_quarter in quarter_map:
-            filtered_df = filtered_df[filtered_df['Date'].dt.month.isin(quarter_map[selected_quarter])]
+        quarter_months = []
+        for quarter in st.session_state.filters['quarters']:
+            quarter_months.extend(quarter_map[quarter])
+        filtered_df = filtered_df[filtered_df['Date'].dt.month.isin(quarter_months)]
     
     # Apply Year filter
-    if selected_year != "All Years":
-        filtered_df = filtered_df[filtered_df['Date'].dt.year == int(selected_year)]
+    if st.session_state.filters['years']:
+        filtered_df = filtered_df[filtered_df['Date'].dt.year.astype(str).isin(st.session_state.filters['years'])]
     
     # Apply Probability filter
-    if selected_probability != "All Probability":
-        filtered_df = filtered_df[filtered_df['Probability'] == selected_probability]
+    if st.session_state.filters['probabilities']:
+        filtered_df = filtered_df[filtered_df['Probability'].isin(st.session_state.filters['probabilities'])]
     
     # Apply Status filter
-    if selected_status != "All Status":
-        filtered_df = filtered_df[filtered_df['Status'] == selected_status]
+    if st.session_state.filters['statuses']:
+        filtered_df = filtered_df[filtered_df['Status'].isin(st.session_state.filters['statuses'])]
     
     # Apply Focus filter
-    if selected_focus != "All Focus":
-        filtered_df = filtered_df[filtered_df['Focus'] == selected_focus]
+    if st.session_state.filters['focus']:
+        filtered_df = filtered_df[filtered_df['Focus'].isin(st.session_state.filters['focus'])]
+    
+    # Apply Date Range filter
+    if st.session_state.filters['date_range']:
+        start_date, end_date = st.session_state.filters['date_range']
+        filtered_df = filtered_df[
+            (filtered_df['Date'].dt.date >= start_date) & 
+            (filtered_df['Date'].dt.date <= end_date)
+        ]
     
     # Apply Search filter
-    if search_term:
-        mask = filtered_df.astype(str).apply(lambda x: x.str.contains(search_term, case=False)).any(axis=1)
+    if st.session_state.filters['search']:
+        mask = filtered_df.astype(str).apply(lambda x: x.str.contains(st.session_state.filters['search'], case=False)).any(axis=1)
         filtered_df = filtered_df[mask]
     
     if len(filtered_df) > 0:
