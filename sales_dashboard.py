@@ -119,18 +119,17 @@ def main():
 
     # Main dashboard content
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team"])
+    page = st.sidebar.radio("Go to", ["Overview", "Sales Team", "Meeting Data"])
 
     # Load data
     df = load_data()
 
-    if page == "Data Input":
-        show_data_input_view(df)
-        show_meeting_data_view()  # Add meeting data viewer under data input
-    elif page == "Overview":
+    if page == "Overview":
         show_overview_view(df)
     elif page == "Sales Team":
         show_sales_team_view(df)
+    elif page == "Meeting Data":
+        show_meeting_data_view()
 
 def show_meeting_data_view():
     """Display the Meeting Data Viewer section"""
