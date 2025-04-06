@@ -1108,8 +1108,8 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
 
-    # Create a single row with all filters
-    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    # Create a single row with all filters using adjusted column sizes
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.2, 1.2, 1.2, 1, 1, 1, 1.2, 1.2])
     
     with col1:
         filters = {
