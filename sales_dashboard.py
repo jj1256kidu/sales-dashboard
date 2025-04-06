@@ -175,231 +175,50 @@ def main():
 
     # Main dashboard content
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team", "Meeting Data"])
+    page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team"])
 
-    # Load data for Overview and Sales Team views
+    # Initialize session state for data if not exists
+    if 'df' not in st.session_state:
+        st.session_state.df = None
+
+    # Load or get data based on page
     if page in ["Overview", "Sales Team"]:
-        df = load_data()
-        if df.empty:
-            st.warning("Please upload sales data in the Data Input section first.")
-            return
+        # Try to get data from session state first
+        if st.session_state.df is not None and not st.session_state.df.empty:
+            df = st.session_state.df
+        else:
+            # Try to load from file
+            df = load_data()
+            if df.empty:
+                st.warning("Please upload sales data in the Data Input section first.")
+                # Switch to Data Input page
+                page = "Data Input"
+                st.experimental_rerun()
 
     # Show appropriate view based on selection
     if page == "Data Input":
-        show_data_input_view(None)  # No need to load data for Data Input
+        # Show data input view and handle file upload
+        uploaded_file = show_data_input_view(None)
+        if uploaded_file is not None:
+            try:
+                # Save the uploaded file
+                with open("sales_data.xlsx", "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                st.success("Data uploaded successfully!")
+                
+                # Load the new data
+                df = load_data()
+                if not df.empty:
+                    st.session_state.df = df
+                    st.success("Data loaded successfully!")
+                else:
+                    st.error("Failed to load the uploaded data. Please check the file format.")
+            except Exception as e:
+                st.error(f"Error saving file: {str(e)}")
     elif page == "Overview":
         show_overview_view(df)
     elif page == "Sales Team":
         show_sales_team_view(df)
-    elif page == "Meeting Data":
-        show_meeting_data_view()  # Meeting Data has its own data loading logic
-
-def show_meeting_data_view():
-    """Display the Meeting Data Viewer section"""
-    st.markdown("""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 25px 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        '>
-            <h3 style='
-                color: #2a5298;
-                margin: 0;
-                font-size: 1.4em;
-                font-weight: 600;
-                font-family: "Segoe UI", sans-serif;
-            '>📊 Meeting Data Viewer</h3>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Create data directory if it doesn't exist
-    if not os.path.exists("data"):
-        os.makedirs("data")
-
-    # File upload section
-    st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📤 Upload New Meeting Data</h4>', unsafe_allow_html=True)
-    uploaded_file = st.file_uploader(
-        "Choose an Excel file",
-        type=['xlsx'],
-        help="Upload your meeting data in Excel format"
-    )
-
-    if uploaded_file is not None:
-        try:
-            # Generate filename with current date
-            current_date = datetime.now().strftime("%Y-%m-%d")
-            filename = f"meeting_{current_date}.xlsx"
-            filepath = os.path.join("data", filename)
-            
-            # Save the file
-            with open(filepath, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            
-            st.success(f"File saved successfully as {filename}")
-            
-            # Push to GitHub
-            try:
-                import git
-                from git.exc import GitCommandError, InvalidGitRepositoryError
-                
-                try:
-                    # Initialize repository if it doesn't exist
-                    if not os.path.exists('.git'):
-                        repo = git.Repo.init('.')
-                        st.info("Initialized new Git repository")
-                    else:
-                        repo = git.Repo('.')
-                    
-                    # Configure git if needed
-                    if not repo.heads:
-                        repo.git.add('data/')
-                        repo.index.commit('Initial commit')
-                        st.info("Created initial commit")
-                    
-                    # Add and commit the new file
-                    repo.git.add('data/')
-                    repo.index.commit(f'Add meeting data for {current_date}')
-                    
-                    # Try to get remote, add if it doesn't exist
-                    try:
-                        origin = repo.remote(name='origin')
-                    except ValueError:
-                        # Get GitHub URL from user
-                        github_url = st.text_input("Please enter your GitHub repository URL (e.g., https://github.com/username/repo.git):")
-                        if github_url:
-                            origin = repo.create_remote('origin', github_url)
-                            st.success("Added remote repository")
-                        else:
-                            st.warning("Please provide a GitHub repository URL to enable automatic pushing")
-                            return
-                    
-                    # Push to remote
-                    try:
-                        origin.push()
-                        st.success("Data successfully pushed to GitHub")
-                    except GitCommandError as push_error:
-                        st.warning(f"Could not push to GitHub: {str(push_error)}")
-                        st.info("Make sure you have the correct permissions and the remote repository exists")
-                
-                except InvalidGitRepositoryError:
-                    st.warning("Not a valid Git repository. Please initialize Git in your project directory.")
-                except Exception as git_error:
-                    st.warning(f"Git operation failed: {str(git_error)}")
-            
-            except ImportError:
-                st.warning("GitPython is not installed. Please run 'pip install gitpython' to enable automatic GitHub pushing")
-            except Exception as e:
-                st.warning(f"Could not push to GitHub: {str(e)}")
-            
-        except Exception as e:
-            st.error(f"Error saving file: {str(e)}")
-
-    # File selection section
-    st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📂 Select Meeting Data</h4>', unsafe_allow_html=True)
-
-    # Get list of files in data directory
-    files = glob.glob(os.path.join("data", "meeting_*.xlsx"))
-    files.sort(key=os.path.getmtime, reverse=True)  # Sort by most recent
-
-    if not files:
-        st.warning("No meeting data files found in the data directory.")
-    else:
-        # Create dropdown with filenames
-        selected_file = st.selectbox(
-            "Select a file",
-            options=files,
-            format_func=lambda x: os.path.basename(x)
-        )
-
-        if selected_file:
-            try:
-                # Read the current week's data from Raw_Data sheet
-                current_df = pd.read_excel(
-                    selected_file,
-                    sheet_name="Raw_Data",
-                    skiprows=2
-                )
-                
-                # Display current week's data
-                st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📋 Current Week Data</h4>', unsafe_allow_html=True)
-                st.dataframe(
-                    current_df,
-                    use_container_width=True,
-                    hide_index=True
-                )
-                
-                # Get the previous week's file
-                if len(files) > 1:
-                    previous_file = files[1]  # Second most recent file
-                    try:
-                        previous_df = pd.read_excel(
-                            previous_file,
-                            sheet_name="Raw_Data",
-                            skiprows=2
-                        )
-                        
-                        # Compare the data
-                        st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📊 Data Comparison</h4>', unsafe_allow_html=True)
-                        
-                        # Create two columns for side-by-side comparison
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            st.markdown(f"<h5>Current Week ({os.path.basename(selected_file)})</h5>", unsafe_allow_html=True)
-                            st.dataframe(
-                                current_df,
-                                use_container_width=True,
-                                hide_index=True
-                            )
-                        
-                        with col2:
-                            st.markdown(f"<h5>Previous Week ({os.path.basename(previous_file)})</h5>", unsafe_allow_html=True)
-                            st.dataframe(
-                                previous_df,
-                                use_container_width=True,
-                                hide_index=True
-                            )
-                        
-                        # Calculate and display differences
-                        st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📈 Key Differences</h4>', unsafe_allow_html=True)
-                        
-                        # Get numeric columns for comparison
-                        numeric_cols = current_df.select_dtypes(include=['int64', 'float64']).columns
-                        
-                        if len(numeric_cols) > 0:
-                            # Calculate differences
-                            differences = pd.DataFrame()
-                            for col in numeric_cols:
-                                if col in previous_df.columns:
-                                    differences[f'{col}_Current'] = current_df[col]
-                                    differences[f'{col}_Previous'] = previous_df[col]
-                                    differences[f'{col}_Change'] = current_df[col] - previous_df[col]
-                                    differences[f'{col}_%_Change'] = ((current_df[col] - previous_df[col]) / previous_df[col] * 100).round(2)
-                            
-                            if not differences.empty:
-                                st.dataframe(
-                                    differences,
-                                    use_container_width=True,
-                                    hide_index=True
-                                )
-                            else:
-                                st.info("No numeric columns found for comparison.")
-                        else:
-                            st.info("No numeric columns found for comparison.")
-                    except Exception as prev_error:
-                        st.warning(f"Could not read previous week's data: {str(prev_error)}")
-                else:
-                    st.info("This is your first data upload. Comparison will be available after your next upload.")
-                
-            except ValueError as e:
-                if "Worksheet named" in str(e):
-                    st.error("The selected file does not contain a sheet named 'Raw_Data'.")
-                else:
-                    st.error(f"Error reading file: {str(e)}")
-            except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":
     main()
