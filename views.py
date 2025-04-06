@@ -9,6 +9,9 @@ import hashlib
 import secrets
 import re
 import logging
+import json
+import random
+from typing import Optional, Dict, Any
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -17,48 +20,25 @@ logger = logging.getLogger(__name__)
 # User database (in production, use a proper database)
 USERS = {
     "admin": {
-        "password_hash": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",  # admin
-        "salt": "salt123",
+        "password": "admin123",  # This will be hashed when saved
         "role": "admin",
         "last_login": None,
         "failed_attempts": 0
     }
 }
 
-def hash_password(password, salt=None):
-    """Hash password with salt"""
-    if salt is None:
-        salt = secrets.token_hex(16)
-    return hashlib.sha256((password + salt).encode()).hexdigest(), salt
-
-def check_password(password, stored_hash, salt):
-    """Check if password matches stored hash"""
-    return hash_password(password, salt)[0] == stored_hash
-
-def validate_password(password):
-    """Validate password complexity"""
-    if len(password) < 8:
-        return False, "Password must be at least 8 characters long"
-    if not re.search(r"[A-Z]", password):
-        return False, "Password must contain at least one uppercase letter"
-    if not re.search(r"[a-z]", password):
-        return False, "Password must contain at least one lowercase letter"
-    if not re.search(r"\d", password):
-        return False, "Password must contain at least one number"
-    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
-        return False, "Password must contain at least one special character"
-    return True, ""
-
 def init_session_state():
     """Initialize session state variables"""
     if 'is_logged_in' not in st.session_state:
         st.session_state.is_logged_in = False
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
     if 'username' not in st.session_state:
         st.session_state.username = None
-    if 'last_activity' not in st.session_state:
-        st.session_state.last_activity = time.time()
     if 'login_attempts' not in st.session_state:
         st.session_state.login_attempts = 0
+    if 'last_attempt' not in st.session_state:
+        st.session_state.last_attempt = 0
     if 'locked_until' not in st.session_state:
         st.session_state.locked_until = 0
     if 'df' not in st.session_state:
@@ -66,133 +46,355 @@ def init_session_state():
     if 'role' not in st.session_state:
         st.session_state.role = None
 
-def check_credentials(username, password):
-    """Check if the provided credentials are valid"""
-    username = username.strip()
-    password = password.strip()
-    
-    if not username or not password:
-        return False, "Please enter both username and password"
-    
-    if username not in USERS:
-        logger.warning(f"Failed login attempt for non-existent user: {username}")
-        return False, "Invalid username or password"
-    
-    user = USERS[username]
-    
-    # Check if account is locked
-    if user["failed_attempts"] >= 3:
-        lockout_time = 300  # 5 minutes
-        if time.time() - user.get("last_failed_attempt", 0) < lockout_time:
-            remaining_time = int(lockout_time - (time.time() - user["last_failed_attempt"]))
-            return False, f"Account locked. Please try again in {remaining_time} seconds"
-        else:
-            user["failed_attempts"] = 0
-    
-    if check_password(password, user["password_hash"], user["salt"]):
-        # Reset failed attempts on successful login
-        user["failed_attempts"] = 0
-        user["last_login"] = time.time()
-        logger.info(f"Successful login for user: {username}")
-        return True, "Login successful"
-    else:
-        # Increment failed attempts
-        user["failed_attempts"] += 1
-        user["last_failed_attempt"] = time.time()
-        logger.warning(f"Failed login attempt for user: {username}")
-        return False, "Invalid username or password"
+def hash_password(password: str) -> str:
+    """Hash a password using SHA-256"""
+    return hashlib.sha256(password.encode()).hexdigest()
 
-def check_authentication():
-    """Check if user is authenticated and handle session management"""
-    init_session_state()
-    
-    # Check session timeout (30 minutes)
-    current_time = time.time()
-    if st.session_state.is_logged_in and (current_time - st.session_state.last_activity) > 1800:
-        logger.info(f"Session expired for user: {st.session_state.username}")
-        st.session_state.is_logged_in = False
-        st.session_state.username = None
-        st.session_state.role = None
-        st.warning("Session expired. Please login again.")
-        st.experimental_rerun()
-    
-    # Update last activity time
-    st.session_state.last_activity = current_time
-    
-    # Return authentication status
-    return st.session_state.is_logged_in
+def load_users():
+    """Load users from JSON file"""
+    try:
+        with open('users.json', 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        # Create default admin user if file doesn't exist
+        default_users = {
+            "admin": {
+                "password": hash_password("admin123"),
+                "role": "admin"
+            }
+        }
+        with open('users.json', 'w') as f:
+            json.dump(default_users, f, indent=4)
+        return default_users
+
+def verify_password(username: str, password: str) -> bool:
+    """Verify user credentials"""
+    users = load_users()
+    if username in users:
+        hashed_password = hash_password(password)
+        return hashed_password == users[username]["password"]
+    return False
+
+def check_password():
+    """Check if the password is correct"""
+    # Check if account is locked
+    if st.session_state.locked_until > time.time():
+        remaining_time = int(st.session_state.locked_until - time.time())
+        st.error(f"Account locked. Please try again in {remaining_time} seconds.")
+        return False
+
+    # Get username and password from session state
+    username = st.session_state.get('login_username', '')
+    password = st.session_state.get('login_password', '')
+
+    # Check if both username and password are provided
+    if not username or not password:
+        st.error("Please enter both username and password")
+        return False
+
+    # Check credentials
+    if verify_password(username, password):
+        st.session_state.is_logged_in = True
+        st.session_state.authenticated = True
+        st.session_state.username = username
+        st.session_state.role = load_users()[username]["role"]
+        st.session_state.login_attempts = 0
+        st.session_state.last_attempt = 0
+        st.session_state.locked_until = 0
+        logger.info(f"Successful login for user: {username}")
+        return True
+    else:
+        # Increment login attempts
+        st.session_state.login_attempts += 1
+        st.session_state.last_attempt = time.time()
+        
+        # Check if account should be locked
+        if st.session_state.login_attempts >= 3:
+            st.session_state.locked_until = time.time() + 300  # Lock for 5 minutes
+            st.error("Too many failed attempts. Account locked for 5 minutes.")
+        else:
+            st.error("Invalid username or password")
+        
+        logger.warning(f"Failed login attempt for user: {username}")
+        return False
 
 def show_login_page():
-    """Display the login page"""
-    init_session_state()
-    
-    st.title("Login")
-    
-    # Check if account is locked
-    current_time = time.time()
-    if st.session_state.locked_until > current_time:
-        remaining_time = int(st.session_state.locked_until - current_time)
-        minutes = remaining_time // 60
-        seconds = remaining_time % 60
-        st.error(f"Account locked. Please try again in {minutes} minutes and {seconds} seconds.")
-        return
-    
-    # Display remaining attempts
-    if st.session_state.login_attempts > 0:
-        remaining_attempts = 3 - st.session_state.login_attempts
-        st.warning(f"Remaining attempts: {remaining_attempts}")
-    
-    # Login form
-    with st.form("login_form"):
-        username = st.text_input("Username", placeholder="Enter your username", key="login_username")
-        password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_password")
-        submit = st.form_submit_button("Login")
-        
-        if submit:
-            try:
-                # Validate input
-                if not username or not password:
-                    st.error("Please enter both username and password.")
-                    return
-                
-                # Check credentials
-                is_valid, message = check_credentials(username, password)
-                if is_valid:
-                    st.session_state.is_logged_in = True
-                    st.session_state.username = username.strip()
-                    st.session_state.role = USERS[username.strip()]["role"]
-                    st.session_state.login_attempts = 0
-                    st.session_state.locked_until = 0
-                    st.success(f"Welcome, {st.session_state.username}! Redirecting...")
-                    st.experimental_rerun()
-                else:
-                    st.session_state.login_attempts += 1
-                    st.session_state.last_attempt = current_time
-                    
-                    if st.session_state.login_attempts >= 3:
-                        st.session_state.locked_until = current_time + 300  # Lock for 5 minutes
-                        st.error("Too many failed attempts. Account locked for 5 minutes.")
-                    else:
-                        st.error(message)
-            except Exception as e:
-                logger.error(f"Login error: {str(e)}")
-                st.error(f"An error occurred during login: {str(e)}")
-    
-    # Add a logout button if logged in
-    if st.session_state.is_logged_in:
-        if st.button("Logout"):
-            logger.info(f"User logged out: {st.session_state.username}")
-            st.session_state.is_logged_in = False
-            st.session_state.username = None
-            st.session_state.role = None
-            st.success("Logged out successfully!")
-            st.experimental_rerun()
+    """Display the login page with username and password fields"""
+    # Hide sidebar and main menu
+    st.markdown("""
+        <style>
+            section[data-testid="stSidebar"] {display: none !important;}
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            
+            /* Override Streamlit defaults */
+            .stApp {
+                background: #0B0B1E !important;
+            }
+            
+            .block-container {
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+
+            /* Custom styles for form elements */
+            [data-testid="stTextInput"] > div > div > input {
+                background-color: rgba(0, 0, 0, 0.5) !important;
+                border: 2px solid #00F5FF !important;
+                border-radius: 25px !important;
+                color: #00F5FF !important;
+                font-size: 1em !important;
+                padding: 12px 25px !important;
+                font-family: 'Orbitron', sans-serif !important;
+                box-shadow: 0 0 10px rgba(0, 245, 255, 0.3) !important;
+                margin-bottom: 15px !important;
+                width: 100% !important;
+            }
+
+            [data-testid="stTextInput"] > div > div > input:focus {
+                border-color: #00F5FF !important;
+                box-shadow: 0 0 20px rgba(0, 245, 255, 0.5) !important;
+            }
+
+            [data-testid="stTextInput"] > div > div > input::placeholder {
+                color: rgba(0, 245, 255, 0.5) !important;
+            }
+
+            [data-testid="stButton"] > button {
+                width: 100% !important;
+                background: linear-gradient(90deg, #00F5FF, #FF00FF) !important;
+                color: white !important;
+                font-weight: 600 !important;
+                padding: 12px !important;
+                font-size: 1.1em !important;
+                border-radius: 25px !important;
+                border: none !important;
+                transition: all 0.3s ease !important;
+                font-family: 'Orbitron', sans-serif !important;
+                text-transform: uppercase !important;
+                letter-spacing: 2px !important;
+                margin-top: 20px !important;
+            }
+
+            [data-testid="stButton"] > button:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 0 30px rgba(0, 245, 255, 0.5) !important;
+            }
+
+            /* Base layout */
+            .main {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                padding: 20px;
+                font-family: 'Orbitron', sans-serif;
+            }
+
+            /* Container and login box */
+            .container {
+                width: 100%;
+                max-width: 400px;
+                margin: 0 auto;
+                position: relative;
+                z-index: 1;
+            }
+
+            .login-box {
+                background: rgba(0, 0, 0, 0.8);
+                border-radius: 25px;
+                padding: 40px;
+                box-shadow: 0 0 50px rgba(0, 245, 255, 0.3);
+                border: 2px solid #00F5FF;
+            }
+
+            /* Title and subtitle */
+            .login-box h1 {
+                color: #00F5FF;
+                text-align: center;
+                margin-bottom: 10px;
+                font-size: 2.5em;
+                font-weight: 700;
+                text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+                font-family: 'Orbitron', sans-serif;
+            }
+
+            .login-box p {
+                color: rgba(0, 245, 255, 0.7);
+                text-align: center;
+                margin-bottom: 30px;
+                font-size: 1.1em;
+            }
+
+            /* Form elements */
+            .form-group {
+                margin-bottom: 20px;
+            }
+
+            .form-group label {
+                display: block;
+                color: #00F5FF;
+                margin-bottom: 8px;
+                font-size: 0.9em;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+
+            /* Remember me and Forgot password */
+            .options {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-top: 20px;
+                color: #00F5FF;
+                font-size: 0.9em;
+            }
+
+            .remember-me {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+            }
+
+            .remember-me input[type="checkbox"] {
+                accent-color: #00F5FF;
+            }
+
+            .forgot-password {
+                color: #00F5FF;
+                text-decoration: none;
+                transition: all 0.3s ease;
+            }
+
+            .forgot-password:hover {
+                text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+            }
+
+            /* Particles */
+            .particles {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 0;
+                pointer-events: none;
+            }
+
+            .particle {
+                position: fixed;
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+                animation: particle-animation 20s infinite linear;
+            }
+
+            @keyframes particle-animation {
+                0% {
+                    transform: translateY(100vh) translateX(0) scale(0);
+                    opacity: 0;
+                }
+                50% {
+                    opacity: 1;
+                }
+                100% {
+                    transform: translateY(-100vh) translateX(100px) scale(1);
+                    opacity: 0;
+                }
+            }
+
+            /* Generate multiple particles with different colors */
+            .particle:nth-child(3n) { background: #00F5FF; }
+            .particle:nth-child(3n+1) { background: #FF00FF; }
+            .particle:nth-child(3n+2) { background: #FFD700; }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Generate particles HTML
+    particles_html = ""
+    for i in range(30):
+        left = random.randint(0, 100)
+        delay = random.randint(0, 20)
+        duration = random.randint(15, 25)
+        particles_html += f'<div class="particle" style="left: {left}vw; animation-delay: {delay}s; animation-duration: {duration}s;"></div>'
+
+    # Create the main container with particles
+    st.markdown(f"""
+        <div class="main">
+            <div class="particles">
+                {particles_html}
+            </div>
+            <div class="container">
+                <div class="login-box">
+                    <h1>Welcome Back</h1>
+                    <p>Please sign in to continue</p>
+                    <div id="login-form">
+    """, unsafe_allow_html=True)
+
+    # Add custom font
+    st.markdown("""
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    """, unsafe_allow_html=True)
+
+    # Create columns for centering the form
+    col1, col2, col3 = st.columns([1, 2, 1])
+
+    with col2:
+        # Username input
+        st.markdown('<div class="form-group"><label>Username</label></div>', unsafe_allow_html=True)
+        username = st.text_input("", value="", placeholder="Enter your username", key="login_username", label_visibility="collapsed")
+
+        # Password input
+        st.markdown('<div class="form-group"><label>Password</label></div>', unsafe_allow_html=True)
+        password = st.text_input("", value="", placeholder="Enter your password", type="password", key="login_password", label_visibility="collapsed")
+
+        if st.button("SIGN IN", key="login_button"):
+            if check_password():
+                st.rerun()
+
+        # Remember me and Forgot password
+        st.markdown("""
+            <div class="options">
+                <label class="remember-me">
+                    <input type="checkbox" checked>
+                    Remember me
+                </label>
+                <a href="#" class="forgot-password">Forgot password?</a>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # Close the containers
+    st.markdown("""
+                    </div>
+                </div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+def is_authenticated():
+    """Check if user is authenticated"""
+    return st.session_state.get("authenticated", False)
+
+def get_current_user():
+    """Get current user's username"""
+    return st.session_state.get("username") if is_authenticated() else None
+
+def logout():
+    """Logout the current user"""
+    logger.info(f"User logged out: {st.session_state.username}")
+    # Clear all session state
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
+    # Reinitialize authentication state
+    st.session_state["authenticated"] = False
+    st.session_state["username"] = None
+    st.session_state["role"] = None
 
 def require_authentication(roles=None):
     """Decorator to require authentication for view functions with optional role-based access"""
     def decorator(func):
         def wrapper(*args, **kwargs):
-            if not check_authentication():
+            if not is_authenticated():
                 show_login_page()
                 return
             
