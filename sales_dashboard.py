@@ -998,13 +998,13 @@ def show_sales_team():
         
         with col1:
             # Sales Owner filter
-            team_members = sorted(df['Sales Owner'].unique())
-            selected_team = col1.selectbox("👤 Sales Owner", ["All Team Members"] + list(team_members))
+            team_members = sorted(df['Sales Owner'].dropna().unique().tolist())
+            selected_team = col1.selectbox("👤 Sales Owner", ["All Team Members"] + team_members)
         
         with col2:
             # Practice filter
-            practices = sorted(df['Practice'].unique())
-            selected_practice = col2.selectbox("🏢 Practice", ["All Practices"] + list(practices))
+            practices = sorted(df['Practice'].dropna().unique().tolist())
+            selected_practice = col2.selectbox("🏢 Practice", ["All Practices"] + practices)
         
         with col3:
             # Month filter
@@ -1019,7 +1019,7 @@ def show_sales_team():
         
         with col5:
             # Year filter
-            years = sorted(df['Expected Close Date'].dt.year.unique())
+            years = sorted(df['Expected Close Date'].dt.year.unique().tolist())
             selected_year = col5.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
         
         with col6:
@@ -1029,8 +1029,8 @@ def show_sales_team():
         
         with col7:
             # Status filter
-            statuses = sorted(df['Sales Stage'].unique())
-            selected_status = col7.selectbox("🎯 Status", ["All Status"] + list(statuses))
+            statuses = sorted(df['Sales Stage'].dropna().unique().tolist())
+            selected_status = col7.selectbox("🎯 Status", ["All Status"] + statuses)
         
         with col8:
             # Search
@@ -1100,6 +1100,9 @@ def show_sales_team():
         team_metrics['Win Rate'] = (team_metrics['Closed Won'] / team_metrics['Total Deals'] * 100).round(1)
         team_metrics['Average Deal Size'] = (team_metrics['Total Pipeline'] / team_metrics['Total Deals']).round(2)
         
+        # Sort team metrics by Total Pipeline
+        team_metrics = team_metrics.sort_values('Total Pipeline', ascending=False)
+        
         # Display team metrics table with formatting
         st.dataframe(
             team_metrics.style.format({
@@ -1135,6 +1138,9 @@ def show_sales_team():
             practice_metrics.columns = ['Practice', 'Total Pipeline', 'Total Deals', 'Closed Won']
             practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Total Deals'] * 100).round(1)
             practice_metrics['Average Deal Size'] = (practice_metrics['Total Pipeline'] / practice_metrics['Total Deals']).round(2)
+            
+            # Sort practice metrics by Total Pipeline
+            practice_metrics = practice_metrics.sort_values('Total Pipeline', ascending=False)
             
             # Display practice metrics and visualizations in two columns
             col1, col2 = st.columns(2)
