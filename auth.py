@@ -9,20 +9,16 @@ import time
 
 def init_session_state():
     """Initialize session state variables"""
-    if "authenticated" not in st.session_state:
+    if 'is_logged_in' not in st.session_state:
+        st.session_state.is_logged_in = False
+    if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
-    if "df" not in st.session_state:
-        st.session_state.df = None
-    if "sales_target" not in st.session_state:
-        st.session_state.sales_target = 0.0
     if 'login_attempts' not in st.session_state:
         st.session_state.login_attempts = 0
     if 'last_attempt' not in st.session_state:
         st.session_state.last_attempt = 0
     if 'locked_until' not in st.session_state:
         st.session_state.locked_until = 0
-    if 'is_logged_in' not in st.session_state:
-        st.session_state.is_logged_in = False
 
 def check_password():
     """Check if the password is correct"""
@@ -31,31 +27,37 @@ def check_password():
         remaining_time = int(st.session_state.locked_until - time.time())
         st.error(f"Account locked. Please try again in {remaining_time} seconds.")
         return False
-    
-    # Get password from user
-    password = st.text_input("Enter password", type="password")
-    
-    if password:
-        # Check if password is correct (replace with your actual password)
-        if password == "admin123":  # Change this to your desired password
-            st.session_state.authenticated = True
-            st.session_state.is_logged_in = True
-            st.session_state.login_attempts = 0
-            st.success("Login successful!")
-            return True
+
+    # Get username and password from session state
+    username = st.session_state.get('login_username', '')
+    password = st.session_state.get('login_password', '')
+
+    # Check if both username and password are provided
+    if not username or not password:
+        st.error("Please enter both username and password")
+        return False
+
+    # Check credentials (for demo purposes, using admin/admin123)
+    if username == "admin" and password == "admin123":
+        st.session_state.is_logged_in = True
+        st.session_state.authenticated = True
+        st.session_state.login_attempts = 0
+        st.session_state.last_attempt = 0
+        st.session_state.locked_until = 0
+        return True
+    else:
+        # Increment login attempts
+        st.session_state.login_attempts += 1
+        st.session_state.last_attempt = time.time()
+        
+        # Check if account should be locked
+        if st.session_state.login_attempts >= 3:
+            st.session_state.locked_until = time.time() + 300  # Lock for 5 minutes
+            st.error("Too many failed attempts. Account locked for 5 minutes.")
         else:
-            st.session_state.login_attempts += 1
-            st.session_state.last_attempt = time.time()
-            
-            # Lock account after 3 failed attempts
-            if st.session_state.login_attempts >= 3:
-                st.session_state.locked_until = time.time() + 300  # Lock for 5 minutes
-                st.error("Too many failed attempts. Account locked for 5 minutes.")
-            else:
-                st.error("Incorrect password. Please try again.")
-            return False
-    
-    return False
+            st.error("Invalid username or password")
+        
+        return False
 
 # Load users from JSON file
 def load_users():
