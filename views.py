@@ -671,44 +671,30 @@ def show_detailed_data_view(st):
         st.warning("Please upload data first")
         return
     
-    df = st.session_state.df
+    df = st.session_state.df.copy()
+    
+    # Ensure Date column is datetime
+    df['Date'] = pd.to_datetime(df['Date'])
     
     # Search and filters
     st.sidebar.header("Search & Filters")
     
     # Text search
-    search_term = st.sidebar.text_input("Search in all columns")
-    if search_term:
-        mask = df.astype(str).apply(lambda x: x.str.contains(search_term, case=False)).any(axis=1)
-        df = df[mask]
+    search_term = st.sidebar.text_input("🔍 Search in all columns")
     
     # Practice filter
-    practices = df['Practice'].unique()
-    selected_practices = st.sidebar.multiselect("Select Practices", practices)
-    if selected_practices:
-        df = df[df['Practice'].isin(selected_practices)]
+    practices = sorted(df['Practice'].unique())
+    selected_practices = st.sidebar.multiselect("🏢 Select Practices", practices)
     
     # Financial Year and Month filter
-    st.sidebar.subheader("Financial Year & Month")
+    st.sidebar.subheader("📅 Financial Year & Month")
     
     # Get unique years from the data
-    df['Date'] = pd.to_datetime(df['Date'])
-    df['Year'] = df['Date'].dt.year
-    years = sorted(df['Year'].unique())
+    years = sorted(df['Date'].dt.year.unique())
     
     # Create financial year options (e.g., 2023-24)
     financial_years = [f"{year}-{str(year+1)[-2:]}" for year in years]
-    selected_fy = st.sidebar.selectbox("Select Financial Year", financial_years)
-    
-    # Get start and end year from selected financial year
-    start_year = int(selected_fy.split('-')[0])
-    end_year = start_year + 1
-    
-    # Filter data for selected financial year
-    df_fy = df[
-        (df['Date'].dt.year >= start_year) & 
-        (df['Date'].dt.year <= end_year)
-    ]
+    selected_fy = st.sidebar.selectbox("Select Financial Year", ["All Years"] + financial_years)
     
     # Month filter
     months = [
@@ -717,46 +703,80 @@ def show_detailed_data_view(st):
     ]
     selected_months = st.sidebar.multiselect("Select Months", months)
     
+    # Status filter
+    statuses = sorted(df['Status'].unique())
+    selected_statuses = st.sidebar.multiselect("🎯 Select Status", statuses)
+    
+    # Apply filters
+    filtered_df = df.copy()
+    
+    # Apply search filter
+    if search_term:
+        mask = filtered_df.astype(str).apply(lambda x: x.str.contains(search_term, case=False)).any(axis=1)
+        filtered_df = filtered_df[mask]
+    
+    # Apply practice filter
+    if selected_practices:
+        filtered_df = filtered_df[filtered_df['Practice'].isin(selected_practices)]
+    
+    # Apply financial year filter
+    if selected_fy != "All Years":
+        start_year = int(selected_fy.split('-')[0])
+        # For financial year April-March
+        start_date = pd.Timestamp(f"{start_year}-04-01")
+        end_date = pd.Timestamp(f"{start_year + 1}-03-31")
+        filtered_df = filtered_df[
+            (filtered_df['Date'] >= start_date) & 
+            (filtered_df['Date'] <= end_date)
+        ]
+    
+    # Apply month filter
     if selected_months:
-        # Convert month names to numbers (April=4, May=5, etc.)
         month_map = {
             "January": 1, "February": 2, "March": 3, "April": 4,
             "May": 5, "June": 6, "July": 7, "August": 8,
             "September": 9, "October": 10, "November": 11, "December": 12
         }
         month_numbers = [month_map[month] for month in selected_months]
-        
-        # Filter data for selected months
-        df_fy = df_fy[df_fy['Date'].dt.month.isin(month_numbers)]
+        filtered_df = filtered_df[filtered_df['Date'].dt.month.isin(month_numbers)]
     
-    # Status filter
-    statuses = df_fy['Status'].unique()
-    selected_statuses = st.sidebar.multiselect("Select Status", statuses)
+    # Apply status filter
     if selected_statuses:
-        df_fy = df_fy[df_fy['Status'].isin(selected_statuses)]
+        filtered_df = filtered_df[filtered_df['Status'].isin(selected_statuses)]
     
-    # Display detailed data
-    st.subheader("Detailed Sales Data")
-    st.dataframe(df_fy.style.format({
-        'Deal Value': '${:,.2f}',
-        'Date': lambda x: x.strftime('%Y-%m-%d')
-    }))
+    # Display filtered data count
+    total_records = len(filtered_df)
+    st.subheader(f"Detailed Sales Data ({total_records} records)")
     
-    # Export options
-    st.sidebar.header("Export Options")
-    if st.sidebar.button("Export to Excel"):
-        try:
-            df_fy.to_excel("sales_data_export.xlsx", index=False)
-            st.sidebar.success("Data exported successfully to Excel!")
-        except Exception as e:
-            st.sidebar.error(f"Error exporting to Excel: {str(e)}")
-    
-    if st.sidebar.button("Export to CSV"):
-        try:
-            df_fy.to_csv("sales_data_export.csv", index=False)
-            st.sidebar.success("Data exported successfully to CSV!")
-        except Exception as e:
-            st.sidebar.error(f"Error exporting to CSV: {str(e)}")
+    if total_records > 0:
+        # Display detailed data
+        st.dataframe(filtered_df.style.format({
+            'Deal Value': '${:,.2f}',
+            'Date': lambda x: x.strftime('%Y-%m-%d')
+        }))
+        
+        # Export options
+        st.sidebar.header("📤 Export Options")
+        
+        col1, col2 = st.sidebar.columns(2)
+        
+        with col1:
+            if st.button("Export to Excel"):
+                try:
+                    filtered_df.to_excel("sales_data_export.xlsx", index=False)
+                    st.success("Data exported successfully to Excel!")
+                except Exception as e:
+                    st.error(f"Error exporting to Excel: {str(e)}")
+        
+        with col2:
+            if st.button("Export to CSV"):
+                try:
+                    filtered_df.to_csv("sales_data_export.csv", index=False)
+                    st.success("Data exported successfully to CSV!")
+                except Exception as e:
+                    st.error(f"Error exporting to CSV: {str(e)}")
+    else:
+        st.warning("No data available for the selected filters")
 
 def main():
     """Main function to handle navigation and view selection"""
