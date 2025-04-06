@@ -436,11 +436,20 @@ def show_sales_team_view(st):
     
     # Team filters
     st.sidebar.header("Team Filters")
+    
+    # Team member filter
     team_members = df['Sales Team Member'].unique()
     selected_team = st.sidebar.multiselect("Select Team Members", team_members)
     
+    # Practice filter
+    practices = df['Practice'].unique()
+    selected_practices = st.sidebar.multiselect("Select Practices", practices)
+    
+    # Apply filters
     if selected_team:
         df = df[df['Sales Team Member'].isin(selected_team)]
+    if selected_practices:
+        df = df[df['Practice'].isin(selected_practices)]
     
     # Calculate team metrics
     team_metrics = df.groupby('Sales Team Member').agg({
@@ -472,6 +481,23 @@ def show_sales_team_view(st):
     fig2 = px.bar(practice_dist, x='Sales Team Member', y='Deal Value',
                   color='Practice', title='Practice Distribution')
     st.plotly_chart(fig2)
+    
+    # Practice-wise metrics
+    st.subheader("Practice-wise Performance")
+    practice_metrics = df.groupby('Practice').agg({
+        'Deal Value': ['sum', 'count'],
+        'Status': lambda x: (x == 'Closed Won').sum()
+    }).reset_index()
+    
+    practice_metrics.columns = ['Practice', 'Total Pipeline', 'Total Deals', 'Closed Won']
+    practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Total Deals'] * 100).round(1)
+    practice_metrics['Average Deal Size'] = (practice_metrics['Total Pipeline'] / practice_metrics['Total Deals']).round(2)
+    
+    st.dataframe(practice_metrics.style.format({
+        'Total Pipeline': '${:,.2f}',
+        'Average Deal Size': '${:,.2f}',
+        'Win Rate': '{:.1f}%'
+    }))
 
 def show_detailed_data_view(st):
     """Display the detailed data view with search and filtering options"""
@@ -490,34 +516,61 @@ def show_detailed_data_view(st):
         mask = df.astype(str).apply(lambda x: x.str.contains(search_term, case=False)).any(axis=1)
         df = df[mask]
     
-    # Date range filter
-    min_date = df['Date'].min()
-    max_date = df['Date'].max()
-    date_range = st.sidebar.date_input(
-        "Date Range",
-        value=(min_date, max_date),
-        min_value=min_date,
-        max_value=max_date
-    )
-    if len(date_range) == 2:
-        df = df[(df['Date'] >= pd.Timestamp(date_range[0])) & 
-                (df['Date'] <= pd.Timestamp(date_range[1]))]
+    # Financial Year and Month filter
+    st.sidebar.subheader("Financial Year & Month")
+    
+    # Get unique years from the data
+    df['Year'] = pd.to_datetime(df['Date']).dt.year
+    years = sorted(df['Year'].unique())
+    
+    # Create financial year options (e.g., 2023-24)
+    financial_years = [f"{year}-{str(year+1)[-2:]}" for year in years]
+    selected_fy = st.sidebar.selectbox("Select Financial Year", financial_years)
+    
+    # Get start and end year from selected financial year
+    start_year = int(selected_fy.split('-')[0])
+    end_year = start_year + 1
+    
+    # Filter data for selected financial year
+    df_fy = df[
+        (pd.to_datetime(df['Date']).dt.year >= start_year) & 
+        (pd.to_datetime(df['Date']).dt.year <= end_year)
+    ]
+    
+    # Month filter
+    months = [
+        "April", "May", "June", "July", "August", "September",
+        "October", "November", "December", "January", "February", "March"
+    ]
+    selected_months = st.sidebar.multiselect("Select Months", months)
+    
+    if selected_months:
+        # Convert month names to numbers (April=4, May=5, etc.)
+        month_map = {
+            "January": 1, "February": 2, "March": 3, "April": 4,
+            "May": 5, "June": 6, "July": 7, "August": 8,
+            "September": 9, "October": 10, "November": 11, "December": 12
+        }
+        month_numbers = [month_map[month] for month in selected_months]
+        
+        # Filter data for selected months
+        df_fy = df_fy[pd.to_datetime(df_fy['Date']).dt.month.isin(month_numbers)]
     
     # Practice filter
-    practices = df['Practice'].unique()
+    practices = df_fy['Practice'].unique()
     selected_practices = st.sidebar.multiselect("Select Practices", practices)
     if selected_practices:
-        df = df[df['Practice'].isin(selected_practices)]
+        df_fy = df_fy[df_fy['Practice'].isin(selected_practices)]
     
     # Status filter
-    statuses = df['Status'].unique()
+    statuses = df_fy['Status'].unique()
     selected_statuses = st.sidebar.multiselect("Select Status", statuses)
     if selected_statuses:
-        df = df[df['Status'].isin(selected_statuses)]
+        df_fy = df_fy[df_fy['Status'].isin(selected_statuses)]
     
     # Display detailed data
     st.subheader("Detailed Sales Data")
-    st.dataframe(df.style.format({
+    st.dataframe(df_fy.style.format({
         'Deal Value': '${:,.2f}',
         'Date': lambda x: x.strftime('%Y-%m-%d')
     }))
@@ -525,11 +578,11 @@ def show_detailed_data_view(st):
     # Export options
     st.sidebar.header("Export Options")
     if st.sidebar.button("Export to Excel"):
-        df.to_excel("sales_data_export.xlsx", index=False)
+        df_fy.to_excel("sales_data_export.xlsx", index=False)
         st.sidebar.success("Data exported successfully!")
     
     if st.sidebar.button("Export to CSV"):
-        df.to_csv("sales_data_export.csv", index=False)
+        df_fy.to_excel("sales_data_export.csv", index=False)
         st.sidebar.success("Data exported successfully!")
 
 def main():
