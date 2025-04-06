@@ -434,9 +434,6 @@ def show_sales_team_view(st):
     
     df = st.session_state.df
     
-    # Debug: Print DataFrame columns
-    st.write("Available columns:", df.columns.tolist())
-    
     # First row of filters
     col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns(9)
     
@@ -454,7 +451,6 @@ def show_sales_team_view(st):
             # Practice filter
             if 'Practice' in df.columns:
                 practices = sorted(df['Practice'].dropna().unique())
-                st.write("Available practices:", practices)  # Debug: Show available practices
                 selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + list(practices))
             else:
                 st.error("Practice column not found in the data")
@@ -542,8 +538,31 @@ def show_sales_team_view(st):
         mask = filtered_df.astype(str).apply(lambda x: x.str.contains(search_term, case=False)).any(axis=1)
         filtered_df = filtered_df[mask]
     
-    # Calculate team metrics with filtered data
     if len(filtered_df) > 0:
+        # Display metrics in a single row
+        metric_cols = st.columns(4)
+        
+        # Calculate total pipeline value
+        total_pipeline = filtered_df['Deal Value'].sum()
+        metric_cols[0].metric("Total Pipeline", f"${total_pipeline:,.2f}")
+        
+        # Calculate total number of deals
+        total_deals = len(filtered_df)
+        metric_cols[1].metric("Total Deals", total_deals)
+        
+        # Calculate win rate
+        closed_won = len(filtered_df[filtered_df['Status'] == 'Closed Won'])
+        win_rate = (closed_won / total_deals * 100) if total_deals > 0 else 0
+        metric_cols[2].metric("Win Rate", f"{win_rate:.1f}%")
+        
+        # Calculate average deal size
+        avg_deal_size = total_pipeline / total_deals if total_deals > 0 else 0
+        metric_cols[3].metric("Average Deal Size", f"${avg_deal_size:,.2f}")
+        
+        # Team Performance Section
+        st.subheader("Team Performance")
+        
+        # Calculate team metrics
         team_metrics = filtered_df.groupby('Sales Team Member').agg({
             'Deal Value': ['sum', 'count'],
             'Status': lambda x: (x == 'Closed Won').sum()
@@ -553,63 +572,52 @@ def show_sales_team_view(st):
         team_metrics['Win Rate'] = (team_metrics['Closed Won'] / team_metrics['Total Deals'] * 100).round(1)
         team_metrics['Average Deal Size'] = (team_metrics['Total Pipeline'] / team_metrics['Total Deals']).round(2)
         
-        # Display team metrics
-        st.subheader("Team Performance Metrics")
+        # Display team metrics table
         st.dataframe(team_metrics.style.format({
             'Total Pipeline': '${:,.2f}',
             'Average Deal Size': '${:,.2f}',
             'Win Rate': '{:.1f}%'
         }))
         
-        # Team member performance chart
-        st.subheader("Team Member Performance")
+        # Team performance visualization
+        st.subheader("Team Performance Visualization")
         fig = px.bar(team_metrics, x='Sales Team Member', y=['Total Pipeline', 'Closed Won'],
-                     title='Team Member Performance', barmode='group')
+                     title='Pipeline vs Closed Won by Team Member', barmode='group')
         st.plotly_chart(fig)
         
-        # Practice distribution by team member
+        # Practice distribution
         if len(filtered_df['Practice'].unique()) > 0:
-            st.subheader("Practice Distribution by Team Member")
+            st.subheader("Practice Distribution")
             practice_dist = filtered_df.groupby(['Sales Team Member', 'Practice'])['Deal Value'].sum().reset_index()
             fig2 = px.bar(practice_dist, x='Sales Team Member', y='Deal Value',
-                         color='Practice', title='Practice Distribution')
+                         color='Practice', title='Practice Distribution by Team Member')
             st.plotly_chart(fig2)
-        
-        # Practice-wise metrics
-        st.subheader("Practice-wise Performance")
-        practice_metrics = filtered_df.groupby('Practice').agg({
-            'Deal Value': ['sum', 'count'],
-            'Status': lambda x: (x == 'Closed Won').sum()
-        }).reset_index()
-        
-        practice_metrics.columns = ['Practice', 'Total Pipeline', 'Total Deals', 'Closed Won']
-        practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Total Deals'] * 100).round(1)
-        practice_metrics['Average Deal Size'] = (practice_metrics['Total Pipeline'] / practice_metrics['Total Deals']).round(2)
-        
-        # Display practice metrics in two columns
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.dataframe(practice_metrics.style.format({
-                'Total Pipeline': '${:,.2f}',
-                'Average Deal Size': '${:,.2f}',
-                'Win Rate': '{:.1f}%'
-            }))
-        
-        with col2:
-            # Practice-wise win rate chart
-            fig3 = px.bar(practice_metrics, x='Practice', y='Win Rate',
-                          title='Win Rate by Practice',
-                          color='Practice')
-            st.plotly_chart(fig3)
-        
-        # Practice-wise pipeline trend
-        st.subheader("Practice-wise Pipeline Trend")
-        practice_trend = filtered_df.groupby(['Practice', filtered_df['Date'].dt.to_period('M')])['Deal Value'].sum().reset_index()
-        practice_trend['Date'] = practice_trend['Date'].astype(str)
-        fig4 = px.line(practice_trend, x='Date', y='Deal Value',
-                       color='Practice', title='Practice-wise Pipeline Trend')
-        st.plotly_chart(fig4)
+            
+            # Practice metrics
+            st.subheader("Practice Performance")
+            practice_metrics = filtered_df.groupby('Practice').agg({
+                'Deal Value': ['sum', 'count'],
+                'Status': lambda x: (x == 'Closed Won').sum()
+            }).reset_index()
+            
+            practice_metrics.columns = ['Practice', 'Total Pipeline', 'Total Deals', 'Closed Won']
+            practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Total Deals'] * 100).round(1)
+            practice_metrics['Average Deal Size'] = (practice_metrics['Total Pipeline'] / practice_metrics['Total Deals']).round(2)
+            
+            # Display practice metrics in two columns
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.dataframe(practice_metrics.style.format({
+                    'Total Pipeline': '${:,.2f}',
+                    'Average Deal Size': '${:,.2f}',
+                    'Win Rate': '{:.1f}%'
+                }))
+            
+            with col2:
+                fig3 = px.bar(practice_metrics, x='Practice', y='Win Rate',
+                             title='Win Rate by Practice', color='Practice')
+                st.plotly_chart(fig3)
     else:
         st.warning("No data available for the selected filters")
 
