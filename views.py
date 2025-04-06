@@ -786,24 +786,36 @@ def show_login_page():
     current_time = time.time()
     if st.session_state.locked_until > current_time:
         remaining_time = int(st.session_state.locked_until - current_time)
-        st.error(f"Account locked. Please try again in {remaining_time} seconds.")
+        minutes = remaining_time // 60
+        seconds = remaining_time % 60
+        st.error(f"Account locked. Please try again in {minutes} minutes and {seconds} seconds.")
         return
+    
+    # Display remaining attempts
+    if st.session_state.login_attempts > 0:
+        remaining_attempts = 3 - st.session_state.login_attempts
+        st.warning(f"Remaining attempts: {remaining_attempts}")
     
     # Login form
     with st.form("login_form"):
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
+        username = st.text_input("Username", placeholder="Enter your username")
+        password = st.text_input("Password", type="password", placeholder="Enter your password")
         submit = st.form_submit_button("Login")
         
         if submit:
             try:
+                # Validate input
+                if not username or not password:
+                    st.error("Please enter both username and password.")
+                    return
+                
                 # Validate credentials
-                if username == "admin" and password == "admin":
+                if username.strip() == "admin" and password.strip() == "admin":
                     st.session_state.is_logged_in = True
                     st.session_state.login_attempts = 0
                     st.session_state.last_attempt = 0
                     st.session_state.locked_until = 0
-                    st.success("Login successful!")
+                    st.success("Login successful! Redirecting...")
                     st.experimental_rerun()
                 else:
                     st.session_state.login_attempts += 1
@@ -813,6 +825,6 @@ def show_login_page():
                         st.session_state.locked_until = current_time + 300  # Lock for 5 minutes
                         st.error("Too many failed attempts. Account locked for 5 minutes.")
                     else:
-                        st.error("Invalid credentials. Please try again.")
+                        st.error("Invalid username or password. Please try again.")
             except Exception as e:
                 st.error(f"An error occurred during login: {str(e)}")
