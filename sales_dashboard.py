@@ -253,6 +253,69 @@ def show_data_input_view(df):
 
     return None
 
+def show_previous_data_view():
+    """Display the previous data tracking section with copy-paste functionality"""
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin: 0;
+                font-size: 1.4em;
+                font-weight: 600;
+                font-family: "Segoe UI", sans-serif;
+            '>📊 Previous Data Tracking</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Create a text area for pasting data
+    st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📋 Paste Your Data</h4>', unsafe_allow_html=True)
+    st.info("Copy and paste your data from Excel or any other source. Make sure to include headers.")
+    
+    # Text area for pasting data
+    pasted_data = st.text_area(
+        "Paste your data here (with headers)",
+        height=300,
+        help="Paste tabular data with headers. Each row should be on a new line, and columns should be separated by tabs or commas."
+    )
+
+    if pasted_data:
+        try:
+            # Try to parse the pasted data
+            # First try with tab separator
+            try:
+                df = pd.read_csv(pd.StringIO(pasted_data), sep='\t')
+            except:
+                # If tab fails, try comma
+                df = pd.read_csv(pd.StringIO(pasted_data), sep=',')
+
+            # Display the parsed data
+            st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📊 Parsed Data Preview</h4>', unsafe_allow_html=True)
+            st.dataframe(df, use_container_width=True)
+
+            # Save button
+            if st.button("Save Pasted Data"):
+                # Generate filename with current date
+                current_date = datetime.now().strftime("%Y-%m-%d")
+                filename = f"previous_data_{current_date}.csv"
+                
+                # Save the data
+                df.to_csv(filename, index=False)
+                st.success(f"Data saved successfully as {filename}")
+                
+                # Store in session state
+                st.session_state.previous_data = df
+                st.success("Data loaded into memory")
+
+        except Exception as e:
+            st.error(f"Error parsing data: {str(e)}")
+            st.info("Please make sure your data is properly formatted with headers and consistent separators.")
+
 def main():
     # Check if user is locked out
     if st.session_state.locked_until > time.time():
@@ -267,11 +330,13 @@ def main():
 
     # Main dashboard content
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team"])
+    page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team", "Previous Data"])
 
     # Initialize session state for data if not exists
     if 'df' not in st.session_state:
         st.session_state.df = None
+    if 'previous_data' not in st.session_state:
+        st.session_state.previous_data = None
 
     # Load or get data based on page
     if page in ["Overview", "Sales Team"]:
@@ -311,6 +376,8 @@ def main():
         show_overview_view(df)
     elif page == "Sales Team":
         show_sales_team_view(df)
+    elif page == "Previous Data":
+        show_previous_data_view()
 
 if __name__ == "__main__":
     main()
