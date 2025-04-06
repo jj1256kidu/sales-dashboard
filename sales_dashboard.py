@@ -417,23 +417,25 @@ def show_data_input():
         </div>
     """, unsafe_allow_html=True)
     
-    # Create two columns for current and previous week data
-    col1, col2 = st.columns(2)
+    # Single file uploader for both current and previous week data
+    uploaded_file = st.file_uploader(
+        "Upload Excel File", 
+        type=['xlsx', 'xls'],
+        key="excel_uploader"
+    )
     
-    with col1:
-        st.markdown("### Current Week Data")
-        uploaded_file = st.file_uploader(
-            "Upload Current Week Data", 
-            type=['xlsx', 'xls'],
-            key="current_week_uploader"
-        )
-        if uploaded_file is not None:
-            try:
-                # Read all sheets from the Excel file
-                excel_file = pd.ExcelFile(uploaded_file)
-                sheet_names = excel_file.sheet_names
-                
-                # Show sheet selection dropdown
+    if uploaded_file is not None:
+        try:
+            # Read all sheets from the Excel file
+            excel_file = pd.ExcelFile(uploaded_file)
+            sheet_names = excel_file.sheet_names
+            
+            # Create two columns for sheet selection
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("### Current Week Data")
+                # Show sheet selection dropdown for current week
                 selected_sheet = st.selectbox(
                     "Select Current Week Sheet",
                     options=sheet_names,
@@ -446,37 +448,23 @@ def show_data_input():
                 st.session_state.raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
                 st.session_state.selected_sheet = selected_sheet
                 st.success(f"Successfully loaded current week sheet '{selected_sheet}' with {len(df):,} records")
-                
-            except Exception as e:
-                st.error(f"Error reading current week file: {str(e)}")
-    
-    with col2:
-        st.markdown("### Previous Week Data")
-        previous_week_file = st.file_uploader(
-            "Upload Previous Week Data", 
-            type=['xlsx', 'xls'],
-            key="previous_week_uploader"
-        )
-        if previous_week_file is not None:
-            try:
-                # Read all sheets from the previous week Excel file
-                previous_excel_file = pd.ExcelFile(previous_week_file)
-                previous_sheet_names = previous_excel_file.sheet_names
-                
+            
+            with col2:
+                st.markdown("### Previous Week Data")
                 # Show sheet selection dropdown for previous week
                 selected_previous_sheet = st.selectbox(
                     "Select Previous Week Sheet",
-                    options=previous_sheet_names,
+                    options=sheet_names,
                     key="previous_sheet_select"
                 )
                 
                 # Load the selected sheet
-                previous_df = pd.read_excel(previous_week_file, sheet_name=selected_previous_sheet)
-                st.session_state.previousweek_raw_data = {sheet: pd.read_excel(previous_week_file, sheet_name=sheet) for sheet in previous_sheet_names}
+                previous_df = pd.read_excel(uploaded_file, sheet_name=selected_previous_sheet)
+                st.session_state.previousweek_raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
                 st.success(f"Successfully loaded previous week sheet '{selected_previous_sheet}' with {len(previous_df):,} records")
                 
-            except Exception as e:
-                st.error(f"Error reading previous week file: {str(e)}")
+        except Exception as e:
+            st.error(f"Error reading Excel file: {str(e)}")
 
 def show_overview():
     if st.session_state.df is None:
