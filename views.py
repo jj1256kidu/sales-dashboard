@@ -537,6 +537,12 @@ def show_detailed_data_view(st):
         mask = df.astype(str).apply(lambda x: x.str.contains(search_term, case=False)).any(axis=1)
         df = df[mask]
     
+    # Practice filter
+    practices = df['Practice'].unique()
+    selected_practices = st.sidebar.multiselect("Select Practices", practices)
+    if selected_practices:
+        df = df[df['Practice'].isin(selected_practices)]
+    
     # Financial Year and Month filter
     st.sidebar.subheader("Financial Year & Month")
     
@@ -577,12 +583,6 @@ def show_detailed_data_view(st):
         
         # Filter data for selected months
         df_fy = df_fy[df_fy['Date'].dt.month.isin(month_numbers)]
-    
-    # Practice filter
-    practices = df_fy['Practice'].unique()
-    selected_practices = st.sidebar.multiselect("Select Practices", practices)
-    if selected_practices:
-        df_fy = df_fy[df_fy['Practice'].isin(selected_practices)]
     
     # Status filter
     statuses = df_fy['Status'].unique()
