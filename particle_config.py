@@ -1,168 +1,199 @@
-"""
-Particle theme configuration for the futuristic login page.
-This file contains the tsParticles configuration settings.
-"""
-
-PARTICLE_CONFIG = {
-    "fullScreen": {
-        "enable": True,
-        "zIndex": 0
-    },
-    "fpsLimit": 60,
-    "background": {
-        "color": "#0f0c29"
-    },
-    "particles": {
-        "number": {
-            "value": 80,
-            "density": {
-                "enable": True,
-                "value_area": 800
-            }
-        },
-        "color": {
-            "value": ["#00f0ff", "#ff00e0", "#ffc400"]
-        },
-        "shape": {
-            "type": ["circle", "triangle"],
-            "options": {
-                "triangle": {
-                    "sides": 3
+class ParticleConfig:
+    """Configuration class for particle effects in the login page."""
+    
+    # Particle appearance
+    PARTICLE_COUNT = 50
+    PARTICLE_MIN_SIZE = 1
+    PARTICLE_MAX_SIZE = 4
+    PARTICLE_COLOR = "rgba(108, 99, 255, 0.3)"
+    PARTICLE_SHAPE = "circle"  # circle, square, or triangle
+    
+    # Animation settings
+    ANIMATION_DURATION_MIN = 10
+    ANIMATION_DURATION_MAX = 20
+    ANIMATION_TYPE = "float"  # float, bounce, or wave
+    
+    # Movement patterns
+    MOVEMENT_RANGE_X = 100  # pixels
+    MOVEMENT_RANGE_Y = "100vh"  # viewport height
+    MOVEMENT_SPEED = "linear"  # linear, ease, or ease-in-out
+    
+    # Interactive settings
+    INTERACTIVE = True
+    HOVER_EFFECT = True
+    CLICK_EFFECT = True
+    
+    # Performance settings
+    MAX_PARTICLES = 100
+    FPS_LIMIT = 60
+    USE_REQUEST_ANIMATION_FRAME = True
+    
+    @classmethod
+    def get_particle_style(cls, x, y, size, duration):
+        """Generate CSS style for a particle."""
+        return f"""
+            left: {x}px;
+            top: {y}px;
+            width: {size}px;
+            height: {size}px;
+            background: {cls.PARTICLE_COLOR};
+            border-radius: {cls._get_border_radius()};
+            animation: {cls.ANIMATION_TYPE} {duration}s {cls.MOVEMENT_SPEED} infinite;
+        """
+    
+    @classmethod
+    def _get_border_radius(cls):
+        """Get border radius based on particle shape."""
+        if cls.PARTICLE_SHAPE == "circle":
+            return "50%"
+        elif cls.PARTICLE_SHAPE == "square":
+            return "0"
+        elif cls.PARTICLE_SHAPE == "triangle":
+            return "0"
+        return "50%"
+    
+    @classmethod
+    def get_animation_keyframes(cls):
+        """Generate CSS keyframes for particle animation."""
+        if cls.ANIMATION_TYPE == "float":
+            return f"""
+                @keyframes float {{
+                    0% {{
+                        transform: translateY(0) translateX(0);
+                        opacity: 0;
+                    }}
+                    10% {{
+                        opacity: 1;
+                    }}
+                    90% {{
+                        opacity: 1;
+                    }}
+                    100% {{
+                        transform: translateY(-{cls.MOVEMENT_RANGE_Y}) translateX({cls.MOVEMENT_RANGE_X}px);
+                        opacity: 0;
+                    }}
+                }}
+            """
+        elif cls.ANIMATION_TYPE == "bounce":
+            return """
+                @keyframes bounce {
+                    0%, 100% {
+                        transform: translateY(0);
+                    }
+                    50% {
+                        transform: translateY(-20px);
+                    }
                 }
-            }
-        },
-        "opacity": {
-            "value": 0.8,
-            "random": True,
-            "anim": {
-                "enable": True,
-                "speed": 1,
-                "opacity_min": 0.4,
-                "sync": False
-            }
-        },
-        "size": {
-            "value": 6,
-            "random": True,
-            "anim": {
-                "enable": True,
-                "speed": 2,
-                "size_min": 3,
-                "sync": False
-            }
-        },
-        "line_linked": {
-            "enable": True,
-            "distance": 150,
-            "color": "#00f0ff",
-            "opacity": 0.6,
-            "width": 1
-        },
-        "move": {
-            "enable": True,
-            "speed": 2,
-            "direction": "none",
-            "random": False,
-            "straight": False,
-            "outModes": {
-                "default": "bounce"
-            },
-            "attract": {
-                "enable": True,
-                "rotateX": 600,
-                "rotateY": 1200
-            }
-        }
-    },
-    "interactivity": {
-        "detect_on": "window",
-        "events": {
-            "onHover": {
-                "enable": True,
-                "mode": ["grab", "bubble"]
-            },
-            "onClick": {
-                "enable": True,
-                "mode": "push"
-            },
-            "resize": True
-        },
-        "modes": {
-            "grab": {
-                "distance": 140,
-                "line_linked": {
-                    "opacity": 0.8
+            """
+        elif cls.ANIMATION_TYPE == "wave":
+            return """
+                @keyframes wave {
+                    0%, 100% {
+                        transform: translateX(0);
+                    }
+                    50% {
+                        transform: translateX(20px);
+                    }
                 }
-            },
-            "bubble": {
-                "distance": 200,
-                "size": 12,
-                "duration": 2,
-                "opacity": 0.8,
-                "speed": 3
-            },
-            "push": {
-                "particles_nb": 6
-            }
-        }
-    },
-    "retina_detect": True
-}
-
-# Simple theme configurations
-NEON_THEME = {
-    "colors": {
-        "primary": "#00f0ff",
-        "secondary": "#ff00e0",
-        "accent": "#ffc400",
-        "background": "#0f0c29"
-    }
-}
-
-CYBER_THEME = {
-    "colors": {
-        "primary": "#0af",
-        "secondary": "#f0a",
-        "accent": "#fa0",
-        "background": "#000033"
-    }
-}
-
-MATRIX_THEME = {
-    "colors": {
-        "primary": "#0f0",
-        "secondary": "#0f0",
-        "accent": "#0f0",
-        "background": "#000000"
-    }
-}
-
-def get_theme_config(theme_name="neon"):
-    """
-    Get particle configuration for a specific theme.
+            """
     
-    Args:
-        theme_name (str): Name of the theme ("neon", "cyber", or "matrix")
-        
-    Returns:
-        dict: Particle configuration dictionary
-    """
-    themes = {
-        "neon": NEON_THEME,
-        "cyber": CYBER_THEME,
-        "matrix": MATRIX_THEME
-    }
-    
-    theme = themes.get(theme_name.lower(), NEON_THEME)
-    
-    # Update base configuration with theme colors
-    config = PARTICLE_CONFIG.copy()
-    config["particles"]["color"]["value"] = [
-        theme["colors"]["primary"],
-        theme["colors"]["secondary"],
-        theme["colors"]["accent"]
-    ]
-    config["background"]["color"] = theme["colors"]["background"]
-    config["particles"]["line_linked"]["color"] = theme["colors"]["primary"]
-    
-    return config 
+    @classmethod
+    def get_particle_script(cls):
+        """Generate JavaScript for particle creation and management."""
+        return f"""
+        <script>
+            class ParticleSystem {{
+                constructor() {{
+                    this.container = document.getElementById('particles');
+                    this.particles = [];
+                    this.maxParticles = {cls.MAX_PARTICLES};
+                    this.fpsLimit = {cls.FPS_LIMIT};
+                    this.lastFrameTime = 0;
+                    this.frameInterval = 1000 / this.fpsLimit;
+                }}
+
+                createParticle() {{
+                    if (this.particles.length >= this.maxParticles) return;
+
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    
+                    const x = Math.random() * window.innerWidth;
+                    const y = Math.random() * window.innerHeight;
+                    const size = Math.random() * ({cls.PARTICLE_MAX_SIZE} - {cls.PARTICLE_MIN_SIZE}) + {cls.PARTICLE_MIN_SIZE};
+                    const duration = Math.random() * ({cls.ANIMATION_DURATION_MAX} - {cls.ANIMATION_DURATION_MIN}) + {cls.ANIMATION_DURATION_MIN};
+                    
+                    particle.style.cssText = `{cls.get_particle_style(x, y, size, duration)}`;
+                    
+                    if ({str(cls.INTERACTIVE).lower()}) {{
+                        this._addInteractivity(particle);
+                    }}
+                    
+                    this.container.appendChild(particle);
+                    this.particles.push(particle);
+                    
+                    // Remove particle after animation
+                    setTimeout(() => {{
+                        particle.remove();
+                        this.particles = this.particles.filter(p => p !== particle);
+                    }}, duration * 1000);
+                }}
+
+                _addInteractivity(particle) {{
+                    if ({str(cls.HOVER_EFFECT).lower()}) {{
+                        particle.addEventListener('mouseenter', () => {{
+                            particle.style.transform = 'scale(2)';
+                            particle.style.background = '{cls.PARTICLE_COLOR.replace("0.3", "0.6")}';
+                        }});
+                        
+                        particle.addEventListener('mouseleave', () => {{
+                            particle.style.transform = 'scale(1)';
+                            particle.style.background = '{cls.PARTICLE_COLOR}';
+                        }});
+                    }}
+
+                    if ({str(cls.CLICK_EFFECT).lower()}) {{
+                        particle.addEventListener('click', () => {{
+                            particle.style.animation = 'none';
+                            particle.style.transform = 'scale(3)';
+                            particle.style.opacity = '0';
+                            setTimeout(() => particle.remove(), 500);
+                        }});
+                    }}
+                }}
+
+                update() {{
+                    const now = performance.now();
+                    const delta = now - this.lastFrameTime;
+
+                    if (delta >= this.frameInterval) {{
+                        this.lastFrameTime = now - (delta % this.frameInterval);
+                        
+                        if (this.particles.length < this.maxParticles) {{
+                            this.createParticle();
+                        }}
+                    }}
+
+                    if ({str(cls.USE_REQUEST_ANIMATION_FRAME).lower()}) {{
+                        requestAnimationFrame(() => this.update());
+                    }}
+                }}
+
+                start() {{
+                    // Create initial particles
+                    for (let i = 0; i < {cls.PARTICLE_COUNT}; i++) {{
+                        this.createParticle();
+                    }}
+                    
+                    // Start update loop
+                    this.update();
+                }}
+            }}
+
+            // Initialize particle system
+            document.addEventListener('DOMContentLoaded', () => {{
+                const particleSystem = new ParticleSystem();
+                particleSystem.start();
+            }});
+        </script>
+        """ 
