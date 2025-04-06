@@ -5,6 +5,49 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import numpy as np
 import time
+import hashlib
+import secrets
+import re
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# User database (in production, use a proper database)
+USERS = {
+    "admin": {
+        "password_hash": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",  # admin
+        "salt": "salt123",
+        "role": "admin",
+        "last_login": None,
+        "failed_attempts": 0
+    }
+}
+
+def hash_password(password, salt=None):
+    """Hash password with salt"""
+    if salt is None:
+        salt = secrets.token_hex(16)
+    return hashlib.sha256((password + salt).encode()).hexdigest(), salt
+
+def check_password(password, stored_hash, salt):
+    """Check if password matches stored hash"""
+    return hash_password(password, salt)[0] == stored_hash
+
+def validate_password(password):
+    """Validate password complexity"""
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long"
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter"
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter"
+    if not re.search(r"\d", password):
+        return False, "Password must contain at least one number"
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return False, "Password must contain at least one special character"
+    return True, ""
 
 def init_session_state():
     """Initialize session state variables"""
@@ -20,11 +63,44 @@ def init_session_state():
         st.session_state.locked_until = 0
     if 'df' not in st.session_state:
         st.session_state.df = None
+    if 'role' not in st.session_state:
+        st.session_state.role = None
 
 def check_credentials(username, password):
     """Check if the provided credentials are valid"""
-    # This is a simple example - in production, use proper authentication
-    return username.strip() == "admin" and password.strip() == "admin"
+    username = username.strip()
+    password = password.strip()
+    
+    if not username or not password:
+        return False, "Please enter both username and password"
+    
+    if username not in USERS:
+        logger.warning(f"Failed login attempt for non-existent user: {username}")
+        return False, "Invalid username or password"
+    
+    user = USERS[username]
+    
+    # Check if account is locked
+    if user["failed_attempts"] >= 3:
+        lockout_time = 300  # 5 minutes
+        if time.time() - user.get("last_failed_attempt", 0) < lockout_time:
+            remaining_time = int(lockout_time - (time.time() - user["last_failed_attempt"]))
+            return False, f"Account locked. Please try again in {remaining_time} seconds"
+        else:
+            user["failed_attempts"] = 0
+    
+    if check_password(password, user["password_hash"], user["salt"]):
+        # Reset failed attempts on successful login
+        user["failed_attempts"] = 0
+        user["last_login"] = time.time()
+        logger.info(f"Successful login for user: {username}")
+        return True, "Login successful"
+    else:
+        # Increment failed attempts
+        user["failed_attempts"] += 1
+        user["last_failed_attempt"] = time.time()
+        logger.warning(f"Failed login attempt for user: {username}")
+        return False, "Invalid username or password"
 
 def check_authentication():
     """Check if user is authenticated and handle session management"""
@@ -33,8 +109,10 @@ def check_authentication():
     # Check session timeout (30 minutes)
     current_time = time.time()
     if st.session_state.is_logged_in and (current_time - st.session_state.last_activity) > 1800:
+        logger.info(f"Session expired for user: {st.session_state.username}")
         st.session_state.is_logged_in = False
         st.session_state.username = None
+        st.session_state.role = None
         st.warning("Session expired. Please login again.")
         st.experimental_rerun()
     
@@ -78,9 +156,11 @@ def show_login_page():
                     return
                 
                 # Check credentials
-                if check_credentials(username, password):
+                is_valid, message = check_credentials(username, password)
+                if is_valid:
                     st.session_state.is_logged_in = True
                     st.session_state.username = username.strip()
+                    st.session_state.role = USERS[username.strip()]["role"]
                     st.session_state.login_attempts = 0
                     st.session_state.locked_until = 0
                     st.success(f"Welcome, {st.session_state.username}! Redirecting...")
@@ -93,25 +173,34 @@ def show_login_page():
                         st.session_state.locked_until = current_time + 300  # Lock for 5 minutes
                         st.error("Too many failed attempts. Account locked for 5 minutes.")
                     else:
-                        st.error("Invalid username or password. Please try again.")
+                        st.error(message)
             except Exception as e:
+                logger.error(f"Login error: {str(e)}")
                 st.error(f"An error occurred during login: {str(e)}")
     
     # Add a logout button if logged in
     if st.session_state.is_logged_in:
         if st.button("Logout"):
+            logger.info(f"User logged out: {st.session_state.username}")
             st.session_state.is_logged_in = False
             st.session_state.username = None
+            st.session_state.role = None
             st.success("Logged out successfully!")
             st.experimental_rerun()
 
-def require_authentication():
-    """Decorator to require authentication for view functions"""
+def require_authentication(roles=None):
+    """Decorator to require authentication for view functions with optional role-based access"""
     def decorator(func):
         def wrapper(*args, **kwargs):
             if not check_authentication():
                 show_login_page()
                 return
+            
+            # Check role-based access if specified
+            if roles and st.session_state.role not in roles:
+                st.error("You don't have permission to access this page.")
+                return
+            
             return func(*args, **kwargs)
         return wrapper
     return decorator
