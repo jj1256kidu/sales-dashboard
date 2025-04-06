@@ -449,6 +449,70 @@ def show_sales_team_view(st):
             'date_range': None
         }
     
+    # Initialize filter presets if not exists
+    if 'filter_presets' not in st.session_state:
+        st.session_state.filter_presets = {
+            'Current Quarter': {
+                'quarters': [f"Q{(pd.Timestamp.now().month-1)//3 + 1}"],
+                'years': [str(pd.Timestamp.now().year)]
+            },
+            'Last Quarter': {
+                'quarters': [f"Q{((pd.Timestamp.now().month-1)//3 - 1) % 4 + 1}"],
+                'years': [str(pd.Timestamp.now().year - (1 if pd.Timestamp.now().month <= 3 else 0))]
+            },
+            'Current Month': {
+                'months': [pd.Timestamp.now().strftime("%B")],
+                'years': [str(pd.Timestamp.now().year)]
+            }
+        }
+    
+    # Export and Presets Section
+    st.markdown("### 🛠️ Tools")
+    tool_cols = st.columns(3)
+    
+    with tool_cols[0]:
+        # Filter Presets
+        preset = st.selectbox(
+            "📋 Apply Filter Preset",
+            options=["Custom"] + list(st.session_state.filter_presets.keys())
+        )
+        if preset != "Custom":
+            st.session_state.filters.update(st.session_state.filter_presets[preset])
+            st.experimental_rerun()
+    
+    with tool_cols[1]:
+        # Save Current Filter as Preset
+        new_preset_name = st.text_input("💾 Save Current Filter as Preset", placeholder="Preset name...")
+        if new_preset_name and st.button("Save"):
+            st.session_state.filter_presets[new_preset_name] = st.session_state.filters.copy()
+            st.success(f"Preset '{new_preset_name}' saved!")
+    
+    with tool_cols[2]:
+        # Export Options
+        export_format = st.selectbox(
+            "📤 Export Data",
+            options=["None", "CSV", "Excel"]
+        )
+        if export_format != "None":
+            if st.button("Export"):
+                filtered_df = apply_filters(df, st.session_state.filters)
+                if export_format == "CSV":
+                    csv = filtered_df.to_csv(index=False)
+                    st.download_button(
+                        label="Download CSV",
+                        data=csv,
+                        file_name="sales_data.csv",
+                        mime="text/csv"
+                    )
+                elif export_format == "Excel":
+                    excel = filtered_df.to_excel(index=False)
+                    st.download_button(
+                        label="Download Excel",
+                        data=excel,
+                        file_name="sales_data.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+    
     # Reset filters button
     if st.button("🔄 Reset All Filters", key="reset_filters"):
         st.session_state.filters = {
@@ -654,76 +718,260 @@ def show_sales_team_view(st):
         win_rate = (closed_won / total_deals * 100) if total_deals > 0 else 0
         avg_deal_size = total_pipeline / total_deals if total_deals > 0 else 0
         
-        # Display summary metrics
-        st.subheader("Summary Metrics")
+        # Calculate weighted pipeline
+        probability_weights = {"High": 0.8, "Medium": 0.5, "Low": 0.2}
+        filtered_df['Weighted Value'] = filtered_df.apply(
+            lambda row: row['Deal Value'] * probability_weights.get(row['Probability'], 0.3),
+            axis=1
+        )
+        weighted_pipeline = filtered_df['Weighted Value'].sum()
+        
+        # Calculate deal velocity
+        closed_deals = filtered_df[filtered_df['Status'] == 'Closed Won']
+        if not closed_deals.empty:
+            closed_deals['Days to Close'] = (closed_deals['Close Date'] - closed_deals['Date']).dt.days
+            avg_days_to_close = closed_deals['Days to Close'].mean()
+        else:
+            avg_days_to_close = 0
+        
+        # Calculate month-over-month growth
+        current_month = filtered_df['Date'].max().to_period('M')
+        prev_month = current_month - 1
+        current_month_data = filtered_df[filtered_df['Date'].dt.to_period('M') == current_month]
+        prev_month_data = filtered_df[filtered_df['Date'].dt.to_period('M') == prev_month]
+        
+        current_month_pipeline = current_month_data['Deal Value'].sum()
+        prev_month_pipeline = prev_month_data['Deal Value'].sum()
+        mom_growth = ((current_month_pipeline - prev_month_pipeline) / prev_month_pipeline * 100) if prev_month_pipeline > 0 else 0
+        
+        # Display summary metrics with enhanced styling
+        st.markdown("### 📊 Summary Metrics")
         metric_cols = st.columns(4)
-        metric_cols[0].metric("Total Pipeline", f"${total_pipeline:,.2f}")
-        metric_cols[1].metric("Total Deals", total_deals)
-        metric_cols[2].metric("Win Rate", f"{win_rate:.1f}%")
-        metric_cols[3].metric("Average Deal Size", f"${avg_deal_size:,.2f}")
+        
+        with metric_cols[0]:
+            st.markdown(f"""
+                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                    <div style='font-size: 0.9em; color: #666;'>Total Pipeline</div>
+                    <div style='font-size: 1.5em; font-weight: bold;'>${total_pipeline:,.2f}</div>
+                    <div style='font-size: 0.8em; color: #666;'>Weighted: ${weighted_pipeline:,.2f}</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with metric_cols[1]:
+            st.markdown(f"""
+                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                    <div style='font-size: 0.9em; color: #666;'>Win Rate</div>
+                    <div style='font-size: 1.5em; font-weight: bold;'>{win_rate:.1f}%</div>
+                    <div style='font-size: 0.8em; color: #666;'>{closed_won} won / {total_deals} total</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with metric_cols[2]:
+            st.markdown(f"""
+                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                    <div style='font-size: 0.9em; color: #666;'>Avg Deal Size</div>
+                    <div style='font-size: 1.5em; font-weight: bold;'>${avg_deal_size:,.2f}</div>
+                    <div style='font-size: 0.8em; color: #666;'>Days to Close: {int(avg_days_to_close)}</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        with metric_cols[3]:
+            st.markdown(f"""
+                <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
+                    <div style='font-size: 0.9em; color: #666;'>MoM Growth</div>
+                    <div style='font-size: 1.5em; font-weight: bold; color: {'#2ecc71' if mom_growth >= 0 else '#e74c3c'}'>
+                        {mom_growth:+.1f}%
+                    </div>
+                    <div style='font-size: 0.8em; color: #666;'>vs Previous Month</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        # Trend Analysis Section
+        st.markdown("### 📈 Trend Analysis")
+        trend_cols = st.columns(2)
+        
+        with trend_cols[0]:
+            # Monthly trend
+            monthly_trend = filtered_df.groupby(filtered_df['Date'].dt.to_period('M'))['Deal Value'].sum().reset_index()
+            monthly_trend['Date'] = monthly_trend['Date'].astype(str)
+            
+            fig_trend = px.line(
+                monthly_trend,
+                x='Date',
+                y='Deal Value',
+                title='Monthly Pipeline Trend',
+                markers=True,
+                template='plotly_white'
+            )
+            fig_trend.update_traces(
+                line=dict(width=3),
+                marker=dict(size=8)
+            )
+            fig_trend.update_layout(
+                hovermode='x unified',
+                showlegend=False,
+                xaxis_title='Month',
+                yaxis_title='Pipeline Value ($)'
+            )
+            st.plotly_chart(fig_trend, use_container_width=True)
+        
+        with trend_cols[1]:
+            # Deal size distribution
+            fig_dist = px.histogram(
+                filtered_df,
+                x='Deal Value',
+                nbins=20,
+                title='Deal Size Distribution',
+                template='plotly_white'
+            )
+            fig_dist.update_layout(
+                hovermode='x unified',
+                showlegend=False,
+                xaxis_title='Deal Value ($)',
+                yaxis_title='Number of Deals'
+            )
+            st.plotly_chart(fig_dist, use_container_width=True)
         
         # Team Performance Section
-        st.subheader("Team Performance")
+        st.markdown("### 👥 Team Performance")
         
-        # Calculate team metrics
+        # Calculate team metrics with enhanced calculations
         team_metrics = filtered_df.groupby('Sales Team Member').agg({
-            'Deal Value': ['sum', 'count'],
-            'Status': lambda x: (x == 'Closed Won').sum()
+            'Deal Value': ['sum', 'count', 'mean'],
+            'Status': lambda x: (x == 'Closed Won').sum(),
+            'Weighted Value': 'sum'
         }).reset_index()
         
-        team_metrics.columns = ['Sales Team Member', 'Total Pipeline', 'Total Deals', 'Closed Won']
-        team_metrics['Win Rate'] = (team_metrics['Closed Won'] / team_metrics['Total Deals'] * 100).round(1)
-        team_metrics['Average Deal Size'] = (team_metrics['Total Pipeline'] / team_metrics['Total Deals']).round(2)
+        team_metrics.columns = ['Sales Team Member', 'Total Pipeline', 'Total Deals', 
+                              'Avg Deal Size', 'Closed Won', 'Weighted Pipeline']
         
-        # Display team metrics table
-        st.dataframe(team_metrics.style.format({
-            'Total Pipeline': '${:,.2f}',
-            'Average Deal Size': '${:,.2f}',
-            'Win Rate': '{:.1f}%'
-        }))
+        # Calculate additional metrics
+        team_metrics['Win Rate'] = (team_metrics['Closed Won'] / team_metrics['Total Deals'] * 100).round(1)
+        team_metrics['Pipeline Share'] = (team_metrics['Total Pipeline'] / total_pipeline * 100).round(1)
+        
+        # Sort by weighted pipeline
+        team_metrics = team_metrics.sort_values('Weighted Pipeline', ascending=False)
+        
+        # Display team metrics with enhanced styling
+        st.dataframe(
+            team_metrics.style.format({
+                'Total Pipeline': '${:,.2f}',
+                'Weighted Pipeline': '${:,.2f}',
+                'Avg Deal Size': '${:,.2f}',
+                'Win Rate': '{:.1f}%',
+                'Pipeline Share': '{:.1f}%'
+            }).background_gradient(subset=['Win Rate', 'Pipeline Share'], cmap='RdYlGn'),
+            use_container_width=True
+        )
         
         # Team performance visualization
-        fig = px.bar(team_metrics, x='Sales Team Member', y=['Total Pipeline', 'Closed Won'],
-                     title='Pipeline vs Closed Won by Team Member', barmode='group')
-        st.plotly_chart(fig)
+        fig_team = px.bar(
+            team_metrics,
+            x='Sales Team Member',
+            y=['Total Pipeline', 'Weighted Pipeline'],
+            title='Pipeline vs Weighted Pipeline by Team Member',
+            barmode='group',
+            template='plotly_white'
+        )
+        fig_team.update_layout(
+            hovermode='x unified',
+            xaxis_title='Team Member',
+            yaxis_title='Pipeline Value ($)'
+        )
+        st.plotly_chart(fig_team, use_container_width=True)
         
-        # Practice distribution and metrics
+        # Practice Analysis Section
         if len(filtered_df['Practice'].unique()) > 0:
-            st.subheader("Practice Analysis")
+            st.markdown("### 🏢 Practice Analysis")
             
-            # Calculate practice metrics
+            # Calculate practice metrics with enhanced calculations
             practice_metrics = filtered_df.groupby('Practice').agg({
-                'Deal Value': ['sum', 'count'],
-                'Status': lambda x: (x == 'Closed Won').sum()
+                'Deal Value': ['sum', 'count', 'mean'],
+                'Status': lambda x: (x == 'Closed Won').sum(),
+                'Weighted Value': 'sum'
             }).reset_index()
             
-            practice_metrics.columns = ['Practice', 'Total Pipeline', 'Total Deals', 'Closed Won']
+            practice_metrics.columns = ['Practice', 'Total Pipeline', 'Total Deals', 
+                                      'Avg Deal Size', 'Closed Won', 'Weighted Pipeline']
+            
+            # Calculate additional metrics
             practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Total Deals'] * 100).round(1)
-            practice_metrics['Average Deal Size'] = (practice_metrics['Total Pipeline'] / practice_metrics['Total Deals']).round(2)
+            practice_metrics['Pipeline Share'] = (practice_metrics['Total Pipeline'] / total_pipeline * 100).round(1)
+            
+            # Sort by weighted pipeline
+            practice_metrics = practice_metrics.sort_values('Weighted Pipeline', ascending=False)
             
             # Display practice metrics and visualizations in two columns
             col1, col2 = st.columns(2)
             
             with col1:
-                st.subheader("Practice Metrics")
-                st.dataframe(practice_metrics.style.format({
-                    'Total Pipeline': '${:,.2f}',
-                    'Average Deal Size': '${:,.2f}',
-                    'Win Rate': '{:.1f}%'
-                }))
+                st.markdown("#### Practice Metrics")
+                st.dataframe(
+                    practice_metrics.style.format({
+                        'Total Pipeline': '${:,.2f}',
+                        'Weighted Pipeline': '${:,.2f}',
+                        'Avg Deal Size': '${:,.2f}',
+                        'Win Rate': '{:.1f}%',
+                        'Pipeline Share': '{:.1f}%'
+                    }).background_gradient(subset=['Win Rate', 'Pipeline Share'], cmap='RdYlGn'),
+                    use_container_width=True
+                )
             
             with col2:
-                st.subheader("Practice Win Rates")
-                fig3 = px.bar(practice_metrics, x='Practice', y='Win Rate',
-                             title='Win Rate by Practice', color='Practice')
-                st.plotly_chart(fig3)
+                st.markdown("#### Practice Performance")
+                fig_practice = px.bar(
+                    practice_metrics,
+                    x='Practice',
+                    y=['Total Pipeline', 'Weighted Pipeline'],
+                    title='Pipeline vs Weighted Pipeline by Practice',
+                    barmode='group',
+                    template='plotly_white'
+                )
+                fig_practice.update_layout(
+                    hovermode='x unified',
+                    xaxis_title='Practice',
+                    yaxis_title='Pipeline Value ($)'
+                )
+                st.plotly_chart(fig_practice, use_container_width=True)
             
             # Practice distribution by team member
-            st.subheader("Practice Distribution by Team")
+            st.markdown("#### Practice Distribution by Team")
             practice_dist = filtered_df.groupby(['Sales Team Member', 'Practice'])['Deal Value'].sum().reset_index()
-            fig2 = px.bar(practice_dist, x='Sales Team Member', y='Deal Value',
-                         color='Practice', title='Practice Distribution by Team Member')
-            st.plotly_chart(fig2)
+            fig_dist = px.bar(
+                practice_dist,
+                x='Sales Team Member',
+                y='Deal Value',
+                color='Practice',
+                title='Practice Distribution by Team Member',
+                template='plotly_white'
+            )
+            fig_dist.update_layout(
+                hovermode='x unified',
+                xaxis_title='Team Member',
+                yaxis_title='Pipeline Value ($)'
+            )
+            st.plotly_chart(fig_dist, use_container_width=True)
+            
+            # Practice heatmap
+            st.markdown("#### Practice Performance Heatmap")
+            practice_heatmap = filtered_df.pivot_table(
+                index='Sales Team Member',
+                columns='Practice',
+                values='Deal Value',
+                aggfunc='sum',
+                fill_value=0
+            )
+            fig_heatmap = px.imshow(
+                practice_heatmap,
+                title='Practice Distribution Heatmap',
+                template='plotly_white',
+                color_continuous_scale='RdYlGn'
+            )
+            fig_heatmap.update_layout(
+                xaxis_title='Practice',
+                yaxis_title='Team Member'
+            )
+            st.plotly_chart(fig_heatmap, use_container_width=True)
     else:
         st.warning("No data available for the selected filters")
 
@@ -839,6 +1087,68 @@ def show_detailed_data_view(st):
                     st.error(f"Error exporting to CSV: {str(e)}")
     else:
         st.warning("No data available for the selected filters")
+
+def apply_filters(df, filters):
+    """Apply all filters to the dataframe"""
+    filtered_df = df.copy()
+    
+    # Apply Sales Owner filter
+    if filters['team_members']:
+        filtered_df = filtered_df[filtered_df['Sales Team Member'].isin(filters['team_members'])]
+    
+    # Apply Practice filter
+    if filters['practices']:
+        filtered_df = filtered_df[filtered_df['Practice'].isin(filters['practices'])]
+    
+    # Apply Month filter
+    if filters['months']:
+        month_map = {
+            "January": 1, "February": 2, "March": 3, "April": 4,
+            "May": 5, "June": 6, "July": 7, "August": 8,
+            "September": 9, "October": 10, "November": 11, "December": 12
+        }
+        month_numbers = [month_map[month] for month in filters['months']]
+        filtered_df = filtered_df[filtered_df['Date'].dt.month.isin(month_numbers)]
+    
+    # Apply Quarter filter
+    if filters['quarters']:
+        quarter_map = {"Q1": [1, 2, 3], "Q2": [4, 5, 6], 
+                      "Q3": [7, 8, 9], "Q4": [10, 11, 12]}
+        quarter_months = []
+        for quarter in filters['quarters']:
+            quarter_months.extend(quarter_map[quarter])
+        filtered_df = filtered_df[filtered_df['Date'].dt.month.isin(quarter_months)]
+    
+    # Apply Year filter
+    if filters['years']:
+        filtered_df = filtered_df[filtered_df['Date'].dt.year.astype(str).isin(filters['years'])]
+    
+    # Apply Probability filter
+    if filters['probabilities']:
+        filtered_df = filtered_df[filtered_df['Probability'].isin(filters['probabilities'])]
+    
+    # Apply Status filter
+    if filters['statuses']:
+        filtered_df = filtered_df[filtered_df['Status'].isin(filters['statuses'])]
+    
+    # Apply Focus filter
+    if filters['focus']:
+        filtered_df = filtered_df[filtered_df['Focus'].isin(filters['focus'])]
+    
+    # Apply Date Range filter
+    if filters['date_range']:
+        start_date, end_date = filters['date_range']
+        filtered_df = filtered_df[
+            (filtered_df['Date'].dt.date >= start_date) & 
+            (filtered_df['Date'].dt.date <= end_date)
+        ]
+    
+    # Apply Search filter
+    if filters['search']:
+        mask = filtered_df.astype(str).apply(lambda x: x.str.contains(filters['search'], case=False)).any(axis=1)
+        filtered_df = filtered_df[mask]
+    
+    return filtered_df
 
 def main():
     """Main function to handle navigation and view selection"""
