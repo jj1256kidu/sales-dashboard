@@ -442,6 +442,7 @@ def show_sales_team_view(st):
     selected_team = st.sidebar.multiselect("Select Team Members", team_members)
     
     # Practice filter
+    st.sidebar.subheader("Practice Filters")
     practices = df['Practice'].unique()
     selected_practices = st.sidebar.multiselect("Select Practices", practices)
     
@@ -493,11 +494,31 @@ def show_sales_team_view(st):
     practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Total Deals'] * 100).round(1)
     practice_metrics['Average Deal Size'] = (practice_metrics['Total Pipeline'] / practice_metrics['Total Deals']).round(2)
     
-    st.dataframe(practice_metrics.style.format({
-        'Total Pipeline': '${:,.2f}',
-        'Average Deal Size': '${:,.2f}',
-        'Win Rate': '{:.1f}%'
-    }))
+    # Display practice metrics in two columns
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.dataframe(practice_metrics.style.format({
+            'Total Pipeline': '${:,.2f}',
+            'Average Deal Size': '${:,.2f}',
+            'Win Rate': '{:.1f}%'
+        }))
+    
+    with col2:
+        # Practice-wise win rate chart
+        fig3 = px.bar(practice_metrics, x='Practice', y='Win Rate',
+                      title='Win Rate by Practice',
+                      color='Practice')
+        st.plotly_chart(fig3)
+    
+    # Practice-wise pipeline trend
+    st.subheader("Practice-wise Pipeline Trend")
+    df['Date'] = pd.to_datetime(df['Date'])
+    practice_trend = df.groupby(['Practice', df['Date'].dt.to_period('M')])['Deal Value'].sum().reset_index()
+    practice_trend['Date'] = practice_trend['Date'].astype(str)
+    fig4 = px.line(practice_trend, x='Date', y='Deal Value',
+                   color='Practice', title='Practice-wise Pipeline Trend')
+    st.plotly_chart(fig4)
 
 def show_detailed_data_view(st):
     """Display the detailed data view with search and filtering options"""
