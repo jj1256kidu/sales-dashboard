@@ -415,9 +415,24 @@ def main():
         show_login_page()
         return
     
+    # Create header
+    st.markdown("""
+        <div class="custom-header">
+            <h1>📊 Sales Dashboard</h1>
+            <p>Track and analyze your sales performance</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
     # Create sidebar for navigation
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team", "Quarterly Summary", "Previous Data"])
+    page = st.sidebar.radio("Go to", [
+        "Data Input", 
+        "Overview", 
+        "Sales Team", 
+        "Detailed Data",
+        "Quarterly Summary", 
+        "Previous Data"
+    ])
     
     # Load data if not in session state
     if 'df' not in st.session_state or st.session_state.df is None:
@@ -451,10 +466,21 @@ def main():
             show_sales_team_view(st.session_state.df)
         else:
             st.warning("No data available. Please upload data first.")
+    elif page == "Detailed Data":
+        if st.session_state.df is not None and not st.session_state.df.empty:
+            show_detailed_data_view(st.session_state.df)
+        else:
+            st.warning("No data available. Please upload data first.")
     elif page == "Quarterly Summary":
-        show_quarterly_summary()
+        if st.session_state.df is not None and not st.session_state.df.empty:
+            show_quarterly_summary(st.session_state.df)
+        else:
+            st.warning("No data available. Please upload data first.")
     elif page == "Previous Data":
-        show_previous_data_view()
+        if st.session_state.df is not None and not st.session_state.df.empty:
+            show_previous_data_view(st.session_state.df)
+        else:
+            st.warning("No data available. Please upload data first.")
 
 if __name__ == "__main__":
     main()
