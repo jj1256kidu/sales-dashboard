@@ -434,25 +434,111 @@ def show_sales_team_view(st):
     
     df = st.session_state.df
     
-    # Filters section
-    st.sidebar.header("Filters")
+    # Add CSS for filter container
+    st.markdown("""
+        <style>
+            .filter-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+                padding: 10px;
+                background: #f0f2f6;
+                border-radius: 5px;
+                margin-bottom: 20px;
+            }
+            
+            .filter-item {
+                flex: 1;
+                min-width: 200px;
+            }
+            
+            .stSelectbox, .stMultiSelect {
+                min-width: 200px;
+            }
+        </style>
+    """, unsafe_allow_html=True)
     
-    # Practice filter
-    practices = df['Practice'].unique()
-    selected_practices = st.sidebar.multiselect("Select Practices", practices)
+    # Horizontal filters at the top
+    col1, col2, col3, col4 = st.columns(4)
     
-    # Team member filter
-    team_members = df['Sales Team Member'].unique()
-    selected_team = st.sidebar.multiselect("Select Team Members", team_members)
+    with col1:
+        # Sales Owner (Team Member) filter
+        team_members = sorted(df['Sales Team Member'].unique())
+        selected_team = st.selectbox("👤 Sales Owner", ["All Team Members"] + list(team_members))
+    
+    with col2:
+        # Practice filter
+        practices = sorted(df['Practice'].unique())
+        selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + list(practices))
+    
+    with col3:
+        # Month filter
+        months = ["All Months", "April", "May", "June", "July", "August", "September",
+                 "October", "November", "December", "January", "February", "March"]
+        selected_month = st.selectbox("📅 Month", months)
+    
+    with col4:
+        # Search
+        search_term = st.text_input("🔍 Search", placeholder="Search...")
+
+    # Second row of filters
+    col5, col6, col7, col8 = st.columns(4)
+    
+    with col5:
+        # Quarter filter
+        quarters = ["All Quarters", "Q1", "Q2", "Q3", "Q4"]
+        selected_quarter = st.selectbox("📊 Quarter", quarters)
+    
+    with col6:
+        # Year filter
+        years = sorted(df['Date'].dt.year.unique())
+        selected_year = st.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
+    
+    with col7:
+        # Probability filter
+        probabilities = ["All Probability", "High", "Medium", "Low"]
+        selected_probability = st.selectbox("📈 Probability", probabilities)
+    
+    with col8:
+        # Status filter
+        statuses = sorted(df['Status'].unique())
+        selected_status = st.selectbox("🎯 Status", ["All Status"] + list(statuses))
     
     # Apply filters
-    if selected_practices:
-        df = df[df['Practice'].isin(selected_practices)]
-    if selected_team:
-        df = df[df['Sales Team Member'].isin(selected_team)]
+    filtered_df = df.copy()
     
-    # Calculate team metrics
-    team_metrics = df.groupby('Sales Team Member').agg({
+    # Apply Sales Owner filter
+    if selected_team != "All Team Members":
+        filtered_df = filtered_df[filtered_df['Sales Team Member'] == selected_team]
+    
+    # Apply Practice filter
+    if selected_practice != "All Practices":
+        filtered_df = filtered_df[filtered_df['Practice'] == selected_practice]
+    
+    # Apply Month filter
+    if selected_month != "All Months":
+        month_map = {
+            "January": 1, "February": 2, "March": 3, "April": 4,
+            "May": 5, "June": 6, "July": 7, "August": 8,
+            "September": 9, "October": 10, "November": 11, "December": 12
+        }
+        filtered_df = filtered_df[filtered_df['Date'].dt.month == month_map[selected_month]]
+    
+    # Apply Year filter
+    if selected_year != "All Years":
+        filtered_df = filtered_df[filtered_df['Date'].dt.year == int(selected_year)]
+    
+    # Apply Status filter
+    if selected_status != "All Status":
+        filtered_df = filtered_df[filtered_df['Status'] == selected_status]
+    
+    # Apply Search filter
+    if search_term:
+        mask = filtered_df.astype(str).apply(lambda x: x.str.contains(search_term, case=False)).any(axis=1)
+        filtered_df = filtered_df[mask]
+    
+    # Calculate team metrics with filtered data
+    team_metrics = filtered_df.groupby('Sales Team Member').agg({
         'Deal Value': ['sum', 'count'],
         'Status': lambda x: (x == 'Closed Won').sum()
     }).reset_index()
@@ -477,14 +563,14 @@ def show_sales_team_view(st):
     
     # Practice distribution by team member
     st.subheader("Practice Distribution by Team Member")
-    practice_dist = df.groupby(['Sales Team Member', 'Practice'])['Deal Value'].sum().reset_index()
+    practice_dist = filtered_df.groupby(['Sales Team Member', 'Practice'])['Deal Value'].sum().reset_index()
     fig2 = px.bar(practice_dist, x='Sales Team Member', y='Deal Value',
                   color='Practice', title='Practice Distribution')
     st.plotly_chart(fig2)
     
     # Practice-wise metrics
     st.subheader("Practice-wise Performance")
-    practice_metrics = df.groupby('Practice').agg({
+    practice_metrics = filtered_df.groupby('Practice').agg({
         'Deal Value': ['sum', 'count'],
         'Status': lambda x: (x == 'Closed Won').sum()
     }).reset_index()
@@ -512,8 +598,7 @@ def show_sales_team_view(st):
     
     # Practice-wise pipeline trend
     st.subheader("Practice-wise Pipeline Trend")
-    df['Date'] = pd.to_datetime(df['Date'])
-    practice_trend = df.groupby(['Practice', df['Date'].dt.to_period('M')])['Deal Value'].sum().reset_index()
+    practice_trend = filtered_df.groupby(['Practice', filtered_df['Date'].dt.to_period('M')])['Deal Value'].sum().reset_index()
     practice_trend['Date'] = practice_trend['Date'].astype(str)
     fig4 = px.line(practice_trend, x='Date', y='Deal Value',
                    color='Practice', title='Practice-wise Pipeline Trend')
