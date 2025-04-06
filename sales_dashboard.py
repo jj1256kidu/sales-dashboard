@@ -461,33 +461,6 @@ def show_data_input():
             
         except Exception as e:
             st.error(f"Error reading Excel file: {str(e)}")
-    
-    with col2:
-        st.markdown("### Previous Week Data")
-        previous_uploaded_file = st.file_uploader(
-            "Upload Previous Week Excel File", 
-            type=['xlsx', 'xls'],
-            key="previous_excel_uploader"
-        )
-        
-        if previous_uploaded_file is not None:
-            try:
-                # Read all sheets from the Excel file
-                excel_file = pd.ExcelFile(previous_uploaded_file)
-                sheet_names = excel_file.sheet_names
-                
-                # Check if "PreviousWeek_Raw_Data" sheet exists
-                if "PreviousWeek_Raw_Data" in sheet_names:
-                    # Load the PreviousWeek_Raw_Data sheet
-                    previous_df = pd.read_excel(previous_uploaded_file, sheet_name="PreviousWeek_Raw_Data")
-                    st.session_state.previousweek_raw_data = {sheet: pd.read_excel(previous_uploaded_file, sheet_name=sheet) for sheet in sheet_names}
-                    st.success(f"Successfully loaded previous week sheet 'PreviousWeek_Raw_Data' with {len(previous_df):,} records")
-                else:
-                    st.error("Required sheet 'PreviousWeek_Raw_Data' not found in the Excel file")
-                    st.write("Available sheets:", sheet_names)
-                
-            except Exception as e:
-                st.error(f"Error reading previous week Excel file: {str(e)}")
 
 def show_overview():
     if st.session_state.df is None:
