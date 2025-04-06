@@ -433,29 +433,39 @@ def show_data_input():
             # Debug information
             st.write("Debug - Available Sheets:", sheet_names)
             
-            # Check if PreviousWeek_Raw_Data sheet exists
-            if "PreviousWeek_Raw_Data" not in sheet_names:
-                st.error("Required sheet 'PreviousWeek_Raw_Data' not found in the Excel file")
-                st.write("Available sheets:", sheet_names)
-                return
+            # Create columns for sheet selection
+            col1, col2 = st.columns(2)
             
-            # Show sheet selection dropdown for current week
-            current_sheets = [sheet for sheet in sheet_names if sheet != "PreviousWeek_Raw_Data"]
-            selected_sheet = st.selectbox(
-                "Select Current Week Sheet",
-                options=current_sheets,
-                key="current_sheet_select"
-            )
+            with col1:
+                st.markdown("### Current Week Sheet")
+                selected_sheet = st.selectbox(
+                    "Select Current Week Sheet",
+                    options=sheet_names,
+                    key="current_sheet_select"
+                )
+                
+                # Load current week data
+                current_df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
+                st.success(f"Successfully loaded current week sheet '{selected_sheet}' with {len(current_df):,} records")
             
-            # Load both current and previous week data
-            current_df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
-            previous_df = pd.read_excel(uploaded_file, sheet_name="PreviousWeek_Raw_Data")
+            with col2:
+                st.markdown("### Previous Week Sheet")
+                previous_sheet = st.selectbox(
+                    "Select Previous Week Sheet",
+                    options=sheet_names,
+                    key="previous_sheet_select"
+                )
+                
+                # Load previous week data
+                previous_df = pd.read_excel(uploaded_file, sheet_name=previous_sheet)
+                st.success(f"Successfully loaded previous week sheet '{previous_sheet}' with {len(previous_df):,} records")
             
             # Store data in session state
             st.session_state.raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
             st.session_state.previousweek_raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
             st.session_state.selected_sheet = selected_sheet
             
+        except Exception as e:
             st.success(f"Successfully loaded current week sheet '{selected_sheet}' with {len(current_df):,} records")
             st.success(f"Successfully loaded previous week sheet 'PreviousWeek_Raw_Data' with {len(previous_df):,} records")
             
@@ -1418,16 +1428,20 @@ def show_week_over_week_delta():
     # Create sheet selection dropdowns
     col1, col2 = st.columns(2)
     with col1:
-        current_sheet = st.selectbox("Select Current Week Sheet", options=current_sheets)
+        st.markdown("### Current Week Sheet")
+        current_sheet = st.selectbox(
+            "Select Current Week Sheet",
+            options=current_sheets,
+            key="current_sheet_select_delta"
+        )
+    
     with col2:
-        # Automatically select PreviousWeek_Raw_Data sheet
-        if "PreviousWeek_Raw_Data" in previous_sheets:
-            previous_sheet = "PreviousWeek_Raw_Data"
-            st.write("Previous Week Sheet: PreviousWeek_Raw_Data")
-        else:
-            st.error("Required sheet 'PreviousWeek_Raw_Data' not found in previous week data")
-            st.write("Available sheets:", previous_sheets)
-            return
+        st.markdown("### Previous Week Sheet")
+        previous_sheet = st.selectbox(
+            "Select Previous Week Sheet",
+            options=previous_sheets,
+            key="previous_sheet_select_delta"
+        )
     
     # Get the selected sheets
     current_data = current_df[current_sheet] if isinstance(current_df, dict) else current_df
