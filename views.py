@@ -520,7 +520,8 @@ def show_detailed_data_view(st):
     st.sidebar.subheader("Financial Year & Month")
     
     # Get unique years from the data
-    df['Year'] = pd.to_datetime(df['Date']).dt.year
+    df['Date'] = pd.to_datetime(df['Date'])
+    df['Year'] = df['Date'].dt.year
     years = sorted(df['Year'].unique())
     
     # Create financial year options (e.g., 2023-24)
@@ -533,8 +534,8 @@ def show_detailed_data_view(st):
     
     # Filter data for selected financial year
     df_fy = df[
-        (pd.to_datetime(df['Date']).dt.year >= start_year) & 
-        (pd.to_datetime(df['Date']).dt.year <= end_year)
+        (df['Date'].dt.year >= start_year) & 
+        (df['Date'].dt.year <= end_year)
     ]
     
     # Month filter
@@ -554,7 +555,7 @@ def show_detailed_data_view(st):
         month_numbers = [month_map[month] for month in selected_months]
         
         # Filter data for selected months
-        df_fy = df_fy[pd.to_datetime(df_fy['Date']).dt.month.isin(month_numbers)]
+        df_fy = df_fy[df_fy['Date'].dt.month.isin(month_numbers)]
     
     # Practice filter
     practices = df_fy['Practice'].unique()
@@ -578,12 +579,18 @@ def show_detailed_data_view(st):
     # Export options
     st.sidebar.header("Export Options")
     if st.sidebar.button("Export to Excel"):
-        df_fy.to_excel("sales_data_export.xlsx", index=False)
-        st.sidebar.success("Data exported successfully!")
+        try:
+            df_fy.to_excel("sales_data_export.xlsx", index=False)
+            st.sidebar.success("Data exported successfully to Excel!")
+        except Exception as e:
+            st.sidebar.error(f"Error exporting to Excel: {str(e)}")
     
     if st.sidebar.button("Export to CSV"):
-        df_fy.to_excel("sales_data_export.csv", index=False)
-        st.sidebar.success("Data exported successfully!")
+        try:
+            df_fy.to_csv("sales_data_export.csv", index=False)
+            st.sidebar.success("Data exported successfully to CSV!")
+        except Exception as e:
+            st.sidebar.error(f"Error exporting to CSV: {str(e)}")
 
 def main():
     """Main function to handle navigation and view selection"""
