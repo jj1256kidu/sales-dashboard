@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import numpy as np
 
-def show_login_page():
+def show_login_page(st):
     """Display the login page with neon-styled authentication and tsparticles"""
     # Custom CSS and JS for login page with particles
     st.markdown("""
@@ -293,7 +293,7 @@ def show_login_page():
         </div>
     """, unsafe_allow_html=True)
 
-def show_data_input_view():
+def show_data_input_view(st):
     """Display the data input view with file upload and preview"""
     st.title("Data Input")
     
@@ -380,7 +380,7 @@ def show_data_input_view():
         </div>
     """, unsafe_allow_html=True)
 
-def show_overview_view():
+def show_overview_view(st):
     """Display the overview view with key metrics and visualizations"""
     if 'df' not in st.session_state:
         st.warning("Please upload data first")
@@ -426,7 +426,7 @@ def show_overview_view():
                    title='Monthly Sales Trend')
     st.plotly_chart(fig3)
 
-def show_sales_team_view():
+def show_sales_team_view(st):
     """Display the sales team view with team performance metrics"""
     if 'df' not in st.session_state:
         st.warning("Please upload data first")
@@ -473,7 +473,7 @@ def show_sales_team_view():
                   color='Practice', title='Practice Distribution')
     st.plotly_chart(fig2)
 
-def show_detailed_data_view():
+def show_detailed_data_view(st):
     """Display the detailed data view with search and filtering options"""
     if 'df' not in st.session_state:
         st.warning("Please upload data first")
@@ -542,7 +542,7 @@ def main():
     
     # Navigation
     if not st.session_state.authenticated:
-        show_login_page()
+        show_login_page(st)
     else:
         # Sidebar navigation
         st.sidebar.title("Navigation")
@@ -563,13 +563,13 @@ def main():
         
         # Display selected view
         if st.session_state.current_view == 'data_input':
-            show_data_input_view()
+            show_data_input_view(st)
         elif st.session_state.current_view == 'overview':
-            show_overview_view()
+            show_overview_view(st)
         elif st.session_state.current_view == 'sales_team':
-            show_sales_team_view()
+            show_sales_team_view(st)
         elif st.session_state.current_view == 'detailed_data':
-            show_detailed_data_view()
+            show_detailed_data_view(st)
 
 if __name__ == "__main__":
     main() 
