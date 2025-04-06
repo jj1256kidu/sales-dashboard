@@ -4,249 +4,123 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import numpy as np
-import time
-import hashlib
-import secrets
-import re
-import logging
-import json
-import random
-from typing import Optional, Dict, Any
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# User database (in production, use a proper database)
-USERS = {
-    "admin": {
-        "password": "admin123",  # This will be hashed when saved
-        "role": "admin",
-        "last_login": None,
-        "failed_attempts": 0
-    }
-}
-
-def init_session_state():
-    """Initialize session state variables"""
-    if 'is_logged_in' not in st.session_state:
-        st.session_state.is_logged_in = False
-    if 'authenticated' not in st.session_state:
-        st.session_state.authenticated = False
-    if 'username' not in st.session_state:
-        st.session_state.username = None
-    if 'login_attempts' not in st.session_state:
-        st.session_state.login_attempts = 0
-    if 'last_attempt' not in st.session_state:
-        st.session_state.last_attempt = 0
-    if 'locked_until' not in st.session_state:
-        st.session_state.locked_until = 0
-    if 'df' not in st.session_state:
-        st.session_state.df = None
-    if 'role' not in st.session_state:
-        st.session_state.role = None
-
-def hash_password(password: str) -> str:
-    """Hash a password using SHA-256"""
-    return hashlib.sha256(password.encode()).hexdigest()
-
-def load_users():
-    """Load users from JSON file"""
-    try:
-        with open('users.json', 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        # Create default admin user if file doesn't exist
-        default_users = {
-            "admin": {
-                "password": hash_password("admin123"),
-                "role": "admin"
-            }
-        }
-        with open('users.json', 'w') as f:
-            json.dump(default_users, f, indent=4)
-        return default_users
-
-def verify_password(username: str, password: str) -> bool:
-    """Verify user credentials"""
-    users = load_users()
-    if username in users:
-        hashed_password = hash_password(password)
-        return hashed_password == users[username]["password"]
-    return False
-
-def check_password():
-    """Check if the password is correct"""
-    # Check if account is locked
-    if st.session_state.locked_until > time.time():
-        remaining_time = int(st.session_state.locked_until - time.time())
-        st.error(f"Account locked. Please try again in {remaining_time} seconds.")
-        return False
-
-    # Get username and password from session state
-    username = st.session_state.get('login_username', '')
-    password = st.session_state.get('login_password', '')
-
-    # Check if both username and password are provided
-    if not username or not password:
-        st.error("Please enter both username and password")
-        return False
-
-    # Check credentials
-    if verify_password(username, password):
-        st.session_state.is_logged_in = True
-        st.session_state.authenticated = True
-        st.session_state.username = username
-        st.session_state.role = load_users()[username]["role"]
-        st.session_state.login_attempts = 0
-        st.session_state.last_attempt = 0
-        st.session_state.locked_until = 0
-        logger.info(f"Successful login for user: {username}")
-        return True
-    else:
-        # Increment login attempts
-        st.session_state.login_attempts += 1
-        st.session_state.last_attempt = time.time()
-        
-        # Check if account should be locked
-        if st.session_state.login_attempts >= 3:
-            st.session_state.locked_until = time.time() + 300  # Lock for 5 minutes
-            st.error("Too many failed attempts. Account locked for 5 minutes.")
-        else:
-            st.error("Invalid username or password")
-        
-        logger.warning(f"Failed login attempt for user: {username}")
-        return False
 
 def show_login_page():
-    """Display the login page with username and password fields"""
-    # Hide sidebar and main menu
+    """Display the login page with neon-styled authentication and tsparticles"""
+    # Custom CSS and JS for login page with particles
     st.markdown("""
         <style>
-            section[data-testid="stSidebar"] {display: none !important;}
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            
-            /* Override Streamlit defaults */
-            .stApp {
-                background: #0B0B1E !important;
-            }
-            
-            .block-container {
-                padding: 0 !important;
-                max-width: 100% !important;
+            /* Reset and base styles */
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
             }
 
-            /* Custom styles for form elements */
-            [data-testid="stTextInput"] > div > div > input {
-                background-color: rgba(0, 0, 0, 0.5) !important;
-                border: 2px solid #00F5FF !important;
-                border-radius: 25px !important;
-                color: #00F5FF !important;
-                font-size: 1em !important;
-                padding: 12px 25px !important;
-                font-family: 'Orbitron', sans-serif !important;
-                box-shadow: 0 0 10px rgba(0, 245, 255, 0.3) !important;
-                margin-bottom: 15px !important;
-                width: 100% !important;
+            /* Particle container */
+            #tsparticles {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                z-index: 0;
+                background: #0a0a2e;
             }
 
-            [data-testid="stTextInput"] > div > div > input:focus {
-                border-color: #00F5FF !important;
-                box-shadow: 0 0 20px rgba(0, 245, 255, 0.5) !important;
-            }
-
-            [data-testid="stTextInput"] > div > div > input::placeholder {
-                color: rgba(0, 245, 255, 0.5) !important;
-            }
-
-            [data-testid="stButton"] > button {
-                width: 100% !important;
-                background: linear-gradient(90deg, #00F5FF, #FF00FF) !important;
-                color: white !important;
-                font-weight: 600 !important;
-                padding: 12px !important;
-                font-size: 1.1em !important;
-                border-radius: 25px !important;
-                border: none !important;
-                transition: all 0.3s ease !important;
-                font-family: 'Orbitron', sans-serif !important;
-                text-transform: uppercase !important;
-                letter-spacing: 2px !important;
-                margin-top: 20px !important;
-            }
-
-            [data-testid="stButton"] > button:hover {
-                transform: translateY(-2px) !important;
-                box-shadow: 0 0 30px rgba(0, 245, 255, 0.5) !important;
-            }
-
-            /* Base layout */
-            .main {
+            /* Main container */
+            .container {
+                position: relative;
+                z-index: 1;
+                height: 100vh;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                min-height: 100vh;
                 padding: 20px;
-                font-family: 'Orbitron', sans-serif;
             }
 
-            /* Container and login box */
-            .container {
-                width: 100%;
-                max-width: 400px;
-                margin: 0 auto;
-                position: relative;
-                z-index: 1;
-            }
-
+            /* Login box */
             .login-box {
                 background: rgba(0, 0, 0, 0.8);
-                border-radius: 25px;
+                border-radius: 20px;
                 padding: 40px;
-                box-shadow: 0 0 50px rgba(0, 245, 255, 0.3);
-                border: 2px solid #00F5FF;
+                width: 100%;
+                max-width: 400px;
+                border: 1px solid rgba(0, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+                box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
             }
 
-            /* Title and subtitle */
-            .login-box h1 {
-                color: #00F5FF;
-                text-align: center;
-                margin-bottom: 10px;
-                font-size: 2.5em;
-                font-weight: 700;
-                text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
-                font-family: 'Orbitron', sans-serif;
-            }
-
-            .login-box p {
-                color: rgba(0, 245, 255, 0.7);
+            /* Form header */
+            .login-header {
                 text-align: center;
                 margin-bottom: 30px;
-                font-size: 1.1em;
             }
 
-            /* Form elements */
+            .login-header h1 {
+                color: #0ff;
+                font-size: 2.5em;
+                font-weight: 600;
+                font-family: 'Segoe UI', sans-serif;
+                text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+                margin-bottom: 10px;
+            }
+
+            /* Form inputs */
             .form-group {
                 margin-bottom: 20px;
             }
 
-            .form-group label {
-                display: block;
-                color: #00F5FF;
-                margin-bottom: 8px;
-                font-size: 0.9em;
-                text-transform: uppercase;
-                letter-spacing: 1px;
+            .stTextInput > div > div > input {
+                width: 100% !important;
+                padding: 15px !important;
+                border-radius: 30px !important;
+                background: rgba(0, 0, 0, 0.5) !important;
+                border: 2px solid #0ff !important;
+                color: #0ff !important;
+                font-size: 1.1em !important;
+                transition: all 0.3s ease !important;
             }
 
-            /* Remember me and Forgot password */
-            .options {
+            .stTextInput > div > div > input:focus {
+                box-shadow: 0 0 20px rgba(0, 255, 255, 0.4) !important;
+                border-color: #0ff !important;
+            }
+
+            .stTextInput > div > div > input::placeholder {
+                color: rgba(0, 255, 255, 0.5) !important;
+            }
+
+            /* Login button */
+            .stButton > button {
+                width: 100% !important;
+                padding: 15px !important;
+                border-radius: 30px !important;
+                background: linear-gradient(90deg, #00ffff, #ff00ff) !important;
+                background-size: 200% 200% !important;
+                border: none !important;
+                color: white !important;
+                font-size: 1.2em !important;
+                font-weight: 600 !important;
+                text-transform: uppercase !important;
+                letter-spacing: 2px !important;
+                cursor: pointer !important;
+                transition: all 0.3s ease !important;
+                animation: buttonGlow 3s infinite !important;
+            }
+
+            .stButton > button:hover {
+                transform: translateY(-2px) !important;
+                box-shadow: 0 0 20px rgba(255, 0, 255, 0.4) !important;
+            }
+
+            /* Additional options */
+            .login-options {
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
                 margin-top: 20px;
-                color: #00F5FF;
+                color: #0ff;
                 font-size: 0.9em;
             }
 
@@ -257,958 +131,445 @@ def show_login_page():
             }
 
             .remember-me input[type="checkbox"] {
-                accent-color: #00F5FF;
+                accent-color: #0ff;
             }
 
             .forgot-password {
-                color: #00F5FF;
+                color: #0ff;
                 text-decoration: none;
                 transition: all 0.3s ease;
             }
 
             .forgot-password:hover {
-                text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
+                text-shadow: 0 0 10px #0ff;
             }
 
-            /* Particles */
-            .particles {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 0;
-                pointer-events: none;
+            /* Error message */
+            .error-message {
+                color: #ff0055;
+                text-align: center;
+                margin-top: 15px;
+                font-size: 0.9em;
+                text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
             }
 
-            .particle {
-                position: fixed;
-                width: 5px;
-                height: 5px;
-                border-radius: 50%;
-                animation: particle-animation 20s infinite linear;
+            /* Animations */
+            @keyframes buttonGlow {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
             }
-
-            @keyframes particle-animation {
-                0% {
-                    transform: translateY(100vh) translateX(0) scale(0);
-                    opacity: 0;
-                }
-                50% {
-                    opacity: 1;
-                }
-                100% {
-                    transform: translateY(-100vh) translateX(100px) scale(1);
-                    opacity: 0;
-                }
-            }
-
-            /* Generate multiple particles with different colors */
-            .particle:nth-child(3n) { background: #00F5FF; }
-            .particle:nth-child(3n+1) { background: #FF00FF; }
-            .particle:nth-child(3n+2) { background: #FFD700; }
         </style>
+
+        <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.12.0/tsparticles.bundle.min.js"></script>
+        <script>
+            window.onload = function() {
+                tsParticles.load("tsparticles", {
+                    fullScreen: {
+                        enable: true
+                    },
+                    particles: {
+                        number: {
+                            value: 80,
+                            density: {
+                                enable: true,
+                                value_area: 800
+                            }
+                        },
+                        color: {
+                            value: ["#00ffff", "#ff00ff", "#00ff00"]
+                        },
+                        shape: {
+                            type: "circle"
+                        },
+                        opacity: {
+                            value: 0.5,
+                            random: true,
+                            animation: {
+                                enable: true,
+                                speed: 1,
+                                minimumValue: 0.1,
+                                sync: false
+                            }
+                        },
+                        size: {
+                            value: 3,
+                            random: true,
+                            animation: {
+                                enable: true,
+                                speed: 2,
+                                minimumValue: 0.1,
+                                sync: false
+                            }
+                        },
+                        links: {
+                            enable: true,
+                            distance: 150,
+                            color: "#00ffff",
+                            opacity: 0.4,
+                            width: 1
+                        },
+                        move: {
+                            enable: true,
+                            speed: 2,
+                            direction: "none",
+                            random: false,
+                            straight: false,
+                            outModes: {
+                                default: "out"
+                            },
+                            attract: {
+                                enable: false,
+                                rotateX: 600,
+                                rotateY: 1200
+                            }
+                        }
+                    },
+                    interactivity: {
+                        detectsOn: "window",
+                        events: {
+                            onHover: {
+                                enable: true,
+                                mode: "repulse"
+                            },
+                            onClick: {
+                                enable: true,
+                                mode: "push"
+                            },
+                            resize: true
+                        },
+                        modes: {
+                            repulse: {
+                                distance: 100,
+                                duration: 0.4
+                            },
+                            push: {
+                                quantity: 4
+                            }
+                        }
+                    },
+                    background: {
+                        color: "#0a0a2e"
+                    }
+                });
+            }
+        </script>
+
+        <div id="tsparticles"></div>
     """, unsafe_allow_html=True)
 
-    # Generate particles HTML
-    particles_html = ""
-    for i in range(30):
-        left = random.randint(0, 100)
-        delay = random.randint(0, 20)
-        duration = random.randint(15, 25)
-        particles_html += f'<div class="particle" style="left: {left}vw; animation-delay: {delay}s; animation-duration: {duration}s;"></div>'
-
-    # Create the main container with particles
-    st.markdown(f"""
-        <div class="main">
-            <div class="particles">
-                {particles_html}
-            </div>
-            <div class="container">
-                <div class="login-box">
+    # Login container
+    st.markdown("""
+        <div class="container">
+            <div class="login-box">
+                <div class="login-header">
                     <h1>Welcome Back</h1>
-                    <p>Please sign in to continue</p>
-                    <div id="login-form">
+                </div>
+                <div class="form-group">
     """, unsafe_allow_html=True)
 
-    # Add custom font
+    # Login form
+    username = st.text_input("", placeholder="Username", key="username")
+    password = st.text_input("", type="password", placeholder="Password", key="password")
+    
+    if st.button("LOGIN"):
+        if password == "admin123":  # Default password
+            st.session_state.authenticated = True
+            st.rerun()
+        else:
+            st.markdown('<div class="error-message">Invalid credentials. Please try again.</div>', unsafe_allow_html=True)
+
+    # Remember me and forgot password
     st.markdown("""
-        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    """, unsafe_allow_html=True)
-
-    # Create columns for centering the form
-    col1, col2, col3 = st.columns([1, 2, 1])
-
-    with col2:
-        # Username input
-        st.markdown('<div class="form-group"><label>Username</label></div>', unsafe_allow_html=True)
-        username = st.text_input("", value="", placeholder="Enter your username", key="login_username", label_visibility="collapsed")
-
-        # Password input
-        st.markdown('<div class="form-group"><label>Password</label></div>', unsafe_allow_html=True)
-        password = st.text_input("", value="", placeholder="Enter your password", type="password", key="login_password", label_visibility="collapsed")
-
-        if st.button("SIGN IN", key="login_button"):
-            if check_password():
-                st.rerun()
-
-        # Remember me and Forgot password
-        st.markdown("""
-            <div class="options">
-                <label class="remember-me">
-                    <input type="checkbox" checked>
-                    Remember me
-                </label>
-                <a href="#" class="forgot-password">Forgot password?</a>
-            </div>
-        """, unsafe_allow_html=True)
-
-    # Close the containers
-    st.markdown("""
+                </div>
+                <div class="login-options">
+                    <div class="remember-me">
+                        <input type="checkbox" id="remember" name="remember">
+                        <label for="remember">Remember me</label>
                     </div>
+                    <a href="#" class="forgot-password">Forgot password?</a>
                 </div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
-def is_authenticated():
-    """Check if user is authenticated"""
-    return st.session_state.get("authenticated", False)
-
-def get_current_user():
-    """Get current user's username"""
-    return st.session_state.get("username") if is_authenticated() else None
-
-def logout():
-    """Logout the current user"""
-    logger.info(f"User logged out: {st.session_state.username}")
-    # Clear all session state
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    # Reinitialize authentication state
-    st.session_state["authenticated"] = False
-    st.session_state["username"] = None
-    st.session_state["role"] = None
-
-def require_authentication(roles=None):
-    """Decorator to require authentication for view functions with optional role-based access"""
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            if not is_authenticated():
-                show_login_page()
-                return
-            
-            # Check role-based access if specified
-            if roles and st.session_state.role not in roles:
-                st.error("You don't have permission to access this page.")
-                return
-            
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-# Format helper functions
-def format_amount(value):
-    """Format amount in lakhs"""
-    if pd.isna(value):
-        return "₹0L"
-    return f"₹{int(value/100000)}L"
-
-def format_percentage(value):
-    """Format percentage"""
-    if pd.isna(value):
-        return "0%"
-    return f"{int(value)}%"
-
-def format_number(value):
-    """Format number with commas"""
-    if pd.isna(value):
-        return "0"
-    return f"{int(value):,}"
-
-# Custom CSS for the dashboard
-st.markdown("""
-    <style>
-        /* Main container */
-        .main {
-            background-color: #f8f9fa;
-            padding: 2rem;
-        }
-        
-        /* Cards */
-        .stCard {
-            background-color: white;
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 1.5rem;
-        }
-        
-        /* Buttons */
-        .stButton > button {
-            background-color: #4A90E2;
-            color: white;
-            border-radius: 5px;
-            padding: 0.5rem 1rem;
-            font-weight: 500;
-            border: none;
-            transition: background-color 0.3s;
-        }
-        
-        .stButton > button:hover {
-            background-color: #357ABD;
-        }
-        
-        /* Metrics */
-        .metric-label {
-            font-size: 1rem;
-            color: #666;
-            margin-bottom: 0.5rem;
-        }
-        
-        .metric-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-        }
-        
-        .big-number {
-            font-size: 3rem;
-            font-weight: 700;
-            color: #2c3e50;
-            text-align: center;
-            margin: 1rem 0;
-        }
-        
-        /* Tables */
-        .stDataFrame {
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        .stDataFrame table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .stDataFrame th {
-            background-color: #4A90E2;
-            color: white;
-            font-weight: 500;
-            padding: 0.75rem;
-            text-align: left;
-        }
-        
-        .stDataFrame td {
-            padding: 0.75rem;
-            border-bottom: 1px solid #eee;
-        }
-        
-        .stDataFrame tr:hover {
-            background-color: #f8f9fa;
-        }
-        
-        /* Input fields */
-        .stTextInput > div > div > input,
-        .stNumberInput > div > div > input,
-        .stSelectbox > div > div > div {
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            padding: 0.5rem;
-        }
-        
-        /* Charts */
-        .stPlotlyChart {
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        /* Tabs */
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 2rem;
-        }
-        
-        .stTabs [data-baseweb="tab"] {
-            padding: 1rem;
-            color: #666;
-            font-weight: 500;
-        }
-        
-        .stTabs [aria-selected="true"] {
-            color: #4A90E2;
-            font-weight: 600;
-        }
-        
-        /* File uploader */
-        .stFileUploader {
-            border: 2px dashed #ddd;
-            border-radius: 10px;
-            padding: 2rem;
-            text-align: center;
-        }
-        
-        /* Success/Error messages */
-        .stAlert {
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        
-        .element-container .stAlert {
-            margin-top: 1rem;
-        }
-    </style>
-""", unsafe_allow_html=True)
-
-# Cache data processing functions
-@st.cache_data
-def process_data(df):
-    """Process and clean the data"""
-    if df is None:
-        return None
-    
-    # Make a copy of the DataFrame
-    processed_df = df.copy()
-    
-    # Convert date columns
-    if 'Expected Close Date' in processed_df.columns:
-        processed_df['Expected Close Date'] = pd.to_datetime(processed_df['Expected Close Date'])
-    
-    # Convert amount to numeric
-    if 'Amount' in processed_df.columns:
-        processed_df['Amount'] = pd.to_numeric(processed_df['Amount'], errors='coerce')
-    
-    # Convert probability to numeric
-    if 'Probability' in processed_df.columns:
-        processed_df['Probability'] = pd.to_numeric(processed_df['Probability'], errors='coerce')
-        processed_df['Probability'] = processed_df['Probability'].fillna(0)
-    
-    # Clean text columns
-    text_columns = ['Practice', 'Team', 'Sales Stage', 'Notes']
-    for col in text_columns:
-        if col in processed_df.columns:
-            processed_df[col] = processed_df[col].astype(str).str.strip()
-            processed_df[col] = processed_df[col].replace('nan', '')
-    
-    return processed_df
-
-@st.cache_data
-def calculate_team_metrics(df):
-    """Calculate team performance metrics"""
-    if df is None:
-        return None
-    
-    # Group by team and calculate metrics
-    team_metrics = df.groupby('Team').agg({
-        'Amount': [
-            ('Total Pipeline', lambda x: x[~df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000),
-            ('Closed Amount', lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000)
-        ],
-        'Sales Stage': [
-            ('Pipeline Deals', lambda x: x[~df['Sales Stage'].str.contains('Won', case=False, na=False)].count()),
-            ('Closed Deals', lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count())
-        ]
-    }).reset_index()
-    
-    # Flatten column names
-    team_metrics.columns = ['Team', 'Total Pipeline', 'Closed Amount', 'Pipeline Deals', 'Closed Deals']
-    
-    # Calculate additional metrics
-    team_metrics['Win Rate'] = (team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100).round(1)
-    team_metrics['Avg Deal Size'] = (team_metrics['Closed Amount'] / team_metrics['Closed Deals']).round(1)
-    
-    # Replace inf and nan values
-    team_metrics['Win Rate'] = team_metrics['Win Rate'].replace([np.inf, -np.inf], 0).fillna(0)
-    team_metrics['Avg Deal Size'] = team_metrics['Avg Deal Size'].replace([np.inf, -np.inf], 0).fillna(0)
-    
-    # Sort by total pipeline
-    team_metrics = team_metrics.sort_values('Total Pipeline', ascending=False)
-    
-    return team_metrics
-
-@st.cache_data
-def filter_dataframe(df, filters):
-    """Filter the DataFrame based on the provided filters"""
-    if df is None:
-        return None
-    
-    # Make a copy of the DataFrame
-    filtered_df = df.copy()
-    
-    # Apply filters
-    for column, values in filters.items():
-        if values and 'All' not in values:
-            filtered_df = filtered_df[filtered_df[column].isin(values)]
-    
-    return filtered_df
-
-@require_authentication()
 def show_data_input_view():
-    """Display the data input view"""
-    # Initialize session state variables if they don't exist
-    if 'df' not in st.session_state:
-        st.session_state.df = None
-    
+    """Display the data input view with file upload and preview"""
     st.title("Data Input")
     
     # File upload section
-    st.subheader("Upload Excel File")
-    uploaded_file = st.file_uploader("Choose an Excel file", type=["xlsx", "xls"])
+    st.markdown("""
+        <style>
+            .upload-container {
+                background: rgba(0, 0, 0, 0.8);
+                border-radius: 20px;
+                padding: 30px;
+                margin-bottom: 30px;
+                border: 1px solid rgba(0, 255, 255, 0.1);
+                backdrop-filter: blur(10px);
+            }
+            
+            .upload-header {
+                color: #0ff;
+                font-size: 1.5em;
+                margin-bottom: 20px;
+                text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            }
+            
+            .file-format-info {
+                background: rgba(0, 0, 0, 0.5);
+                border-radius: 10px;
+                padding: 15px;
+                margin-top: 20px;
+                border: 1px solid rgba(0, 255, 255, 0.2);
+            }
+            
+            .required-fields {
+                margin-top: 20px;
+                color: #0ff;
+            }
+        </style>
+        
+        <div class="upload-container">
+            <div class="upload-header">Upload Sales Data</div>
+    """, unsafe_allow_html=True)
+    
+    uploaded_file = st.file_uploader("Choose a file", type=['xlsx', 'csv'])
     
     if uploaded_file is not None:
         try:
-            # Read the uploaded file
-            df = pd.read_excel(uploaded_file)
-            
-            # Validate required columns
-            required_columns = ['Practice', 'Team', 'Sales Stage', 'Amount', 'Expected Close Date']
-            missing_columns = [col for col in required_columns if col not in df.columns]
-            
-            if missing_columns:
-                st.error(f"Missing required columns: {', '.join(missing_columns)}")
+            if uploaded_file.name.endswith('.xlsx'):
+                df = pd.read_excel(uploaded_file)
             else:
-                # Validate data types
-                try:
-                    df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
-                    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
-                    
-                    # Check for invalid data
-                    invalid_amount = df['Amount'].isna().sum()
-                    invalid_date = df['Expected Close Date'].isna().sum()
-                    
-                    if invalid_amount > 0 or invalid_date > 0:
-                        st.warning(f"Found {invalid_amount} invalid amounts and {invalid_date} invalid dates. These rows will be excluded.")
-                        df = df.dropna(subset=['Amount', 'Expected Close Date'])
-                    
-                    st.session_state.df = df
-                    st.success("File uploaded successfully!")
-                except Exception as e:
-                    st.error(f"Error processing data: {str(e)}")
+                df = pd.read_csv(uploaded_file)
+            
+            st.session_state.df = df
+            st.success("File uploaded successfully!")
+            
+            # Display data preview
+            st.subheader("Data Preview")
+            st.dataframe(df.head())
+            
+            # Display data summary
+            st.subheader("Data Summary")
+            st.write(f"Total Records: {len(df)}")
+            st.write(f"Columns: {', '.join(df.columns)}")
+            
         except Exception as e:
             st.error(f"Error reading file: {str(e)}")
     
-    # Manual input section
-    st.subheader("Manual Input")
-    
-    if st.session_state.df is None:
-        st.session_state.df = pd.DataFrame(columns=["Practice", "Team", "Sales Stage", "Amount", "Expected Close Date", "Probability", "Notes"])
-    
-    with st.form("manual_input_form"):
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            practice = st.text_input("Practice")
-            team = st.text_input("Team")
-            sales_stage = st.selectbox("Sales Stage", ["Prospecting", "Qualification", "Proposal", "Negotiation", "Closed Won", "Closed Lost"])
-            amount = st.number_input("Amount", min_value=0.0, step=1000.0)
-        
-        with col2:
-            expected_close_date = st.date_input("Expected Close Date")
-            probability = st.slider("Probability (%)", 0, 100, 50)
-            notes = st.text_area("Notes")
-        
-        submit = st.form_submit_button("Add Data")
-        
-        if submit:
-            try:
-                # Validate input
-                if not practice or not team or not sales_stage or amount <= 0:
-                    st.error("Please fill in all required fields with valid values.")
-                    return
-                
-                # Create new row
-                new_row = pd.DataFrame([{
-                    "Practice": practice,
-                    "Team": team,
-                    "Sales Stage": sales_stage,
-                    "Amount": amount,
-                    "Expected Close Date": pd.Timestamp(expected_close_date),
-                    "Probability": probability,
-                    "Notes": notes
-                }])
-                
-                # Add to DataFrame
-                st.session_state.df = pd.concat([st.session_state.df, new_row], ignore_index=True)
-                st.success("Data added successfully!")
-            except Exception as e:
-                st.error(f"Error adding data: {str(e)}")
-    
-    # Display current data
-    if st.session_state.df is not None and not st.session_state.df.empty:
-        st.subheader("Current Data")
-        st.dataframe(st.session_state.df)
-        
-        # Download button
-        csv = st.session_state.df.to_csv(index=False)
-        st.download_button(
-            label="Download data as CSV",
-            data=csv,
-            file_name="sales_data.csv",
-            mime="text/csv"
-        )
+    st.markdown("""
+            <div class="file-format-info">
+                <h4>Supported File Formats:</h4>
+                <ul>
+                    <li>Excel (.xlsx)</li>
+                    <li>CSV (.csv)</li>
+                </ul>
+            </div>
+            
+            <div class="required-fields">
+                <h4>Required Fields:</h4>
+                <ul>
+                    <li>Date</li>
+                    <li>Sales Team Member</li>
+                    <li>Practice</li>
+                    <li>Deal Value</li>
+                    <li>Status</li>
+                </ul>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
-@require_authentication()
 def show_overview_view():
-    """Display the overview section with key metrics and charts"""
-    if st.session_state.df is None:
-        st.warning("Please upload data to view the dashboard.")
+    """Display the overview view with key metrics and visualizations"""
+    if 'df' not in st.session_state:
+        st.warning("Please upload data first")
         return
     
-    st.title("Sales Performance Overview")
-    
-    # Process data
-    df = process_data(st.session_state.df)
-    
-    # Sales target input
-    target = st.number_input("Enter Sales Target (in lakhs)", min_value=0, value=1000)
+    df = st.session_state.df
     
     # Calculate metrics
-    total_pipeline = df["Amount"].sum() / 100000
-    closed_won = df[df["Sales Stage"] == "Closed Won"]["Amount"].sum() / 100000
-    achievement_percentage = (closed_won / target) * 100 if target > 0 else 0
-    
-    # Display key metrics
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("Total Pipeline", f"₹{format_number(total_pipeline)}L")
-    with col2:
-        st.metric("Closed Won", f"₹{format_number(closed_won)}L")
-    with col3:
-        st.metric("Target", f"₹{format_number(target)}L")
-    with col4:
-        st.metric("Achievement", f"{format_percentage(achievement_percentage)}")
-    
-    # Practice metrics
-    st.subheader("Practice Metrics")
-    practice = st.selectbox("Select Practice", ["All"] + list(df["Practice"].unique()))
-    
-    if practice != "All":
-        df = df[df["Practice"] == practice]
-    
-    # Practice summary
-    practice_metrics = df.groupby("Practice").agg({
-        "Amount": ["sum", "count"],
-        "Sales Stage": lambda x: (x == "Closed Won").sum()
-    }).reset_index()
-    
-    practice_metrics.columns = ["Practice", "Total Pipeline", "Pipeline Deals", "Closed Deals"]
-    practice_metrics["Win Rate"] = (practice_metrics["Closed Deals"] / practice_metrics["Pipeline Deals"] * 100).round(1)
-    practice_metrics["Average Deal Size"] = (practice_metrics["Total Pipeline"] / practice_metrics["Pipeline Deals"] / 100000).round(1)
-    
-    st.dataframe(practice_metrics)
-    
-    # Focus Areas Distribution
-    st.subheader("Focus Areas Distribution")
-    focus_areas = df.groupby("Practice")["Amount"].sum().sort_values(ascending=False)
-    
-    fig = go.Figure(data=[go.Pie(
-        labels=focus_areas.index,
-        values=focus_areas.values,
-        hole=0.3
-    )])
-    
-    fig.update_layout(
-        title="Focus Areas Distribution",
-        showlegend=True
-    )
-    
-    st.plotly_chart(fig)
-    
-    # Monthly pipeline trend
-    st.subheader("Monthly Pipeline Trend")
-    deal_type = st.selectbox("Select Deal Type", ["All", "Closed Won", "Pipeline"])
-    
-    if deal_type != "All":
-        df = df[df["Sales Stage"] == deal_type]
-    
-    monthly_trend = df.groupby(pd.Grouper(key="Expected Close Date", freq="M"))["Amount"].sum().reset_index()
-    monthly_trend["Amount"] = monthly_trend["Amount"] / 100000
-    
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=monthly_trend["Expected Close Date"],
-        y=monthly_trend["Amount"],
-        name="Amount"
-    ))
-    
-    fig.update_layout(
-        title="Monthly Pipeline Trend",
-        xaxis_title="Month",
-        yaxis_title="Amount (in lakhs)",
-        showlegend=True
-    )
-    
-    st.plotly_chart(fig)
-    
-    # Monthly metrics
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric("Total Value", f"₹{format_number(monthly_trend['Amount'].sum())}L")
-    with col2:
-        st.metric("Monthly Average", f"₹{format_number(monthly_trend['Amount'].mean())}L")
-    with col3:
-        st.metric("Total Deals", format_number(len(monthly_trend)))
-
-def show_sales_team_view():
-    """Display the sales team performance section"""
-    if st.session_state.df is None:
-        st.warning("Please upload data to view the dashboard.")
-        return
-    
-    st.title("Sales Team Performance")
-    
-    # Process data
-    df = process_data(st.session_state.df)
-    
-    # Calculate team metrics
-    team_metrics = calculate_team_metrics(df)
-    
-    # Team selection
-    team = st.selectbox("Select Team", ["All"] + list(df["Team"].unique()))
-    
-    if team != "All":
-        df = df[df["Team"] == team]
-        team_metrics = team_metrics[team_metrics.index == team]
-    
-    # Display team metrics
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("Total Pipeline", f"₹{format_number(team_metrics['Total Pipeline'].iloc[0] / 100000)}L")
-    with col2:
-        st.metric("Total Deals", format_number(team_metrics['Pipeline Deals'].iloc[0]))
-    with col3:
-        st.metric("Win Rate", format_percentage(team_metrics['Win Rate'].iloc[0]))
-    with col4:
-        st.metric("Average Deal Size", f"₹{format_number(team_metrics['Average Deal Size'].iloc[0])}L")
-    
-    # Team-wise charts
-    st.subheader("Team Performance")
-    
-    # Pipeline vs Closed Won
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=team_metrics.index,
-        y=team_metrics["Total Pipeline"] / 100000,
-        name="Pipeline"
-    ))
-    fig.add_trace(go.Bar(
-        x=team_metrics.index,
-        y=team_metrics["Closed Amount"] / 100000,
-        name="Closed Won"
-    ))
-    
-    fig.update_layout(
-        title="Pipeline vs Closed Won",
-        xaxis_title="Team",
-        yaxis_title="Amount (in lakhs)",
-        barmode="group"
-    )
-    
-    st.plotly_chart(fig)
-    
-    # Pipeline vs Closed Deals
-    fig = go.Figure()
-    fig.add_trace(go.Bar(
-        x=team_metrics.index,
-        y=team_metrics["Pipeline Deals"],
-        name="Pipeline"
-    ))
-    fig.add_trace(go.Bar(
-        x=team_metrics.index,
-        y=team_metrics["Closed Deals"],
-        name="Closed Won"
-    ))
-    
-    fig.update_layout(
-        title="Pipeline vs Closed Deals",
-        xaxis_title="Team",
-        yaxis_title="Number of Deals",
-        barmode="group"
-    )
-    
-    st.plotly_chart(fig)
-    
-    # Team-wise summary
-    st.subheader("Team-wise Summary")
-    team_summary = team_metrics.copy()
-    team_summary["Total Pipeline"] = team_summary["Total Pipeline"] / 100000
-    team_summary["Closed Amount"] = team_summary["Closed Amount"] / 100000
-    
-    st.dataframe(team_summary)
-
-def show_detailed_data_view():
-    """Display the detailed data view with filters and data table"""
-    if st.session_state.df is None:
-        st.warning("Please upload data to view the dashboard.")
-        return
-    
-    st.title("Detailed Data View")
-    
-    # Process data
-    df = process_data(st.session_state.df)
-    
-    # Filters
-    st.subheader("Filters")
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        practice = st.multiselect("Practice", ["All"] + list(df["Practice"].unique()), default=["All"])
-    with col2:
-        team = st.multiselect("Team", ["All"] + list(df["Team"].unique()), default=["All"])
-    with col3:
-        sales_stage = st.multiselect("Sales Stage", ["All"] + list(df["Sales Stage"].unique()), default=["All"])
-    
-    # Apply filters
-    filters = {
-        "Practice": practice,
-        "Team": team,
-        "Sales Stage": sales_stage
-    }
-    
-    filtered_df = filter_dataframe(df, filters)
+    total_closed_won = df[df['Status'] == 'Closed Won']['Deal Value'].sum()
+    total_pipeline = df['Deal Value'].sum()
+    win_rate = (total_closed_won / total_pipeline) * 100 if total_pipeline > 0 else 0
     
     # Display metrics
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        st.metric("Total Pipeline", f"₹{format_number(filtered_df['Amount'].sum() / 100000)}L")
+        st.metric("Total Closed Won", f"${total_closed_won:,.2f}")
     with col2:
-        st.metric("Total Deals", format_number(len(filtered_df)))
+        st.metric("Total Pipeline", f"${total_pipeline:,.2f}")
     with col3:
-        win_rate = (filtered_df[filtered_df["Sales Stage"] == "Closed Won"]["Amount"].sum() / filtered_df["Amount"].sum() * 100) if len(filtered_df) > 0 else 0
-        st.metric("Win Rate", format_percentage(win_rate))
-    with col4:
-        avg_deal_size = (filtered_df["Amount"].sum() / len(filtered_df) / 100000) if len(filtered_df) > 0 else 0
-        st.metric("Average Deal Size", f"₹{format_number(avg_deal_size)}L")
+        st.metric("Win Rate", f"{win_rate:.1f}%")
     
-    # Display data table
-    st.subheader("Data Table")
-    st.dataframe(filtered_df)
+    # Practice-wise pipeline
+    st.subheader("Practice-wise Pipeline")
+    practice_pipeline = df.groupby('Practice')['Deal Value'].sum().reset_index()
+    fig1 = px.bar(practice_pipeline, x='Practice', y='Deal Value',
+                  color='Practice', title='Pipeline by Practice')
+    st.plotly_chart(fig1)
+    
+    # Practice-wise closed deals
+    st.subheader("Practice-wise Closed Deals")
+    closed_deals = df[df['Status'] == 'Closed Won'].groupby('Practice')['Deal Value'].sum().reset_index()
+    fig2 = px.pie(closed_deals, values='Deal Value', names='Practice',
+                  title='Closed Deals by Practice')
+    st.plotly_chart(fig2)
+    
+    # Monthly trend
+    st.subheader("Monthly Sales Trend")
+    df['Date'] = pd.to_datetime(df['Date'])
+    monthly_trend = df.groupby(df['Date'].dt.to_period('M'))['Deal Value'].sum().reset_index()
+    monthly_trend['Date'] = monthly_trend['Date'].astype(str)
+    fig3 = px.line(monthly_trend, x='Date', y='Deal Value',
+                   title='Monthly Sales Trend')
+    st.plotly_chart(fig3)
 
-def show_quarterly_summary():
-    """Display the quarterly summary view"""
-    # Initialize session state variables if they don't exist
+def show_sales_team_view():
+    """Display the sales team view with team performance metrics"""
     if 'df' not in st.session_state:
-        st.session_state.df = None
-    
-    if st.session_state.df is None:
-        st.warning("Please upload data to view the dashboard.")
+        st.warning("Please upload data first")
         return
     
-    try:
-        # Process data with error handling
-        df = process_data(st.session_state.df)
-        if df is None or df.empty:
-            st.error("No valid data available for analysis.")
-            return
-            
-        # Validate required columns
-        required_columns = ['Amount', 'Sales Stage', 'Expected Close Date', 'Practice']
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        if missing_columns:
-            st.error(f"Missing required columns: {', '.join(missing_columns)}")
-            return
-            
-        st.title("Quarterly Summary")
-        
-        # Quarter selection with validation
-        current_year = pd.Timestamp.now().year
-        quarters = [f"Q{i} {current_year}" for i in range(1, 5)]
-        quarter = st.selectbox("Select Quarter", quarters)
-        
-        # Filter data for selected quarter with error handling
-        try:
-            q = int(quarter.split()[0][1])
-            start_date = pd.Timestamp(f"{current_year}-{3*q-2}-01")
-            end_date = pd.Timestamp(f"{current_year}-{3*q}-30")
-            
-            df = df[(df["Expected Close Date"] >= start_date) & (df["Expected Close Date"] <= end_date)]
-            
-            if df.empty:
-                st.warning(f"No data available for {quarter}")
-                return
-                
-            # Calculate metrics with error handling
-            total_pipeline = df["Amount"].sum() / 100000
-            closed_won = df[df["Sales Stage"] == "Closed Won"]["Amount"].sum() / 100000
-            total_deals = len(df)
-            win_rate = (closed_won / total_pipeline * 100) if total_pipeline > 0 else 0
-            
-            # Display key metrics
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.metric("Total Pipeline", f"₹{format_number(total_pipeline)}L")
-            with col2:
-                st.metric("Closed Won", f"₹{format_number(closed_won)}L")
-            with col3:
-                st.metric("Total Deals", format_number(total_deals))
-            with col4:
-                st.metric("Win Rate", format_percentage(win_rate))
-            
-            # Practice-wise summary with error handling
-            st.subheader("Practice-wise Summary")
-            try:
-                practice_summary = df.groupby("Practice").agg({
-                    "Amount": ["sum", "count"],
-                    "Sales Stage": lambda x: (x == "Closed Won").sum()
-                }).reset_index()
-                
-                practice_summary.columns = ["Practice", "Total Pipeline", "Pipeline Deals", "Closed Deals"]
-                practice_summary["Win Rate"] = (practice_summary["Closed Deals"] / practice_summary["Pipeline Deals"] * 100).round(1)
-                practice_summary["Closed Amount"] = practice_summary["Total Pipeline"] / 100000
-                
-                st.dataframe(practice_summary)
-            except Exception as e:
-                st.error(f"Error generating practice summary: {str(e)}")
-            
-            # Monthly trend with error handling
-            st.subheader("Monthly Trend")
-            try:
-                monthly_trend = df.groupby(pd.Grouper(key="Expected Close Date", freq="M"))["Amount"].sum().reset_index()
-                monthly_trend["Amount"] = monthly_trend["Amount"] / 100000
-                
-                fig = go.Figure()
-                fig.add_trace(go.Bar(
-                    x=monthly_trend["Expected Close Date"],
-                    y=monthly_trend["Amount"],
-                    name="Amount"
-                ))
-                
-                fig.update_layout(
-                    title="Monthly Pipeline Trend",
-                    xaxis_title="Month",
-                    yaxis_title="Amount (in lakhs)",
-                    showlegend=True
-                )
-                
-                st.plotly_chart(fig)
-            except Exception as e:
-                st.error(f"Error generating monthly trend: {str(e)}")
-                
-        except Exception as e:
-            st.error(f"Error processing quarter data: {str(e)}")
-            
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
-
-def show_previous_data_view():
-    """Display the previous data view"""
-    # Initialize session state variables if they don't exist
-    if 'df' not in st.session_state:
-        st.session_state.df = None
+    df = st.session_state.df
     
-    if st.session_state.df is None:
-        st.warning("Please upload data to view the dashboard.")
+    # Team filters
+    st.sidebar.header("Team Filters")
+    team_members = df['Sales Team Member'].unique()
+    selected_team = st.sidebar.multiselect("Select Team Members", team_members)
+    
+    if selected_team:
+        df = df[df['Sales Team Member'].isin(selected_team)]
+    
+    # Calculate team metrics
+    team_metrics = df.groupby('Sales Team Member').agg({
+        'Deal Value': ['sum', 'count'],
+        'Status': lambda x: (x == 'Closed Won').sum()
+    }).reset_index()
+    
+    team_metrics.columns = ['Sales Team Member', 'Total Pipeline', 'Total Deals', 'Closed Won']
+    team_metrics['Win Rate'] = (team_metrics['Closed Won'] / team_metrics['Total Deals'] * 100).round(1)
+    team_metrics['Average Deal Size'] = (team_metrics['Total Pipeline'] / team_metrics['Total Deals']).round(2)
+    
+    # Display team metrics
+    st.subheader("Team Performance Metrics")
+    st.dataframe(team_metrics.style.format({
+        'Total Pipeline': '${:,.2f}',
+        'Average Deal Size': '${:,.2f}',
+        'Win Rate': '{:.1f}%'
+    }))
+    
+    # Team member performance chart
+    st.subheader("Team Member Performance")
+    fig = px.bar(team_metrics, x='Sales Team Member', y=['Total Pipeline', 'Closed Won'],
+                 title='Team Member Performance', barmode='group')
+    st.plotly_chart(fig)
+    
+    # Practice distribution by team member
+    st.subheader("Practice Distribution by Team Member")
+    practice_dist = df.groupby(['Sales Team Member', 'Practice'])['Deal Value'].sum().reset_index()
+    fig2 = px.bar(practice_dist, x='Sales Team Member', y='Deal Value',
+                  color='Practice', title='Practice Distribution')
+    st.plotly_chart(fig2)
+
+def show_detailed_data_view():
+    """Display the detailed data view with search and filtering options"""
+    if 'df' not in st.session_state:
+        st.warning("Please upload data first")
         return
     
-    try:
-        # Process data with error handling
-        df = process_data(st.session_state.df)
-        if df is None or df.empty:
-            st.error("No valid data available for analysis.")
-            return
-            
-        # Validate required columns
-        required_columns = ['Amount', 'Sales Stage', 'Expected Close Date', 'Practice']
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        if missing_columns:
-            st.error(f"Missing required columns: {', '.join(missing_columns)}")
-            return
-            
-        st.title("Previous Data View")
+    df = st.session_state.df
+    
+    # Search and filters
+    st.sidebar.header("Search & Filters")
+    
+    # Text search
+    search_term = st.sidebar.text_input("Search in all columns")
+    if search_term:
+        mask = df.astype(str).apply(lambda x: x.str.contains(search_term, case=False)).any(axis=1)
+        df = df[mask]
+    
+    # Date range filter
+    min_date = df['Date'].min()
+    max_date = df['Date'].max()
+    date_range = st.sidebar.date_input(
+        "Date Range",
+        value=(min_date, max_date),
+        min_value=min_date,
+        max_value=max_date
+    )
+    if len(date_range) == 2:
+        df = df[(df['Date'] >= pd.Timestamp(date_range[0])) & 
+                (df['Date'] <= pd.Timestamp(date_range[1]))]
+    
+    # Practice filter
+    practices = df['Practice'].unique()
+    selected_practices = st.sidebar.multiselect("Select Practices", practices)
+    if selected_practices:
+        df = df[df['Practice'].isin(selected_practices)]
+    
+    # Status filter
+    statuses = df['Status'].unique()
+    selected_statuses = st.sidebar.multiselect("Select Status", statuses)
+    if selected_statuses:
+        df = df[df['Status'].isin(selected_statuses)]
+    
+    # Display detailed data
+    st.subheader("Detailed Sales Data")
+    st.dataframe(df.style.format({
+        'Deal Value': '${:,.2f}',
+        'Date': lambda x: x.strftime('%Y-%m-%d')
+    }))
+    
+    # Export options
+    st.sidebar.header("Export Options")
+    if st.sidebar.button("Export to Excel"):
+        df.to_excel("sales_data_export.xlsx", index=False)
+        st.sidebar.success("Data exported successfully!")
+    
+    if st.sidebar.button("Export to CSV"):
+        df.to_csv("sales_data_export.csv", index=False)
+        st.sidebar.success("Data exported successfully!")
+
+def main():
+    """Main function to handle navigation and view selection"""
+    # Initialize session state
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
+    if 'current_view' not in st.session_state:
+        st.session_state.current_view = 'login'
+    
+    # Navigation
+    if not st.session_state.authenticated:
+        show_login_page()
+    else:
+        # Sidebar navigation
+        st.sidebar.title("Navigation")
+        view_options = {
+            "Data Input": "data_input",
+            "Overview": "overview",
+            "Sales Team": "sales_team",
+            "Detailed Data": "detailed_data"
+        }
+        selected_view = st.sidebar.radio("Select View", list(view_options.keys()))
+        st.session_state.current_view = view_options[selected_view]
         
-        # Year selection with validation
-        current_year = pd.Timestamp.now().year
-        years = [str(year) for year in range(current_year - 4, current_year + 1)]
-        selected_year = st.selectbox("Select Year", years)
+        # Logout button
+        if st.sidebar.button("Logout"):
+            st.session_state.authenticated = False
+            st.session_state.current_view = 'login'
+            st.rerun()
         
-        # Filter data for selected year with error handling
-        try:
-            start_date = pd.Timestamp(f"{selected_year}-01-01")
-            end_date = pd.Timestamp(f"{selected_year}-12-31")
-            
-            df = df[(df["Expected Close Date"] >= start_date) & (df["Expected Close Date"] <= end_date)]
-            
-            if df.empty:
-                st.warning(f"No data available for {selected_year}")
-                return
-                
-            # Calculate metrics with error handling
-            total_pipeline = df["Amount"].sum() / 100000
-            closed_won = df[df["Sales Stage"] == "Closed Won"]["Amount"].sum() / 100000
-            total_deals = len(df)
-            win_rate = (closed_won / total_pipeline * 100) if total_pipeline > 0 else 0
-            
-            # Display key metrics
-            col1, col2, col3, col4 = st.columns(4)
-            
-            with col1:
-                st.metric("Total Pipeline", f"₹{format_number(total_pipeline)}L")
-            with col2:
-                st.metric("Closed Won", f"₹{format_number(closed_won)}L")
-            with col3:
-                st.metric("Total Deals", format_number(total_deals))
-            with col4:
-                st.metric("Win Rate", format_percentage(win_rate))
-            
-            # Quarterly trend with error handling
-            st.subheader("Quarterly Trend")
-            try:
-                df['Quarter'] = df['Expected Close Date'].dt.quarter
-                quarterly_trend = df.groupby('Quarter').agg({
-                    'Amount': 'sum',
-                    'Sales Stage': lambda x: (x == 'Closed Won').sum()
-                }).reset_index()
-                
-                quarterly_trend['Amount'] = quarterly_trend['Amount'] / 100000
-                
-                fig = go.Figure()
-                fig.add_trace(go.Bar(
-                    x=quarterly_trend['Quarter'],
-                    y=quarterly_trend['Amount'],
-                    name='Amount'
-                ))
-                fig.add_trace(go.Scatter(
-                    x=quarterly_trend['Quarter'],
-                    y=quarterly_trend['Sales Stage'],
-                    name='Closed Deals',
-                    mode='lines+markers'
-                ))
-                
-                fig.update_layout(
-                    title=f"Quarterly Performance - {selected_year}",
-                    xaxis_title="Quarter",
-                    yaxis_title="Amount (in lakhs) / Number of Deals",
-                    showlegend=True
-                )
-                
-                st.plotly_chart(fig)
-            except Exception as e:
-                st.error(f"Error generating quarterly trend: {str(e)}")
-            
-            # Practice-wise summary with error handling
-            st.subheader("Practice-wise Summary")
-            try:
-                practice_summary = df.groupby("Practice").agg({
-                    "Amount": ["sum", "count"],
-                    "Sales Stage": lambda x: (x == "Closed Won").sum()
-                }).reset_index()
-                
-                practice_summary.columns = ["Practice", "Total Pipeline", "Pipeline Deals", "Closed Deals"]
-                practice_summary["Win Rate"] = (practice_summary["Closed Deals"] / practice_summary["Pipeline Deals"] * 100).round(1)
-                practice_summary["Closed Amount"] = practice_summary["Total Pipeline"] / 100000
-                
-                st.dataframe(practice_summary)
-            except Exception as e:
-                st.error(f"Error generating practice summary: {str(e)}")
-                
-        except Exception as e:
-            st.error(f"Error processing year data: {str(e)}")
-            
-    except Exception as e:
-        st.error(f"An error occurred: {str(e)}")
+        # Display selected view
+        if st.session_state.current_view == 'data_input':
+            show_data_input_view()
+        elif st.session_state.current_view == 'overview':
+            show_overview_view()
+        elif st.session_state.current_view == 'sales_team':
+            show_sales_team_view()
+        elif st.session_state.current_view == 'detailed_data':
+            show_detailed_data_view()
+
+if __name__ == "__main__":
+    main() 
