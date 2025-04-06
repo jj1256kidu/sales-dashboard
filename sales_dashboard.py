@@ -1386,12 +1386,190 @@ def show_detailed():
     
     st.dataframe(df, use_container_width=True)
 
+def show_week_over_week_delta():
+    st.markdown("""
+        <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
+            <h3 style='color: #2a5298; margin: 0; font-size: 1.2em; font-weight: 600;'>📊 Week-over-Week Delta Analysis</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    if 'raw_data' not in st.session_state or 'previousweek_raw_data' not in st.session_state:
+        st.warning("Please upload both current week and previous week data to view delta analysis")
+        return
+    
+    current_df = st.session_state.raw_data
+    previous_df = st.session_state.previousweek_raw_data
+    
+    # Get sheet names from both files
+    current_sheets = list(current_df.keys()) if isinstance(current_df, dict) else ['Sheet1']
+    previous_sheets = list(previous_df.keys()) if isinstance(previous_df, dict) else ['Sheet1']
+    
+    # Create sheet selection dropdowns
+    col1, col2 = st.columns(2)
+    with col1:
+        current_sheet = st.selectbox("Select Current Week Sheet", options=current_sheets)
+    with col2:
+        previous_sheet = st.selectbox("Select Previous Week Sheet", options=previous_sheets)
+    
+    # Get the selected sheets
+    current_data = current_df[current_sheet] if isinstance(current_df, dict) else current_df
+    previous_data = previous_df[previous_sheet] if isinstance(previous_df, dict) else previous_df
+    
+    # Ensure both dataframes have the same structure
+    required_columns = ['Organization Name', 'Opportunity Name', 'Deal Value', 'Status', 'Sales Team Member', 'Practice']
+    for col in required_columns:
+        if col not in current_data.columns or col not in previous_data.columns:
+            st.error(f"Required column '{col}' not found in one or both datasets")
+            return
+    
+    # Calculate metrics for current week
+    current_metrics = {
+        'Total Pipeline': current_data['Deal Value'].sum(),
+        'Total Deals': len(current_data),
+        'Closed Won': current_data[current_data['Status'] == 'Closed Won']['Deal Value'].sum(),
+        'Total Deals Count': len(current_data),
+        'Closed Won Count': len(current_data[current_data['Status'] == 'Closed Won'])
+    }
+    
+    # Calculate metrics for previous week
+    previous_metrics = {
+        'Total Pipeline': previous_data['Deal Value'].sum(),
+        'Total Deals': len(previous_data),
+        'Closed Won': previous_data[previous_data['Status'] == 'Closed Won']['Deal Value'].sum(),
+        'Total Deals Count': len(previous_data),
+        'Closed Won Count': len(previous_data[previous_data['Status'] == 'Closed Won'])
+    }
+    
+    # Calculate deltas
+    delta_metrics = {
+        'Total Pipeline': current_metrics['Total Pipeline'] - previous_metrics['Total Pipeline'],
+        'Total Deals': current_metrics['Total Deals'] - previous_metrics['Total Deals'],
+        'Closed Won': current_metrics['Closed Won'] - previous_metrics['Closed Won'],
+        'Total Deals Count': current_metrics['Total Deals Count'] - previous_metrics['Total Deals Count'],
+        'Closed Won Count': current_metrics['Closed Won Count'] - previous_metrics['Closed Won Count']
+    }
+    
+    # Display metrics in cards
+    col1, col2, col3, col4, col5 = st.columns(5)
+    
+    with col1:
+        st.metric(
+            "Total Pipeline",
+            f"₹{current_metrics['Total Pipeline']/100000:,.0f}L",
+            f"₹{delta_metrics['Total Pipeline']/100000:,.0f}L",
+            delta_color="normal"
+        )
+    
+    with col2:
+        st.metric(
+            "Total Deals",
+            f"{current_metrics['Total Deals']:,}",
+            f"{delta_metrics['Total Deals']:,}",
+            delta_color="normal"
+        )
+    
+    with col3:
+        st.metric(
+            "Closed Won",
+            f"₹{current_metrics['Closed Won']/100000:,.0f}L",
+            f"₹{delta_metrics['Closed Won']/100000:,.0f}L",
+            delta_color="normal"
+        )
+    
+    with col4:
+        st.metric(
+            "Total Deals Count",
+            f"{current_metrics['Total Deals Count']:,}",
+            f"{delta_metrics['Total Deals Count']:,}",
+            delta_color="normal"
+        )
+    
+    with col5:
+        st.metric(
+            "Closed Won Count",
+            f"{current_metrics['Closed Won Count']:,}",
+            f"{delta_metrics['Closed Won Count']:,}",
+            delta_color="normal"
+        )
+    
+    # Team-wise comparison
+    st.subheader("Team-wise Comparison")
+    current_team = current_data.groupby('Sales Team Member').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Closed Won').sum()
+    }).reset_index()
+    
+    previous_team = previous_data.groupby('Sales Team Member').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Closed Won').sum()
+    }).reset_index()
+    
+    # Merge current and previous data
+    team_comparison = pd.merge(
+        current_team,
+        previous_team,
+        on='Sales Team Member',
+        suffixes=('_current', '_previous')
+    )
+    
+    # Calculate deltas
+    team_comparison['Pipeline Delta'] = team_comparison['Deal Value_current'] - team_comparison['Deal Value_previous']
+    team_comparison['Closed Won Delta'] = team_comparison['Status_current'] - team_comparison['Status_previous']
+    
+    # Display team comparison
+    st.dataframe(
+        team_comparison.style.format({
+            'Deal Value_current': '₹{:,.2f}',
+            'Deal Value_previous': '₹{:,.2f}',
+            'Pipeline Delta': '₹{:,.2f}',
+            'Status_current': '{:,.0f}',
+            'Status_previous': '{:,.0f}',
+            'Closed Won Delta': '{:,.0f}'
+        })
+    )
+    
+    # Practice-wise comparison
+    st.subheader("Practice-wise Comparison")
+    current_practice = current_data.groupby('Practice').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Closed Won').sum()
+    }).reset_index()
+    
+    previous_practice = previous_data.groupby('Practice').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Closed Won').sum()
+    }).reset_index()
+    
+    # Merge current and previous data
+    practice_comparison = pd.merge(
+        current_practice,
+        previous_practice,
+        on='Practice',
+        suffixes=('_current', '_previous')
+    )
+    
+    # Calculate deltas
+    practice_comparison['Pipeline Delta'] = practice_comparison['Deal Value_current'] - practice_comparison['Deal Value_previous']
+    practice_comparison['Closed Won Delta'] = practice_comparison['Status_current'] - practice_comparison['Status_previous']
+    
+    # Display practice comparison
+    st.dataframe(
+        practice_comparison.style.format({
+            'Deal Value_current': '₹{:,.2f}',
+            'Deal Value_previous': '₹{:,.2f}',
+            'Pipeline Delta': '₹{:,.2f}',
+            'Status_current': '{:,.0f}',
+            'Status_previous': '{:,.0f}',
+            'Closed Won Delta': '{:,.0f}'
+        })
+    )
+
 def main():
     with st.sidebar:
         st.title("Navigation")
         selected = st.radio(
             "Select View",
-            options=["Data Input", "Overview", "Sales Team", "Detailed Data"],
+            options=["Data Input", "Overview", "Sales Team", "Detailed Data", "Week-over-Week Delta"],
             key="navigation"
         )
         st.session_state.current_view = selected.lower().replace(" ", "_")
@@ -1404,6 +1582,8 @@ def main():
         show_sales_team()
     elif st.session_state.current_view == "detailed_data":
         show_detailed()
+    elif st.session_state.current_view == "week_over_week_delta":
+        show_week_over_week_delta()
 
 if __name__ == "__main__":
     main()
