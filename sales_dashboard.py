@@ -465,17 +465,15 @@ def show_data_input():
                 excel_file = pd.ExcelFile(previous_uploaded_file)
                 sheet_names = excel_file.sheet_names
                 
-                # Show sheet selection dropdown for previous week
-                selected_previous_sheet = st.selectbox(
-                    "Select Previous Week Sheet",
-                    options=sheet_names,
-                    key="previous_sheet_select"
-                )
-                
-                # Load the selected sheet
-                previous_df = pd.read_excel(previous_uploaded_file, sheet_name=selected_previous_sheet)
-                st.session_state.previousweek_raw_data = {sheet: pd.read_excel(previous_uploaded_file, sheet_name=sheet) for sheet in sheet_names}
-                st.success(f"Successfully loaded previous week sheet '{selected_previous_sheet}' with {len(previous_df):,} records")
+                # Check if "PreviousWeek_Raw_Data" sheet exists
+                if "PreviousWeek_Raw_Data" in sheet_names:
+                    # Load the PreviousWeek_Raw_Data sheet
+                    previous_df = pd.read_excel(previous_uploaded_file, sheet_name="PreviousWeek_Raw_Data")
+                    st.session_state.previousweek_raw_data = {sheet: pd.read_excel(previous_uploaded_file, sheet_name=sheet) for sheet in sheet_names}
+                    st.success(f"Successfully loaded previous week sheet 'PreviousWeek_Raw_Data' with {len(previous_df):,} records")
+                else:
+                    st.error("Required sheet 'PreviousWeek_Raw_Data' not found in the Excel file")
+                    st.write("Available sheets:", sheet_names)
                 
             except Exception as e:
                 st.error(f"Error reading previous week Excel file: {str(e)}")
@@ -1438,7 +1436,14 @@ def show_week_over_week_delta():
     with col1:
         current_sheet = st.selectbox("Select Current Week Sheet", options=current_sheets)
     with col2:
-        previous_sheet = st.selectbox("Select Previous Week Sheet", options=previous_sheets)
+        # Automatically select PreviousWeek_Raw_Data sheet
+        if "PreviousWeek_Raw_Data" in previous_sheets:
+            previous_sheet = "PreviousWeek_Raw_Data"
+            st.write("Previous Week Sheet: PreviousWeek_Raw_Data")
+        else:
+            st.error("Required sheet 'PreviousWeek_Raw_Data' not found in previous week data")
+            st.write("Available sheets:", previous_sheets)
+            return
     
     # Get the selected sheets
     current_data = current_df[current_sheet] if isinstance(current_df, dict) else current_df
