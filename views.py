@@ -1208,34 +1208,49 @@ def show_detailed_data_view(df):
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        practice_filter = st.multiselect(
-            "Practice",
-            options=['All'] + sorted(df['Practice'].dropna().unique().tolist()),
-            default=['All']
-        )
+        if 'Practice' in df.columns:
+            practices = ['All'] + sorted(df['Practice'].dropna().unique().tolist())
+            selected_practice = st.multiselect(
+                "Select Practice(s)",
+                options=practices,
+                default=['All'],
+                key="practice_filter"
+            )
+        else:
+            st.error("Practice column not found in the dataset")
     
     with col2:
-        team_filter = st.multiselect(
-            "Team",
-            options=['All'] + sorted(df['Sales Owner'].dropna().unique().tolist()),
-            default=['All']
-        )
+        if 'Team' in df.columns:
+            teams = ['All'] + sorted(df['Team'].dropna().unique().tolist())
+            selected_team = st.multiselect(
+                "Select Team(s)",
+                options=teams,
+                default=['All'],
+                key="team_filter"
+            )
+        else:
+            st.error("Team column not found in the dataset")
     
     with col3:
-        stage_filter = st.multiselect(
-            "Sales Stage",
-            options=['All'] + sorted(df['Sales Stage'].dropna().unique().tolist()),
-            default=['All']
-        )
+        if 'Sales Stage' in df.columns:
+            stages = ['All'] + sorted(df['Sales Stage'].dropna().unique().tolist())
+            selected_stage = st.multiselect(
+                "Select Sales Stage(s)",
+                options=stages,
+                default=['All'],
+                key="stage_filter"
+            )
+        else:
+            st.error("Sales Stage column not found in the dataset")
     
     # Apply filters
     filtered_df = df.copy()
-    if 'All' not in practice_filter:
-        filtered_df = filtered_df[filtered_df['Practice'].isin(practice_filter)]
-    if 'All' not in team_filter:
-        filtered_df = filtered_df[filtered_df['Sales Owner'].isin(team_filter)]
-    if 'All' not in stage_filter:
-        filtered_df = filtered_df[filtered_df['Sales Stage'].isin(stage_filter)]
+    if 'All' not in selected_practice:
+        filtered_df = filtered_df[filtered_df['Practice'].isin(selected_practice)]
+    if 'All' not in selected_team:
+        filtered_df = filtered_df[filtered_df['Team'].isin(selected_team)]
+    if 'All' not in selected_stage:
+        filtered_df = filtered_df[filtered_df['Sales Stage'].isin(selected_stage)]
     
     # Summary metrics
     st.markdown("### Summary Metrics")
@@ -1317,18 +1332,20 @@ def show_quarterly_summary(df):
     
     # Filter data for selected quarter
     start_date = pd.Timestamp(year=year, month=(quarter-1)*3+1, day=1)
-    end_date = start_date + pd.DateOffset(months=3) - pd.DateOffset(days=1)
+    end_date = start_date + pd.offsets.QuarterEnd()
     
-    quarter_data = df[
-        (df['Expected Close Date'] >= start_date) & 
+    filtered_df = df[
+        (df['Expected Close Date'] >= start_date) &
         (df['Expected Close Date'] <= end_date)
     ]
     
     # Calculate metrics
-    total_pipeline = quarter_data[~quarter_data['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000
-    closed_won = quarter_data[quarter_data['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000
-    total_deals = len(quarter_data)
-    win_rate = (len(quarter_data[quarter_data['Sales Stage'].str.contains('Won', case=False, na=False)]) / total_deals * 100) if total_deals > 0 else 0
+    total_pipeline = filtered_df['Amount'].sum() / 100000
+    won_deals = filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
+    closed_amount = won_deals['Amount'].sum() / 100000
+    total_deals = len(filtered_df)
+    closed_deals = len(won_deals)
+    win_rate = (closed_deals / total_deals * 100) if total_deals > 0 else 0
     
     # Display metrics
     st.markdown("### Key Metrics")
@@ -1347,8 +1364,8 @@ def show_quarterly_summary(df):
         st.markdown(f"""
             <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                 <div class='metric-label'>Closed Won</div>
-                <div class='metric-value'>₹{int(closed_won)}L</div>
-                <div style='color: #666; font-size: 0.9em;'>Won deals value</div>
+                <div class='metric-value'>₹{int(closed_amount)}L</div>
+                <div style='color: #666; font-size: 0.9em;'>Total closed amount</div>
             </div>
         """, unsafe_allow_html=True)
     
