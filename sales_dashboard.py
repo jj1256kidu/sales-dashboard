@@ -364,7 +364,20 @@ def filter_dataframe(df, filters):
         for col in ['Organization Name', 'Opportunity Name', 'Sales Owner', 'Sales Stage']:
             search_mask |= df[col].astype(str).str.lower().str.contains(search, na=False)
         mask &= search_mask
-    
+    with col3:
+        # Practice filter - Multi-select
+        if 'Practice' in df.columns:
+            practices = sorted(df['Practice'].dropna().unique())
+            selected_practice = st.multiselect(
+                "🏢 Practice",
+                options=practices,
+                default=st.session_state.filters['practices'],
+                key="practice_filter"
+            )
+            st.session_state.filters['practices'] = selected_practice
+        else:
+            st.error("Practice column not found in the data")
+            
     if filters.get('month_filter') != "All Months":
         mask &= df['Month'] == filters['month_filter']
     
