@@ -1571,13 +1571,6 @@ def show_week_over_week_delta():
     )
 
 def main():
-    st.set_page_config(
-        page_title="Sales Dashboard",
-        page_icon="📊",
-        layout="wide",
-        initial_sidebar_state="expanded"
-    )
-    
     # Initialize session state variables
     if 'df' not in st.session_state:
         st.session_state.df = None
