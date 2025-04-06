@@ -478,7 +478,7 @@ def show_sales_team_view(st):
     """, unsafe_allow_html=True)
     
     # First row of filters
-    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns(9)
     
     with col1:
         # Sales Owner (Team Member) filter
@@ -490,35 +490,40 @@ def show_sales_team_view(st):
         search_term = st.text_input("🔍 Search", placeholder="Search...")
     
     with col3:
+        # Practice filter (moved to more prominent position)
+        practices = sorted(df['Practice'].unique())
+        selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + list(practices))
+    
+    with col4:
         # Month filter
         months = ["All Months", "April", "May", "June", "July", "August", "September",
                  "October", "November", "December", "January", "February", "March"]
         selected_month = st.selectbox("📅 Month", months)
     
-    with col4:
+    with col5:
         # Quarter filter
         quarters = ["All Quarters", "Q1", "Q2", "Q3", "Q4"]
         selected_quarter = st.selectbox("📊 Quarter", quarters)
     
-    with col5:
+    with col6:
         # Year filter
         years = sorted(df['Date'].dt.year.unique())
         selected_year = st.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
     
-    with col6:
+    with col7:
         # Probability filter
         probabilities = ["All Probability", "High", "Medium", "Low"]
         selected_probability = st.selectbox("📈 Probability", probabilities)
     
-    with col7:
+    with col8:
         # Status filter
         statuses = sorted(df['Status'].unique())
         selected_status = st.selectbox("🎯 Status", ["All Status"] + list(statuses))
     
-    with col8:
-        # Practice filter
-        practices = sorted(df['Practice'].unique())
-        selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + list(practices))
+    with col9:
+        # Focus filter
+        focus_options = ["All Focus", "New Business", "Existing Business"]
+        selected_focus = st.selectbox("🎯 Focus", focus_options)
     
     # Apply filters
     filtered_df = df.copy()
