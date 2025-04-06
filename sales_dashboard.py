@@ -64,6 +64,12 @@ if 'reset_triggered' not in st.session_state:
     st.session_state.reset_triggered = False
 if 'selected_team_member' not in st.session_state:
     st.session_state.selected_team_member = None
+if 'raw_data' not in st.session_state:
+    st.session_state.raw_data = None
+if 'previousweek_raw_data' not in st.session_state:
+    st.session_state.previousweek_raw_data = None
+if 'selected_sheet' not in st.session_state:
+    st.session_state.selected_sheet = None
 
 # Keep a single "sales_target" in session state
 if 'sales_target' not in st.session_state:
@@ -1565,24 +1571,101 @@ def show_week_over_week_delta():
     )
 
 def main():
-    with st.sidebar:
-        st.title("Navigation")
-        selected = st.radio(
-            "Select View",
-            options=["Data Input", "Overview", "Sales Team", "Detailed Data", "Week-over-Week Delta"],
-            key="navigation"
-        )
-        st.session_state.current_view = selected.lower().replace(" ", "_")
+    st.set_page_config(
+        page_title="Sales Dashboard",
+        page_icon="📊",
+        layout="wide",
+        initial_sidebar_state="expanded"
+    )
     
-    if st.session_state.current_view == "data_input":
-        show_data_input()
-    elif st.session_state.current_view == "overview":
+    # Initialize session state variables
+    if 'df' not in st.session_state:
+        st.session_state.df = None
+    if 'raw_data' not in st.session_state:
+        st.session_state.raw_data = None
+    if 'previousweek_raw_data' not in st.session_state:
+        st.session_state.previousweek_raw_data = None
+    if 'selected_sheet' not in st.session_state:
+        st.session_state.selected_sheet = None
+    
+    # Sidebar for file uploads
+    with st.sidebar:
+        st.markdown("""
+            <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
+                <h3 style='color: #2a5298; margin: 0; font-size: 1.2em; font-weight: 600;'>📤 Upload Data</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        uploaded_file = st.file_uploader("Upload Current Week Data", type=['xlsx', 'xls'])
+        if uploaded_file is not None:
+            try:
+                # Read all sheets from the Excel file
+                excel_file = pd.ExcelFile(uploaded_file)
+                sheet_names = excel_file.sheet_names
+                
+                # Show sheet selection dropdown
+                selected_sheet = st.selectbox(
+                    "Select Sheet to View",
+                    options=sheet_names,
+                    key="current_sheet_select"
+                )
+                
+                # Load the selected sheet
+                df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
+                st.session_state.df = df
+                st.session_state.raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
+                st.session_state.selected_sheet = selected_sheet
+                st.success(f"Successfully loaded sheet '{selected_sheet}' with {len(df):,} records")
+                
+            except Exception as e:
+                st.error(f"Error reading file: {str(e)}")
+        
+        st.markdown("""
+            <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
+                <h3 style='color: #2a5298; margin: 0; font-size: 1.2em; font-weight: 600;'>📤 Upload Previous Week Data</h3>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        previous_week_file = st.file_uploader("Upload Previous Week Data", type=['xlsx', 'xls'])
+        if previous_week_file is not None:
+            try:
+                # Read all sheets from the previous week Excel file
+                previous_excel_file = pd.ExcelFile(previous_week_file)
+                previous_sheet_names = previous_excel_file.sheet_names
+                
+                # Show sheet selection dropdown for previous week
+                selected_previous_sheet = st.selectbox(
+                    "Select Previous Week Sheet",
+                    options=previous_sheet_names,
+                    key="previous_sheet_select"
+                )
+                
+                # Load the selected sheet
+                previous_df = pd.read_excel(previous_week_file, sheet_name=selected_previous_sheet)
+                st.session_state.previousweek_raw_data = {sheet: pd.read_excel(previous_week_file, sheet_name=sheet) for sheet in previous_sheet_names}
+                st.success(f"Successfully loaded previous week sheet '{selected_previous_sheet}' with {len(previous_df):,} records")
+                
+            except Exception as e:
+                st.error(f"Error reading previous week file: {str(e)}")
+    
+    # Main content
+    st.title("📊 Sales Dashboard")
+    
+    # Navigation
+    view = st.radio(
+        "Select View",
+        ["Overview", "Sales Team", "Detailed View", "Week-over-Week Delta"],
+        horizontal=True,
+        label_visibility="collapsed"
+    )
+    
+    if view == "Overview":
         show_overview()
-    elif st.session_state.current_view == "sales_team":
+    elif view == "Sales Team":
         show_sales_team()
-    elif st.session_state.current_view == "detailed_data":
+    elif view == "Detailed View":
         show_detailed()
-    elif st.session_state.current_view == "week_over_week_delta":
+    elif view == "Week-over-Week Delta":
         show_week_over_week_delta()
 
 if __name__ == "__main__":
