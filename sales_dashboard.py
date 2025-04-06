@@ -9,6 +9,7 @@ from auth import check_password, init_session_state
 import os
 import glob
 import time
+from io import StringIO
 
 # Page configuration
 st.set_page_config(
@@ -286,19 +287,32 @@ def show_previous_data_view():
 
     if pasted_data:
         try:
-            # Try to parse the pasted data
+            # Clean the pasted data
+            # Remove empty lines and normalize line endings
+            cleaned_lines = [line.strip() for line in pasted_data.split('\n') if line.strip()]
+            cleaned_data = '\n'.join(cleaned_lines)
+
+            # Try to parse the cleaned data
             # First try with tab separator (Excel default)
             try:
-                df = pd.read_csv(pd.StringIO(pasted_data), sep='\t')
+                df = pd.read_csv(StringIO(cleaned_data), sep='\t', na_values=['', 'NA', 'N/A', 'NULL', 'null', 'None', 'none'])
             except:
                 # If tab fails, try comma
                 try:
-                    df = pd.read_csv(pd.StringIO(pasted_data), sep=',')
+                    df = pd.read_csv(StringIO(cleaned_data), sep=',', na_values=['', 'NA', 'N/A', 'NULL', 'null', 'None', 'none'])
                 except:
-                    # If both fail, try to clean and parse
-                    # Remove extra spaces and normalize line endings
-                    cleaned_data = '\n'.join(line.strip() for line in pasted_data.split('\n'))
-                    df = pd.read_csv(pd.StringIO(cleaned_data), sep=None, engine='python')
+                    # If both fail, try to parse with python engine
+                    df = pd.read_csv(StringIO(cleaned_data), sep=None, engine='python', na_values=['', 'NA', 'N/A', 'NULL', 'null', 'None', 'none'])
+
+            # Clean up the dataframe
+            # Replace empty strings with NaN
+            df = df.replace('', np.nan)
+            # Convert numeric columns, keeping original values if conversion fails
+            for col in df.columns:
+                try:
+                    df[col] = pd.to_numeric(df[col], errors='ignore')
+                except:
+                    pass
 
             # Display the parsed data
             st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📊 Data Preview</h4>', unsafe_allow_html=True)
