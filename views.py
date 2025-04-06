@@ -455,11 +455,30 @@ def show_sales_team_view(st):
             .stSelectbox, .stMultiSelect {
                 min-width: 200px;
             }
+
+            /* Custom styling for filters */
+            div[data-testid="stSelectbox"] label {
+                font-size: 14px !important;
+                font-weight: 500 !important;
+                color: #333 !important;
+            }
+
+            div[data-testid="stSelectbox"] > div > div {
+                background: white !important;
+                border: 1px solid #ddd !important;
+                border-radius: 4px !important;
+            }
+
+            div[data-testid="stTextInput"] label {
+                font-size: 14px !important;
+                font-weight: 500 !important;
+                color: #333 !important;
+            }
         </style>
     """, unsafe_allow_html=True)
     
-    # Horizontal filters at the top
-    col1, col2, col3, col4 = st.columns(4)
+    # First row of filters
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
     
     with col1:
         # Sales Owner (Team Member) filter
@@ -467,9 +486,8 @@ def show_sales_team_view(st):
         selected_team = st.selectbox("👤 Sales Owner", ["All Team Members"] + list(team_members))
     
     with col2:
-        # Practice filter
-        practices = sorted(df['Practice'].unique())
-        selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + list(practices))
+        # Search
+        search_term = st.text_input("🔍 Search", placeholder="Search...")
     
     with col3:
         # Month filter
@@ -478,31 +496,29 @@ def show_sales_team_view(st):
         selected_month = st.selectbox("📅 Month", months)
     
     with col4:
-        # Search
-        search_term = st.text_input("🔍 Search", placeholder="Search...")
-
-    # Second row of filters
-    col5, col6, col7, col8 = st.columns(4)
-    
-    with col5:
         # Quarter filter
         quarters = ["All Quarters", "Q1", "Q2", "Q3", "Q4"]
         selected_quarter = st.selectbox("📊 Quarter", quarters)
     
-    with col6:
+    with col5:
         # Year filter
         years = sorted(df['Date'].dt.year.unique())
         selected_year = st.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
     
-    with col7:
+    with col6:
         # Probability filter
         probabilities = ["All Probability", "High", "Medium", "Low"]
         selected_probability = st.selectbox("📈 Probability", probabilities)
     
-    with col8:
+    with col7:
         # Status filter
         statuses = sorted(df['Status'].unique())
         selected_status = st.selectbox("🎯 Status", ["All Status"] + list(statuses))
+    
+    with col8:
+        # Practice filter
+        practices = sorted(df['Practice'].unique())
+        selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + list(practices))
     
     # Apply filters
     filtered_df = df.copy()
