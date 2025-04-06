@@ -987,7 +987,11 @@ def show_sales_team():
         st.warning("Please upload data first")
         return
     
-    df = st.session_state.df
+    df = st.session_state.df.copy()
+    
+    # Convert Expected Close Date to datetime if it's not already
+    if 'Expected Close Date' in df.columns:
+        df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', errors='coerce')
     
     # First row of filters
     st.markdown("### 🔍 Filters")
@@ -1019,8 +1023,12 @@ def show_sales_team():
         
         with col5:
             # Year filter
-            years = sorted(df['Expected Close Date'].dt.year.unique().tolist())
-            selected_year = col5.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
+            if 'Expected Close Date' in df.columns and df['Expected Close Date'].dtype == 'datetime64[ns]':
+                years = sorted(df['Expected Close Date'].dt.year.unique().tolist())
+                selected_year = col5.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
+            else:
+                selected_year = "All Years"
+                col5.selectbox("📆 Year", ["All Years"], disabled=True)
         
         with col6:
             # Probability filter
