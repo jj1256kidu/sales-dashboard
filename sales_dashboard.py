@@ -274,47 +274,85 @@ def show_previous_data_view():
     """, unsafe_allow_html=True)
 
     # Create a text area for pasting data
-    st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📋 Paste Your Data</h4>', unsafe_allow_html=True)
-    st.info("Copy and paste your data from Excel or any other source. Make sure to include headers.")
+    st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📋 Paste Your Excel Data</h4>', unsafe_allow_html=True)
+    st.info("Copy and paste your entire Excel sheet data. The system will automatically detect the format.")
     
     # Text area for pasting data
     pasted_data = st.text_area(
-        "Paste your data here (with headers)",
-        height=300,
-        help="Paste tabular data with headers. Each row should be on a new line, and columns should be separated by tabs or commas."
+        "Paste your Excel data here",
+        height=400,
+        help="Paste your entire Excel sheet data. The system will handle both tab and comma separators."
     )
 
     if pasted_data:
         try:
             # Try to parse the pasted data
-            # First try with tab separator
+            # First try with tab separator (Excel default)
             try:
                 df = pd.read_csv(pd.StringIO(pasted_data), sep='\t')
             except:
                 # If tab fails, try comma
-                df = pd.read_csv(pd.StringIO(pasted_data), sep=',')
+                try:
+                    df = pd.read_csv(pd.StringIO(pasted_data), sep=',')
+                except:
+                    # If both fail, try to clean and parse
+                    # Remove extra spaces and normalize line endings
+                    cleaned_data = '\n'.join(line.strip() for line in pasted_data.split('\n'))
+                    df = pd.read_csv(pd.StringIO(cleaned_data), sep=None, engine='python')
 
             # Display the parsed data
-            st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📊 Parsed Data Preview</h4>', unsafe_allow_html=True)
+            st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📊 Data Preview</h4>', unsafe_allow_html=True)
+            
+            # Show data info
+            st.write(f"Rows: {len(df)}, Columns: {len(df.columns)}")
+            st.write("Columns:", df.columns.tolist())
+            
+            # Display the dataframe with all columns
             st.dataframe(df, use_container_width=True)
 
-            # Save button
-            if st.button("Save Pasted Data"):
-                # Generate filename with current date
-                current_date = datetime.now().strftime("%Y-%m-%d")
-                filename = f"previous_data_{current_date}.csv"
-                
-                # Save the data
-                df.to_csv(filename, index=False)
-                st.success(f"Data saved successfully as {filename}")
-                
-                # Store in session state
-                st.session_state.previous_data = df
-                st.success("Data loaded into memory")
+            # Save options
+            st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">💾 Save Options</h4>', unsafe_allow_html=True)
+            
+            # Create two columns for save options
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                if st.button("Save as Excel"):
+                    # Generate filename with current date
+                    current_date = datetime.now().strftime("%Y-%m-%d")
+                    filename = f"previous_data_{current_date}.xlsx"
+                    
+                    # Save the data
+                    df.to_excel(filename, index=False)
+                    st.success(f"Data saved successfully as {filename}")
+                    
+                    # Store in session state
+                    st.session_state.previous_data = df
+                    st.success("Data loaded into memory")
+
+            with col2:
+                if st.button("Save as CSV"):
+                    # Generate filename with current date
+                    current_date = datetime.now().strftime("%Y-%m-%d")
+                    filename = f"previous_data_{current_date}.csv"
+                    
+                    # Save the data
+                    df.to_csv(filename, index=False)
+                    st.success(f"Data saved successfully as {filename}")
+                    
+                    # Store in session state
+                    st.session_state.previous_data = df
+                    st.success("Data loaded into memory")
 
         except Exception as e:
             st.error(f"Error parsing data: {str(e)}")
-            st.info("Please make sure your data is properly formatted with headers and consistent separators.")
+            st.info("""
+                Tips for pasting Excel data:
+                1. Copy the entire sheet (Ctrl+A, Ctrl+C)
+                2. Make sure headers are included
+                3. The system will automatically detect the format
+                4. If parsing fails, try copying a smaller section first
+            """)
 
 def main():
     # Check if user is locked out
