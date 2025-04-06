@@ -140,6 +140,8 @@ def load_data():
         df['Amount_Lacs'] = df['Amount'].fillna(0).div(100000).round(0).astype(int)
         df['Weighted_Amount'] = (df['Amount_Lacs'] * df['Probability_Num'] / 100).round(0).astype(int)
         
+        # Store the processed dataframe in session state
+        st.session_state.df = df
         return df
         
     except Exception as e:
@@ -160,12 +162,14 @@ def main():
 
     # Main dashboard content
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Overview", "Sales Team", "Meeting Data"])
+    page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team", "Meeting Data"])
 
     # Load data
     df = load_data()
 
-    if page == "Overview":
+    if page == "Data Input":
+        show_data_input_view(df)
+    elif page == "Overview":
         show_overview_view(df)
     elif page == "Sales Team":
         show_sales_team_view(df)
