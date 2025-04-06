@@ -417,39 +417,50 @@ def show_data_input():
         </div>
     """, unsafe_allow_html=True)
     
-    # Create two columns for file uploaders
-    col1, col2 = st.columns(2)
+    # Single file uploader for both current and previous week data
+    uploaded_file = st.file_uploader(
+        "Upload Excel File", 
+        type=['xlsx', 'xls'],
+        key="excel_uploader"
+    )
     
-    with col1:
-        st.markdown("### Current Week Data")
-        current_uploaded_file = st.file_uploader(
-            "Upload Current Week Excel File", 
-            type=['xlsx', 'xls'],
-            key="current_excel_uploader"
-        )
-        
-        if current_uploaded_file is not None:
-            try:
-                # Read all sheets from the Excel file
-                excel_file = pd.ExcelFile(current_uploaded_file)
-                sheet_names = excel_file.sheet_names
-                
-                # Show sheet selection dropdown for current week
-                selected_sheet = st.selectbox(
-                    "Select Current Week Sheet",
-                    options=sheet_names,
-                    key="current_sheet_select"
-                )
-                
-                # Load the selected sheet
-                df = pd.read_excel(current_uploaded_file, sheet_name=selected_sheet)
-                st.session_state.df = df
-                st.session_state.raw_data = {sheet: pd.read_excel(current_uploaded_file, sheet_name=sheet) for sheet in sheet_names}
-                st.session_state.selected_sheet = selected_sheet
-                st.success(f"Successfully loaded current week sheet '{selected_sheet}' with {len(df):,} records")
-                
-            except Exception as e:
-                st.error(f"Error reading current week Excel file: {str(e)}")
+    if uploaded_file is not None:
+        try:
+            # Read all sheets from the Excel file
+            excel_file = pd.ExcelFile(uploaded_file)
+            sheet_names = excel_file.sheet_names
+            
+            # Debug information
+            st.write("Debug - Available Sheets:", sheet_names)
+            
+            # Check if PreviousWeek_Raw_Data sheet exists
+            if "PreviousWeek_Raw_Data" not in sheet_names:
+                st.error("Required sheet 'PreviousWeek_Raw_Data' not found in the Excel file")
+                st.write("Available sheets:", sheet_names)
+                return
+            
+            # Show sheet selection dropdown for current week
+            current_sheets = [sheet for sheet in sheet_names if sheet != "PreviousWeek_Raw_Data"]
+            selected_sheet = st.selectbox(
+                "Select Current Week Sheet",
+                options=current_sheets,
+                key="current_sheet_select"
+            )
+            
+            # Load both current and previous week data
+            current_df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
+            previous_df = pd.read_excel(uploaded_file, sheet_name="PreviousWeek_Raw_Data")
+            
+            # Store data in session state
+            st.session_state.raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
+            st.session_state.previousweek_raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
+            st.session_state.selected_sheet = selected_sheet
+            
+            st.success(f"Successfully loaded current week sheet '{selected_sheet}' with {len(current_df):,} records")
+            st.success(f"Successfully loaded previous week sheet 'PreviousWeek_Raw_Data' with {len(previous_df):,} records")
+            
+        except Exception as e:
+            st.error(f"Error reading Excel file: {str(e)}")
     
     with col2:
         st.markdown("### Previous Week Data")
@@ -1413,7 +1424,7 @@ def show_week_over_week_delta():
     st.write("Debug - Session State Keys:", list(st.session_state.keys()))
     
     if 'raw_data' not in st.session_state or 'previousweek_raw_data' not in st.session_state:
-        st.warning("Please upload both current week and previous week data to view delta analysis")
+        st.warning("Please upload your Excel file to view delta analysis")
         return
     
     current_df = st.session_state.raw_data
