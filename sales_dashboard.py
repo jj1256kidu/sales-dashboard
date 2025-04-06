@@ -982,215 +982,391 @@ def show_overview():
         st.info("Required columns (Expected Close Date, Amount, Sales Stage) not found in the dataset")
 
 def show_sales_team():
-    """Display the sales team view with team performance metrics"""
     if st.session_state.df is None:
-        st.warning("Please upload data first")
+        st.warning("Please upload your sales data to view team information")
         return
     
-    df = st.session_state.df.copy()
+    # Process data once with caching
+    df = process_data(st.session_state.df)
     
-    # Convert Expected Close Date to datetime if it's not already
-    if 'Expected Close Date' in df.columns:
-        df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', errors='coerce')
+    # Team members
+    team_members = sorted(df['Sales Owner'].dropna().unique().tolist())
     
-    # First row of filters
-    st.markdown("### 🔍 Filters")
-    filter_container = st.container()
+    st.markdown("""
+        <div style='
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        '>
+            <h2 style='
+                color: white;
+                margin: 0;
+                text-align: center;
+                font-size: 2em;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            '>Sales Team Data</h2>
+        </div>
+    """, unsafe_allow_html=True)
+
+    metrics = calculate_team_metrics(df)
     
-    with filter_container:
-        col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
-        
-        with col1:
-            # Sales Owner filter
-            team_members = sorted(df['Sales Owner'].dropna().unique().tolist())
-            selected_team = col1.selectbox("👤 Sales Owner", ["All Team Members"] + team_members)
-        
-        with col2:
-            # Practice filter
-            practices = sorted(df['Practice'].dropna().unique().tolist())
-            selected_practice = col2.selectbox("🏢 Practice", ["All Practices"] + practices)
-        
-        with col3:
-            # Month filter
-            months = ["All Months", "April", "May", "June", "July", "August", "September",
-                     "October", "November", "December", "January", "February", "March"]
-            selected_month = col3.selectbox("📅 Month", months)
-        
-        with col4:
-            # Quarter filter
-            quarters = ["All Quarters", "Q1", "Q2", "Q3", "Q4"]
-            selected_quarter = col4.selectbox("📊 Quarter", quarters)
-        
-        with col5:
-            # Year filter
-            if 'Expected Close Date' in df.columns and df['Expected Close Date'].dtype == 'datetime64[ns]':
-                years = sorted(df['Expected Close Date'].dt.year.unique().tolist())
-                selected_year = col5.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
-            else:
-                selected_year = "All Years"
-                col5.selectbox("📆 Year", ["All Years"], disabled=True)
-        
-        with col6:
-            # Probability filter
-            probabilities = ["All Probability", "High", "Medium", "Low"]
-            selected_probability = col6.selectbox("📈 Probability", probabilities)
-        
-        with col7:
-            # Status filter
-            statuses = sorted(df['Sales Stage'].dropna().unique().tolist())
-            selected_status = col7.selectbox("🎯 Status", ["All Status"] + statuses)
-        
-        with col8:
-            # Search
-            search_term = col8.text_input("🔍 Search", placeholder="Search...")
+    col1, col2, col3, col4 = st.columns(4)
+    metric_style = """
+        text-align: center;
+        padding: 20px;
+        background: linear-gradient(135deg, {gradient});
+        border-radius: 15px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        margin: 10px 5px;
+    """
+    metric_text_style = """
+        color: #FFFFFF;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 2.6em;
+        font-weight: 800;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+        margin: 15px 0;
+        letter-spacing: 0.5px;
+        -webkit-font-smoothing: antialiased;
+    """
+    label_style = """
+        color: #FFFFFF;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 1.5em;
+        font-weight: 800;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        -webkit-font-smoothing: antialiased;
+    """
+    sublabel_style = """
+        color: #FFFFFF;
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 1.2em;
+        font-weight: 700;
+        margin-top: 8px;
+        letter-spacing: 0.5px;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
+        -webkit-font-smoothing: antialiased;
+    """
     
-    # Apply filters
-    filters = {
-        'team_member': selected_team,
-        'practice': selected_practice,
-        'month': selected_month,
-        'quarter': selected_quarter,
-        'year': selected_year,
-        'probability': selected_probability,
-        'status': selected_status,
-        'search': search_term
-    }
+    total_pipeline = metrics['Current Pipeline'].sum()
+    total_closed = metrics['Closed Won'].sum()
+    total_closed_deals = metrics['Closed Deals'].sum()
+    total_pipeline_deals = metrics['Pipeline Deals'].sum()
     
+    with col1:
+        st.markdown(f"""
+            <div style='{metric_style.format(gradient="#2193b0 0%, #6dd5ed 100%")}'>
+                <div style='{label_style}'>Pipeline Value</div>
+                <div style='{metric_text_style}'>₹{int(total_pipeline)}L</div>
+                <div style='{sublabel_style}'>Active opportunities</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown(f"""
+            <div style='{metric_style.format(gradient="#11998e 0%, #38ef7d 100%")}'>
+                <div style='{label_style}'>Closed Won</div>
+                <div style='{metric_text_style}'>₹{int(total_closed)}L</div>
+                <div style='{sublabel_style}'>Won opportunities</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col3:
+        win_rate = round((total_closed_deals / (total_closed_deals + total_pipeline_deals) * 100), 1) if (total_closed_deals + total_pipeline_deals) > 0 else 0
+        st.markdown(f"""
+            <div style='{metric_style.format(gradient="#4e54c8 0%, #8f94fb 100%")}'>
+                <div style='{label_style}'>Win Rate</div>
+                <div style='{metric_text_style}'>{int(win_rate)}%</div>
+                <div style='{sublabel_style}'>{int(total_closed_deals)} won</div>
+            </div>
+        """, unsafe_allow_html=True)
+    
+    with col4:
+        avg_deal_size = round(total_closed / total_closed_deals, 1) if total_closed_deals > 0 else 0
+        st.markdown(f"""
+            <div style='{metric_style.format(gradient="#f12711 0%, #f5af19 100%")}'>
+                <div style='{label_style}'>Avg Deal Size</div>
+                <div style='{metric_text_style}'>₹{int(avg_deal_size)}L</div>
+                <div style='{sublabel_style}'>Per won deal</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("""
+        <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
+            <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>🔍 Filters</h4>
+        </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    with col1:
+        filters = {
+            'selected_member': st.selectbox(
+                "👤 Sales Owner",
+                options=["All Team Members"] + team_members,
+                key="team_member_filter"
+            )
+        }
+    with col2:
+        filters['search'] = st.text_input("🔍 Search", placeholder="Search...")
+    with col3:
+        fiscal_order = ['April', 'May', 'June', 'July', 'August', 'September', 
+                       'October', 'November', 'December', 'January', 'February', 'March']
+        available_months = df['Month'].dropna().unique().tolist()
+        available_months.sort(key=lambda x: fiscal_order.index(x) if x in fiscal_order else len(fiscal_order))
+        filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months)
+    with col4:
+        filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
+    with col5:
+        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
+    with col6:
+        probability_options = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%", "Custom Range"]
+        filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_options)
+        # Step 1: Get current values safely
+        min_prob_init = str(filters.get('min_prob', 0))
+        max_prob_init = str(filters.get('max_prob', 100))
+        if filters.get('probability_filter') == "Custom Range":
+            col6a, col6b = st.columns(2)
+            with col6a:
+                min_prob_input = st.text_input("Min %", value=min_prob_init, key="custom_min_prob_input")
+
+            with col6b:
+                max_prob_input = st.text_input("Max %", value=max_prob_init, key="custom_max_prob_input")
+                    # Step 3: Validate and convert
+            try:
+                min_prob = int(min_prob_input)
+            except ValueError:
+                min_prob = 0
+        
+            try:
+                max_prob = int(max_prob_input)
+            except ValueError:
+                max_prob = 100
+
+            filters['min_prob'] = min_prob
+            filters['max_prob'] = max_prob
+            filters['custom_prob_range'] = f"{min_prob}-{max_prob}%"
+
+    with col7:
+        status_options = ["All Status", "Committed for the Month", "Upsides for the Month"]
+        filters['status_filter'] = st.selectbox("🎯 Status", options=status_options)
+        if filters['status_filter'] == "Committed for the Month":
+            current_month = pd.Timestamp.now().strftime('%B')
+            mask = (df['Month'] == current_month) & (df['Probability_Num'] > 75)
+            filtered_df = df[mask]
+        elif filters['status_filter'] == "Upsides for the Month":
+            current_month = pd.Timestamp.now().strftime('%B')
+            mask = (df['Month'] == current_month) & (df['Probability_Num'].between(25, 75))
+            filtered_df = df[mask]
+    with col8:
+        filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All Focus"] + sorted(df['KritiKal Focus Areas'].dropna().unique().tolist()))
+
     filtered_df = filter_dataframe(df, filters)
     
-    if len(filtered_df) > 0:
-        # Calculate common metrics once
-        total_pipeline = filtered_df['Amount'].sum() / 100000  # Convert to lakhs
-        total_deals = len(filtered_df)
-        closed_won = len(filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)])
-        win_rate = (closed_won / total_deals * 100) if total_deals > 0 else 0
-        avg_deal_size = total_pipeline / total_deals if total_deals > 0 else 0
-        
-        # Display summary metrics
-        st.markdown("### 📊 Summary Metrics")
-        metric_cols = st.columns(4)
-        
-        metric_cols[0].metric(
-            "Total Pipeline",
-            format_amount(total_pipeline),
-            help="Total value of all deals in pipeline"
-        )
-        
-        metric_cols[1].metric(
-            "Total Deals",
-            format_number(total_deals),
-            help="Total number of deals"
-        )
-        
-        metric_cols[2].metric(
-            "Win Rate",
-            format_percentage(win_rate),
-            help="Percentage of closed won deals"
-        )
-        
-        metric_cols[3].metric(
-            "Average Deal Size",
-            format_amount(avg_deal_size),
-            help="Average value per deal"
-        )
-        
-        # Team Performance Section
-        st.markdown("### 👥 Team Performance")
-        
-        # Calculate team metrics once
-        team_metrics = filtered_df.groupby('Sales Owner').agg({
-            'Amount': lambda x: x.sum() / 100000,  # Convert to lakhs
-            'Sales Stage': 'count',
-            'Sales Stage': lambda x: x.str.contains('Won', case=False, na=False).sum()
-        }).reset_index()
-        
-        team_metrics.columns = ['Sales Owner', 'Total Pipeline', 'Total Deals', 'Closed Won']
-        team_metrics['Win Rate'] = (team_metrics['Closed Won'] / team_metrics['Total Deals'] * 100).round(1)
-        team_metrics['Average Deal Size'] = (team_metrics['Total Pipeline'] / team_metrics['Total Deals']).round(2)
-        
-        # Sort team metrics by Total Pipeline
-        team_metrics = team_metrics.sort_values('Total Pipeline', ascending=False)
-        
-        # Display team metrics table with formatting
-        st.dataframe(
-            team_metrics.style.format({
-                'Total Pipeline': format_amount,
-                'Average Deal Size': format_amount,
-                'Win Rate': format_percentage
-            }),
-            use_container_width=True
-        )
-        
-        # Team performance visualization
-        fig = px.bar(
-            team_metrics,
-            x='Sales Owner',
-            y=['Total Pipeline', 'Closed Won'],
-            title='Pipeline vs Closed Won by Team Member',
-            barmode='group',
-            template='plotly_white'
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Practice Analysis Section
-        if len(filtered_df['Practice'].unique()) > 0:
-            st.markdown("### 🏢 Practice Analysis")
-            
-            # Calculate practice metrics once
-            practice_metrics = filtered_df.groupby('Practice').agg({
-                'Amount': lambda x: x.sum() / 100000,  # Convert to lakhs
-                'Sales Stage': 'count',
-                'Sales Stage': lambda x: x.str.contains('Won', case=False, na=False).sum()
-            }).reset_index()
-            
-            practice_metrics.columns = ['Practice', 'Total Pipeline', 'Total Deals', 'Closed Won']
-            practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Total Deals'] * 100).round(1)
-            practice_metrics['Average Deal Size'] = (practice_metrics['Total Pipeline'] / practice_metrics['Total Deals']).round(2)
-            
-            # Sort practice metrics by Total Pipeline
-            practice_metrics = practice_metrics.sort_values('Total Pipeline', ascending=False)
-            
-            # Display practice metrics and visualizations in two columns
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("#### Practice Metrics")
-                st.dataframe(
-                    practice_metrics.style.format({
-                        'Total Pipeline': format_amount,
-                        'Average Deal Size': format_amount,
-                        'Win Rate': format_percentage
-                    }),
-                    use_container_width=True
-                )
-            
-            with col2:
-                st.markdown("#### Practice Win Rates")
-                fig = px.bar(
-                    practice_metrics,
-                    x='Practice',
-                    y='Win Rate',
-                    title='Win Rate by Practice',
-                    color='Practice',
-                    template='plotly_white'
-                )
-                st.plotly_chart(fig, use_container_width=True)
-            
-            # Practice distribution by team member
-            st.markdown("#### Practice Distribution by Team")
-            practice_dist = filtered_df.groupby(['Sales Owner', 'Practice'])['Amount'].sum().reset_index()
-            practice_dist['Amount'] = practice_dist['Amount'] / 100000  # Convert to lakhs
-            fig = px.bar(
-                practice_dist,
-                x='Sales Owner',
-                y='Amount',
-                color='Practice',
-                title='Practice Distribution by Team Member',
-                template='plotly_white'
+    st.markdown("""
+        <div style='margin-bottom: 20px;'>
+            <h3 style='color: #2a5298; margin: 0; font-size: 1.4em; font-weight: 600;'>Performance Metrics</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    m1, m2, m3 = st.columns(3)
+    current_pipeline = filtered_df[~filtered_df['Is_Won']]['Amount_Lacs'].sum()
+    weighted_projections = filtered_df[~filtered_df['Is_Won']]['Weighted_Amount'].sum()
+    closed_won = filtered_df[filtered_df['Is_Won']]['Amount_Lacs'].sum()
+
+    with m1:
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+                height: 100%;
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                    🌊 Current Pipeline
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(current_pipeline)}L
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with m2:
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #6B5B95 0%, #846EA9 100%);
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                    ⚖️ Weighted Projections
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(weighted_projections)}L
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with m3:
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                    💰 Closed Won
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(closed_won)}L
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<div style='margin: 25px 0;'></div>", unsafe_allow_html=True)
+
+    st.markdown(f"""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin: 0;
+                font-size: 1.4em;
+                font-weight: 600;
+                font-family: "Segoe UI", sans-serif;
+            '>Team Member Performance</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    filtered_df = filtered_df.reset_index(drop=True)
+    filtered_df.index = filtered_df.index + 1
+    
+    display_df = filtered_df[['Organization Name', 'Opportunity Name', 'Geography', 
+                            'Expected Close Date', 'Probability', 'Amount', 
+                            'Sales Owner', 'Pre-sales Technical Lead', 'Business Owner', 
+                            'Type', 'KritiKal Focus Areas']].copy()
+    
+    display_df = display_df.rename(columns={
+        'Amount': 'Amount (In Lacs)',
+        'Pre-sales Technical Lead': 'Tech Owner',
+        'Type': 'Hunting /farming'
+    })
+    
+    display_df['Amount (In Lacs)'] = display_df['Amount (In Lacs)'].apply(lambda x: int(x/100000) if pd.notnull(x) else 0)
+    display_df['Probability'] = display_df['Probability'].apply(format_percentage)
+    display_df['Weighted Revenue (In Lacs)'] = display_df.apply(
+        lambda row: int((row['Amount (In Lacs)']) * float(str(row['Probability']).rstrip('%'))/100) if pd.notnull(row['Amount (In Lacs)']) else 0, 
+        axis=1
+    )
+    
+    display_df['Expected Close Date'] = pd.to_datetime(display_df['Expected Close Date']).dt.strftime('%d-%b-%Y')
+    display_df = display_df.sort_values('Amount (In Lacs)', ascending=False)
+    
+    display_df.index = range(1, len(display_df) + 1)
+    display_df.index.name = 'S.No'
+    
+    st.dataframe(
+        display_df,
+        column_config={
+            'Amount (In Lacs)': st.column_config.NumberColumn(
+                'Amount (In Lacs)',
+                format="₹%d L",
+                help="Amount in Lakhs"
+            ),
+            'Weighted Revenue (In Lacs)': st.column_config.NumberColumn(
+                'Weighted Revenue (In Lacs)',
+                format="₹%d L",
+                help="Weighted Revenue in Lakhs"
+            ),
+            'Probability': st.column_config.TextColumn(
+                'Probability',
+                help="Probability of winning the deal"
+            ),
+            'Expected Close Date': st.column_config.TextColumn(
+                'Expected Close Date',
+                help="Expected closing date"
             )
-            st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("No data available for the selected filters")
+        }
+    )
+    
+    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin: 0;
+                font-size: 1.4em;
+                font-weight: 600;
+                font-family: "Segoe UI", sans-serif;
+            '>Team Member Performance</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    team_metrics = df.groupby('Sales Owner').agg({
+        'Amount': lambda x: round(x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000, 1),
+        'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
+    }).reset_index()
+    team_metrics.columns = ['Sales Owner', 'Closed Won', 'Closed Deals']
+    
+    pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
+    total_pipeline = round(pipeline_df.groupby('Sales Owner')['Amount'].sum() / 100000, 1)
+    team_metrics['Current Pipeline'] = team_metrics['Sales Owner'].map(total_pipeline)
+    
+    def calculate_weighted_projection(owner):
+        owner_pipeline = pipeline_df[pipeline_df['Sales Owner'] == owner]
+        weighted_sum = sum((amt * pr / 100) 
+                           for amt, pr in zip(owner_pipeline['Amount'], owner_pipeline['Probability_Num']))
+        return round(weighted_sum / 100000, 1)
+    
+    team_metrics['Weighted Projections'] = team_metrics['Sales Owner'].apply(calculate_weighted_projection)
+    
+    total_deals_owner = pipeline_df.groupby('Sales Owner').size()
+    team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(total_deals_owner)
+    team_metrics['Win Rate'] = round((team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100), 1)
+    team_metrics = team_metrics.sort_values('Current Pipeline', ascending=False)
+    
+    summary_data = team_metrics.copy()
+    summary_data['Current Pipeline'] = summary_data['Current Pipeline'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Weighted Projections'] = summary_data['Weighted Projections'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Closed Won'] = summary_data['Closed Won'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x}%")
+    
+    st.dataframe(
+        summary_data[[
+            'Sales Owner',
+            'Current Pipeline',
+            'Weighted Projections',
+            'Closed Won',
+            'Pipeline Deals',
+            'Closed Deals',
+            'Win Rate'
+        ]],
+        use_container_width=True
+    )
 
 def show_detailed():
     if st.session_state.df is None:
