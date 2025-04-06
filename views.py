@@ -779,6 +779,9 @@ def show_week_over_week_delta():
         </div>
     """, unsafe_allow_html=True)
     
+    # Debug information
+    st.write("Debug - Session State Keys:", list(st.session_state.keys()))
+    
     if 'raw_data' not in st.session_state or 'previousweek_raw_data' not in st.session_state:
         st.warning("Please upload both current week and previous week data to view delta analysis")
         return
@@ -786,9 +789,17 @@ def show_week_over_week_delta():
     current_df = st.session_state.raw_data
     previous_df = st.session_state.previousweek_raw_data
     
+    # Debug information
+    st.write("Debug - Current Data Type:", type(current_df))
+    st.write("Debug - Previous Data Type:", type(previous_df))
+    
     # Get sheet names from both files
     current_sheets = list(current_df.keys()) if isinstance(current_df, dict) else ['Sheet1']
     previous_sheets = list(previous_df.keys()) if isinstance(previous_df, dict) else ['Sheet1']
+    
+    # Debug information
+    st.write("Debug - Current Sheets:", current_sheets)
+    st.write("Debug - Previous Sheets:", previous_sheets)
     
     # Create sheet selection dropdowns
     col1, col2 = st.columns(2)
@@ -801,11 +812,17 @@ def show_week_over_week_delta():
     current_data = current_df[current_sheet] if isinstance(current_df, dict) else current_df
     previous_data = previous_df[previous_sheet] if isinstance(previous_df, dict) else previous_df
     
+    # Debug information
+    st.write("Debug - Current Data Shape:", current_data.shape if hasattr(current_data, 'shape') else "No shape")
+    st.write("Debug - Previous Data Shape:", previous_data.shape if hasattr(previous_data, 'shape') else "No shape")
+    
     # Ensure both dataframes have the same structure
     required_columns = ['Organization Name', 'Opportunity Name', 'Deal Value', 'Status', 'Sales Team Member', 'Practice', 'Quarter']
     for col in required_columns:
         if col not in current_data.columns or col not in previous_data.columns:
             st.error(f"Required column '{col}' not found in one or both datasets")
+            st.write("Debug - Current Columns:", current_data.columns if hasattr(current_data, 'columns') else "No columns")
+            st.write("Debug - Previous Columns:", previous_data.columns if hasattr(previous_data, 'columns') else "No columns")
             return
     
     # Quarter filter
@@ -830,6 +847,10 @@ def show_week_over_week_delta():
         'Deal Value': 'sum',
         'Status': lambda x: (x == 'Committed').sum()
     }).reset_index()
+    
+    # Debug information
+    st.write("Debug - Current Owner Metrics Shape:", current_owner_metrics.shape)
+    st.write("Debug - Previous Owner Metrics Shape:", previous_owner_metrics.shape)
     
     # Merge current and previous data
     owner_comparison = pd.merge(
@@ -881,6 +902,10 @@ def show_week_over_week_delta():
         'Deal Value': 'sum',
         'Status': lambda x: (x == 'Committed').sum()
     }).reset_index()
+    
+    # Debug information
+    st.write("Debug - Current Function Metrics Shape:", current_function_metrics.shape)
+    st.write("Debug - Previous Function Metrics Shape:", previous_function_metrics.shape)
     
     # Merge current and previous data
     function_comparison = pd.merge(
