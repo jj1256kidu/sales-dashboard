@@ -1430,25 +1430,23 @@ def show_week_over_week_delta():
     quarters = sorted(current_data['Quarter'].unique())
     selected_quarter = st.selectbox("Select Quarter", options=["All Quarters"] + quarters.tolist())
     
-    # Filter data by quarter if selected
+    # Filter data by selected quarter
     if selected_quarter != "All Quarters":
         current_data = current_data[current_data['Quarter'] == selected_quarter]
         previous_data = previous_data[previous_data['Quarter'] == selected_quarter]
     
-    # Calculate committed deals (assuming committed means deals with high probability)
-    current_committed = current_data[current_data['Status'].str.contains('Committed', case=False, na=False)]
-    previous_committed = previous_data[previous_data['Status'].str.contains('Committed', case=False, na=False)]
-    
     # Sales Owner Commitment Table
-    st.markdown("### Sales Owner Commitment Comparison")
+    st.markdown("### Sales Owner Commitment Table")
     
-    # Group by Sales Owner
-    current_owner_metrics = current_committed.groupby('Sales Team Member').agg({
-        'Deal Value': 'sum'
+    # Calculate metrics for each sales owner
+    current_owner_metrics = current_data.groupby('Sales Team Member').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Committed').sum()
     }).reset_index()
     
-    previous_owner_metrics = previous_committed.groupby('Sales Team Member').agg({
-        'Deal Value': 'sum'
+    previous_owner_metrics = previous_data.groupby('Sales Team Member').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Committed').sum()
     }).reset_index()
     
     # Merge current and previous data
@@ -1456,8 +1454,8 @@ def show_week_over_week_delta():
         current_owner_metrics,
         previous_owner_metrics,
         on='Sales Team Member',
-        how='outer',
-        suffixes=('_current', '_previous')
+        suffixes=('_current', '_previous'),
+        how='outer'
     ).fillna(0)
     
     # Calculate deltas
@@ -1482,23 +1480,24 @@ def show_week_over_week_delta():
     
     # Display the table with styling
     st.dataframe(
-        owner_comparison.style.apply(
-            lambda x: ['color: red' if float(str(x['Delta']).replace('₹', '').replace('L', '')) < 0 else 'color: green' for _ in x],
+        owner_comparison.style.applymap(
+            lambda x: 'color: red' if x.startswith('₹-') else 'color: green',
             subset=['Delta']
-        ),
-        use_container_width=True
+        )
     )
     
     # Function Overview Commitment Table
-    st.markdown("### Function Overview Commitment Comparison")
+    st.markdown("### Function Overview Commitment Table")
     
-    # Group by Practice/Function
-    current_function_metrics = current_committed.groupby('Practice').agg({
-        'Deal Value': 'sum'
+    # Calculate metrics for each function
+    current_function_metrics = current_data.groupby('Practice').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Committed').sum()
     }).reset_index()
     
-    previous_function_metrics = previous_committed.groupby('Practice').agg({
-        'Deal Value': 'sum'
+    previous_function_metrics = previous_data.groupby('Practice').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Committed').sum()
     }).reset_index()
     
     # Merge current and previous data
@@ -1506,8 +1505,8 @@ def show_week_over_week_delta():
         current_function_metrics,
         previous_function_metrics,
         on='Practice',
-        how='outer',
-        suffixes=('_current', '_previous')
+        suffixes=('_current', '_previous'),
+        how='outer'
     ).fillna(0)
     
     # Calculate deltas
@@ -1532,11 +1531,10 @@ def show_week_over_week_delta():
     
     # Display the table with styling
     st.dataframe(
-        function_comparison.style.apply(
-            lambda x: ['color: red' if float(str(x['Delta']).replace('₹', '').replace('L', '')) < 0 else 'color: green' for _ in x],
+        function_comparison.style.applymap(
+            lambda x: 'color: red' if x.startswith('₹-') else 'color: green',
             subset=['Delta']
-        ),
-        use_container_width=True
+        )
     )
 
 def main():
