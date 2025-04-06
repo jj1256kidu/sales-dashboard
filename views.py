@@ -1509,7 +1509,7 @@ def show_previous_data_view(df):
 
     # Year selection
     current_year = pd.Timestamp.now().year
-    years = list(range(current_year - 5, current_year))
+    years = [str(year) for year in range(current_year - 4, current_year + 1)]
     selected_year = st.selectbox(
         "Select Year",
         options=years,
@@ -1517,13 +1517,21 @@ def show_previous_data_view(df):
     )
     
     # Filter data for selected year
-    year_data = df[df['Expected Close Date'].dt.year == selected_year]
+    start_date = pd.Timestamp(year=int(selected_year), month=1, day=1)
+    end_date = pd.Timestamp(year=int(selected_year), month=12, day=31)
+    
+    filtered_df = df[
+        (df['Expected Close Date'] >= start_date) &
+        (df['Expected Close Date'] <= end_date)
+    ]
     
     # Calculate metrics
-    total_pipeline = year_data[~year_data['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000
-    closed_won = year_data[year_data['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000
-    total_deals = len(year_data)
-    win_rate = (len(year_data[year_data['Sales Stage'].str.contains('Won', case=False, na=False)]) / total_deals * 100) if total_deals > 0 else 0
+    total_pipeline = filtered_df['Amount'].sum() / 100000
+    won_deals = filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
+    closed_amount = won_deals['Amount'].sum() / 100000
+    total_deals = len(filtered_df)
+    closed_deals = len(won_deals)
+    win_rate = (closed_deals / total_deals * 100) if total_deals > 0 else 0
     
     # Display metrics
     st.markdown("### Key Metrics")
@@ -1542,8 +1550,8 @@ def show_previous_data_view(df):
         st.markdown(f"""
             <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                 <div class='metric-label'>Closed Won</div>
-                <div class='metric-value'>₹{int(closed_won)}L</div>
-                <div style='color: #666; font-size: 0.9em;'>Won deals value</div>
+                <div class='metric-value'>₹{int(closed_amount)}L</div>
+                <div style='color: #666; font-size: 0.9em;'>Total closed amount</div>
             </div>
         """, unsafe_allow_html=True)
     
@@ -1561,120 +1569,155 @@ def show_previous_data_view(df):
             <div style='text-align: center; padding: 15px; background: #f8f9fa; border-radius: 10px;'>
                 <div class='metric-label'>Win Rate</div>
                 <div class='metric-value'>{int(win_rate)}%</div>
-                <div style='color: #666; font-size: 0.9em;'>Success rate</div>
+                <div style='color: #666; font-size: 0.9em;'>{int(closed_deals)} won</div>
             </div>
         """, unsafe_allow_html=True)
     
     # Quarterly trend
     st.markdown("### Quarterly Trend")
-    quarterly_data = year_data.groupby(year_data['Expected Close Date'].dt.quarter).agg({
-        'Amount': 'sum',
-        'Sales Stage': lambda x: x[year_data['Sales Stage'].str.contains('Won', case=False, na=False)].count()
-    }).reset_index()
-    
-    quarterly_data['Expected Close Date'] = quarterly_data['Expected Close Date'].apply(lambda x: f"Q{x}")
-    quarterly_data['Amount'] = quarterly_data['Amount'] / 100000
-    
-    fig_trend = go.Figure()
-    fig_trend.add_trace(go.Bar(
-        x=quarterly_data['Expected Close Date'],
-        y=quarterly_data['Amount'],
-        name='Amount',
-        text=quarterly_data['Amount'].apply(lambda x: f"₹{int(x)}L"),
-        textposition='outside',
-        textfont=dict(size=16, color='#4A90E2', family='Segoe UI', weight='bold'),
-        marker_color='#4A90E2',
-        marker_line=dict(color='#357ABD', width=2),
-        opacity=0.9
-    ))
-    fig_trend.add_trace(go.Scatter(
-        x=quarterly_data['Expected Close Date'],
-        y=quarterly_data['Sales Stage'],
-        name='Closed Deals',
-        mode='lines+markers',
-        line=dict(width=3, color='#2ecc71'),
-        marker=dict(size=8, color='#2ecc71'),
-        text=quarterly_data['Sales Stage'],
-        textposition='top center',
-        textfont=dict(size=16, color='#2ecc71', family='Segoe UI', weight='bold')
-    ))
-    
-    fig_trend.update_layout(
-        title=dict(
-            text="Quarterly Trend",
-            font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
-            x=0.5,
-            y=0.95,
-            xanchor='center',
-            yanchor='top'
-        ),
-        height=500,
-        barmode='group',
-        bargap=0.15,
-        bargroupgap=0.1,
-        xaxis_title=dict(
-            text="Quarter",
-            font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
-            standoff=15
-        ),
-        yaxis_title=dict(
-            text="Amount (Lakhs) / Number of Deals",
-            font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
-            standoff=15
-        ),
-        showlegend=True,
-        legend=dict(
-            font=dict(size=14, family='Segoe UI', color='#2c3e50'),
-            yanchor="top",
-            y=0.99,
-            xanchor="right",
-            x=0.99,
-            bgcolor='rgba(255, 255, 255, 0.8)',
-            bordercolor='rgba(0, 0, 0, 0.2)',
-            borderwidth=1
-        ),
-        font=dict(size=14, family='Segoe UI'),
-        xaxis=dict(
-            tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
-            gridcolor='rgba(0, 0, 0, 0.1)'
-        ),
-        yaxis=dict(
-            tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
-            gridcolor='rgba(0, 0, 0, 0.1)'
-        ),
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        margin=dict(t=80, b=40, l=40, r=40)
-    )
-    
-    st.plotly_chart(fig_trend, use_container_width=True)
+    if 'Expected Close Date' in filtered_df.columns:
+        quarterly_data = filtered_df.groupby(filtered_df['Expected Close Date'].dt.to_period('Q')).agg({
+            'Amount': 'sum',
+            'Sales Stage': lambda x: x[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
+        }).reset_index()
+        
+        quarterly_data['Expected Close Date'] = quarterly_data['Expected Close Date'].astype(str)
+        quarterly_data['Amount'] = quarterly_data['Amount'] / 100000
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            fig_amount = go.Figure()
+            fig_amount.add_trace(go.Bar(
+                x=quarterly_data['Expected Close Date'],
+                y=quarterly_data['Amount'],
+                name='Amount',
+                text=quarterly_data['Amount'].apply(lambda x: f"₹{int(x)}L"),
+                textposition='outside',
+                textfont=dict(size=16, color='#4A90E2', family='Segoe UI', weight='bold'),
+                marker_color='#4A90E2',
+                marker_line=dict(color='#357ABD', width=2),
+                opacity=0.9
+            ))
+            fig_amount.update_layout(
+                title=dict(
+                    text="Quarterly Amount Trend",
+                    font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    x=0.5,
+                    y=0.95,
+                    xanchor='center',
+                    yanchor='top'
+                ),
+                height=500,
+                xaxis_title=dict(
+                    text="Quarter",
+                    font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=15
+                ),
+                yaxis_title=dict(
+                    text="Amount (Lakhs)",
+                    font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=15
+                ),
+                showlegend=False,
+                font=dict(size=14, family='Segoe UI'),
+                xaxis=dict(
+                    tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
+                    gridcolor='rgba(0, 0, 0, 0.1)'
+                ),
+                yaxis=dict(
+                    tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
+                    gridcolor='rgba(0, 0, 0, 0.1)'
+                ),
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                margin=dict(t=80, b=40, l=40, r=40)
+            )
+            st.plotly_chart(fig_amount, use_container_width=True)
+        
+        with col2:
+            fig_deals = go.Figure()
+            fig_deals.add_trace(go.Scatter(
+                x=quarterly_data['Expected Close Date'],
+                y=quarterly_data['Sales Stage'],
+                mode='lines+markers',
+                name='Closed Deals',
+                line=dict(width=3, color='#2ecc71'),
+                marker=dict(size=8, color='#2ecc71'),
+                text=quarterly_data['Sales Stage'],
+                textposition='top center',
+                textfont=dict(size=12, family='Segoe UI', weight='bold')
+            ))
+            fig_deals.update_layout(
+                title=dict(
+                    text="Quarterly Closed Deals Trend",
+                    font=dict(size=22, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    x=0.5,
+                    y=0.95,
+                    xanchor='center',
+                    yanchor='top'
+                ),
+                height=500,
+                xaxis_title=dict(
+                    text="Quarter",
+                    font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=15
+                ),
+                yaxis_title=dict(
+                    text="Number of Deals",
+                    font=dict(size=16, family='Segoe UI', color='#2c3e50', weight='bold'),
+                    standoff=15
+                ),
+                showlegend=False,
+                font=dict(size=14, family='Segoe UI'),
+                xaxis=dict(
+                    tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
+                    gridcolor='rgba(0, 0, 0, 0.1)'
+                ),
+                yaxis=dict(
+                    tickfont=dict(size=12, family='Segoe UI', color='#2c3e50'),
+                    gridcolor='rgba(0, 0, 0, 0.1)'
+                ),
+                plot_bgcolor='white',
+                paper_bgcolor='white',
+                margin=dict(t=80, b=40, l=40, r=40)
+            )
+            st.plotly_chart(fig_deals, use_container_width=True)
+    else:
+        st.error("Expected Close Date column not found in the dataset")
     
     # Practice-wise summary
     st.markdown("### Practice-wise Summary")
-    practice_metrics = year_data.groupby('Practice').agg({
-        'Amount': lambda x: x[year_data['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
-        'Sales Stage': lambda x: x[year_data['Sales Stage'].str.contains('Won', case=False, na=False)].count()
-    }).reset_index()
-    
-    practice_metrics.columns = ['Practice', 'Closed Amount', 'Closed Deals']
-    
-    # Pipeline by practice
-    pipeline_df = year_data[~year_data['Sales Stage'].str.contains('Won', case=False, na=False)]
-    total_pipeline = pipeline_df.groupby('Practice')['Amount'].sum() / 100000
-    practice_metrics['Total Pipeline'] = practice_metrics['Practice'].map(total_pipeline)
-    
-    # Pipeline deal counts
-    total_deals = pipeline_df.groupby('Practice').size()
-    practice_metrics['Pipeline Deals'] = practice_metrics['Practice'].map(total_deals)
-    
-    # Sort by pipeline
-    practice_metrics = practice_metrics.sort_values('Total Pipeline', ascending=False)
-    
-    # Display practice metrics
-    st.dataframe(
-        practice_metrics,
-        use_container_width=True
-    ) 
+    if 'Practice' in filtered_df.columns:
+        practice_metrics = filtered_df.groupby('Practice').agg({
+            'Amount': lambda x: x[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000,
+            'Sales Stage': lambda x: x[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
+        }).reset_index()
+        
+        practice_metrics.columns = ['Practice', 'Closed Amount', 'Closed Deals']
+        
+        # Pipeline by practice
+        pipeline_df = filtered_df[~filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
+        total_pipeline = pipeline_df.groupby('Practice')['Amount'].sum() / 100000
+        practice_metrics['Total Pipeline'] = practice_metrics['Practice'].map(total_pipeline)
+        
+        # Pipeline deal counts
+        total_deals = pipeline_df.groupby('Practice').size()
+        practice_metrics['Pipeline Deals'] = practice_metrics['Practice'].map(total_deals)
+        
+        # Sort by pipeline
+        practice_metrics = practice_metrics.sort_values('Total Pipeline', ascending=False)
+        
+        # Format columns
+        practice_metrics['Closed Amount'] = practice_metrics['Closed Amount'].apply(lambda x: f"₹{int(x)}L")
+        practice_metrics['Total Pipeline'] = practice_metrics['Total Pipeline'].apply(lambda x: f"₹{int(x)}L")
+        
+        st.dataframe(
+            practice_metrics[['Practice', 'Closed Amount', 'Total Pipeline', 'Closed Deals', 'Pipeline Deals']],
+            use_container_width=True
+        )
+    else:
+        st.error("Practice column not found in the dataset")
 
 def show_login_page():
     """Display the login page"""
@@ -1692,23 +1735,23 @@ def show_login_page():
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
         submit_button = st.form_submit_button("Login")
-    
-    if submit_button:
-        # Check credentials
-        if username == "admin" and password == "admin":
-            st.session_state.is_logged_in = True
-            st.session_state.login_attempts = 0
-            st.session_state.last_attempt = 0
-            st.session_state.locked_until = 0
-            st.success("Login successful!")
-            st.experimental_rerun()
-        else:
-            st.session_state.login_attempts += 1
-            st.session_state.last_attempt = current_time
-            
-            # Check if too many attempts
-            if st.session_state.login_attempts >= 3:
-                st.session_state.locked_until = current_time + 300  # Lock for 5 minutes
-                st.error("Too many failed attempts. Account locked for 5 minutes.")
+        
+        if submit_button:
+            # Check credentials
+            if username == "admin" and password == "admin":
+                st.session_state.is_logged_in = True
+                st.session_state.login_attempts = 0
+                st.session_state.last_attempt = 0
+                st.session_state.locked_until = 0
+                st.success("Login successful!")
+                st.experimental_rerun()
             else:
-                st.error("Invalid credentials. Please try again.")
+                st.session_state.login_attempts += 1
+                st.session_state.last_attempt = current_time
+                
+                # Check if account should be locked
+                if st.session_state.login_attempts >= 3:
+                    st.session_state.locked_until = current_time + 300  # Lock for 5 minutes
+                    st.error("Too many failed attempts. Account locked for 5 minutes.")
+                else:
+                    st.error("Invalid credentials. Please try again.")
