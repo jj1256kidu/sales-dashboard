@@ -244,8 +244,13 @@ def filter_dataframe(df, filters):
     
     return filtered_df
 
+@require_authentication()
 def show_data_input_view():
-    """Display the data input section with file upload and manual input options"""
+    """Display the data input view"""
+    # Initialize session state variables if they don't exist
+    if 'df' not in st.session_state:
+        st.session_state.df = None
+    
     st.title("Data Input")
     
     # File upload section
@@ -254,44 +259,84 @@ def show_data_input_view():
     
     if uploaded_file is not None:
         try:
+            # Read the uploaded file
             df = pd.read_excel(uploaded_file)
-            st.session_state.df = df
-            st.success("File uploaded successfully!")
+            
+            # Validate required columns
+            required_columns = ['Practice', 'Team', 'Sales Stage', 'Amount', 'Expected Close Date']
+            missing_columns = [col for col in required_columns if col not in df.columns]
+            
+            if missing_columns:
+                st.error(f"Missing required columns: {', '.join(missing_columns)}")
+            else:
+                # Validate data types
+                try:
+                    df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
+                    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
+                    
+                    # Check for invalid data
+                    invalid_amount = df['Amount'].isna().sum()
+                    invalid_date = df['Expected Close Date'].isna().sum()
+                    
+                    if invalid_amount > 0 or invalid_date > 0:
+                        st.warning(f"Found {invalid_amount} invalid amounts and {invalid_date} invalid dates. These rows will be excluded.")
+                        df = df.dropna(subset=['Amount', 'Expected Close Date'])
+                    
+                    st.session_state.df = df
+                    st.success("File uploaded successfully!")
+                except Exception as e:
+                    st.error(f"Error processing data: {str(e)}")
         except Exception as e:
-            st.error(f"Error uploading file: {str(e)}")
+            st.error(f"Error reading file: {str(e)}")
     
     # Manual input section
     st.subheader("Manual Input")
+    
+    if st.session_state.df is None:
+        st.session_state.df = pd.DataFrame(columns=["Practice", "Team", "Sales Stage", "Amount", "Expected Close Date", "Probability", "Notes"])
+    
     with st.form("manual_input_form"):
-        practice = st.text_input("Practice")
-        team = st.text_input("Team")
-        sales_stage = st.selectbox("Sales Stage", ["Prospecting", "Qualification", "Proposal", "Negotiation", "Closed Won", "Closed Lost"])
-        amount = st.number_input("Amount (in lakhs)", min_value=0)
-        expected_close_date = st.date_input("Expected Close Date")
-        probability = st.slider("Probability (%)", min_value=0, max_value=100, value=50)
-        notes = st.text_area("Notes")
+        col1, col2 = st.columns(2)
         
-        submit_button = st.form_submit_button("Add Data")
+        with col1:
+            practice = st.text_input("Practice")
+            team = st.text_input("Team")
+            sales_stage = st.selectbox("Sales Stage", ["Prospecting", "Qualification", "Proposal", "Negotiation", "Closed Won", "Closed Lost"])
+            amount = st.number_input("Amount", min_value=0.0, step=1000.0)
         
-        if submit_button:
-            if st.session_state.df is None:
-                st.session_state.df = pd.DataFrame(columns=["Practice", "Team", "Sales Stage", "Amount", "Expected Close Date", "Probability", "Notes"])
-            
-            new_row = pd.DataFrame({
-                "Practice": [practice],
-                "Team": [team],
-                "Sales Stage": [sales_stage],
-                "Amount": [amount],
-                "Expected Close Date": [expected_close_date],
-                "Probability": [probability],
-                "Notes": [notes]
-            })
-            
-            st.session_state.df = pd.concat([st.session_state.df, new_row], ignore_index=True)
-            st.success("Data added successfully!")
+        with col2:
+            expected_close_date = st.date_input("Expected Close Date")
+            probability = st.slider("Probability (%)", 0, 100, 50)
+            notes = st.text_area("Notes")
+        
+        submit = st.form_submit_button("Add Data")
+        
+        if submit:
+            try:
+                # Validate input
+                if not practice or not team or not sales_stage or amount <= 0:
+                    st.error("Please fill in all required fields with valid values.")
+                    return
+                
+                # Create new row
+                new_row = pd.DataFrame([{
+                    "Practice": practice,
+                    "Team": team,
+                    "Sales Stage": sales_stage,
+                    "Amount": amount,
+                    "Expected Close Date": pd.Timestamp(expected_close_date),
+                    "Probability": probability,
+                    "Notes": notes
+                }])
+                
+                # Add to DataFrame
+                st.session_state.df = pd.concat([st.session_state.df, new_row], ignore_index=True)
+                st.success("Data added successfully!")
+            except Exception as e:
+                st.error(f"Error adding data: {str(e)}")
     
     # Display current data
-    if st.session_state.df is not None:
+    if st.session_state.df is not None and not st.session_state.df.empty:
         st.subheader("Current Data")
         st.dataframe(st.session_state.df)
         
@@ -779,6 +824,8 @@ def show_login_page():
         st.session_state.last_attempt = 0
     if 'locked_until' not in st.session_state:
         st.session_state.locked_until = 0
+    if 'username' not in st.session_state:
+        st.session_state.username = None
     
     st.title("Login")
     
@@ -798,8 +845,8 @@ def show_login_page():
     
     # Login form
     with st.form("login_form"):
-        username = st.text_input("Username", placeholder="Enter your username")
-        password = st.text_input("Password", type="password", placeholder="Enter your password")
+        username = st.text_input("Username", placeholder="Enter your username", key="login_username")
+        password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_password")
         submit = st.form_submit_button("Login")
         
         if submit:
@@ -812,10 +859,11 @@ def show_login_page():
                 # Validate credentials
                 if username.strip() == "admin" and password.strip() == "admin":
                     st.session_state.is_logged_in = True
+                    st.session_state.username = username.strip()
                     st.session_state.login_attempts = 0
                     st.session_state.last_attempt = 0
                     st.session_state.locked_until = 0
-                    st.success("Login successful! Redirecting...")
+                    st.success(f"Welcome, {st.session_state.username}! Redirecting...")
                     st.experimental_rerun()
                 else:
                     st.session_state.login_attempts += 1
@@ -828,3 +876,46 @@ def show_login_page():
                         st.error("Invalid username or password. Please try again.")
             except Exception as e:
                 st.error(f"An error occurred during login: {str(e)}")
+    
+    # Add a logout button if logged in
+    if st.session_state.is_logged_in:
+        if st.button("Logout"):
+            st.session_state.is_logged_in = False
+            st.session_state.username = None
+            st.success("Logged out successfully!")
+            st.experimental_rerun()
+
+def check_authentication():
+    """Check if user is authenticated and handle session management"""
+    # Initialize session state variables if they don't exist
+    if 'is_logged_in' not in st.session_state:
+        st.session_state.is_logged_in = False
+    if 'username' not in st.session_state:
+        st.session_state.username = None
+    if 'last_activity' not in st.session_state:
+        st.session_state.last_activity = time.time()
+    
+    # Check session timeout (30 minutes)
+    current_time = time.time()
+    if st.session_state.is_logged_in and (current_time - st.session_state.last_activity) > 1800:
+        st.session_state.is_logged_in = False
+        st.session_state.username = None
+        st.warning("Session expired. Please login again.")
+        st.experimental_rerun()
+    
+    # Update last activity time
+    st.session_state.last_activity = current_time
+    
+    # Return authentication status
+    return st.session_state.is_logged_in
+
+def require_authentication():
+    """Decorator to require authentication for view functions"""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            if not check_authentication():
+                show_login_page()
+                return
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
