@@ -328,65 +328,33 @@ def show_previous_data_view():
             """)
 
 def main():
-    # Check if user is locked out
-    if st.session_state.locked_until > time.time():
-        remaining_time = int(st.session_state.locked_until - time.time())
-        st.error(f"Account locked. Please try again in {remaining_time} seconds.")
-        return
-
-    # Show login form if not authenticated
-    if not st.session_state.authenticated:
+    # Initialize session state
+    init_session_state()
+    
+    # Check if user is logged in
+    if not st.session_state.get('is_logged_in', False):
         show_login_page()
         return
-
-    # Main dashboard content
+    
+    # Create sidebar for navigation
     st.sidebar.title("Navigation")
-    page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team", "Previous Data"])
-
-    # Initialize session state for data if not exists
+    page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team", "Quarterly Summary", "Previous Data"])
+    
+    # Load data if not in session state
     if 'df' not in st.session_state:
-        st.session_state.df = None
-    if 'previous_data' not in st.session_state:
-        st.session_state.previous_data = None
-
-    # Load or get data based on page
-    if page in ["Overview", "Sales Team"]:
-        # Try to get data from session state first
-        if st.session_state.df is not None and not st.session_state.df.empty:
-            df = st.session_state.df
-        else:
-            # Try to load from file
-            df = load_data()
-            if df.empty:
-                st.warning("Please upload sales data in the Data Input section first.")
-                # Switch to Data Input page
-                page = "Data Input"
-                st.experimental_rerun()
-
-    # Show appropriate view based on selection
+        st.session_state.df = load_data()
+    
+    # Display selected page
     if page == "Data Input":
-        # Show data input view and handle file upload
-        uploaded_file = show_data_input_view(None)
-        if uploaded_file is not None:
-            try:
-                # Save the uploaded file
-                with open("sales_data.xlsx", "wb") as f:
-                    f.write(uploaded_file.getbuffer())
-                st.success("Data uploaded successfully!")
-                
-                # Load the new data
-                df = load_data()
-                if not df.empty:
-                    st.session_state.df = df
-                    st.success("Data loaded successfully!")
-                else:
-                    st.error("Failed to load the uploaded data. Please check the file format.")
-            except Exception as e:
-                st.error(f"Error saving file: {str(e)}")
+        show_data_input_view(st.session_state.df)
     elif page == "Overview":
-        show_overview_view(df)
+        show_overview_view(st.session_state.df)
     elif page == "Sales Team":
-        show_sales_team_view(df)
+        show_sales_team_view(st.session_state.df)
+    elif page == "Quarterly Summary":
+        # Import and run the quarterly dashboard
+        from quarterly_dashboard import main as quarterly_main
+        quarterly_main()
     elif page == "Previous Data":
         show_previous_data_view()
 
