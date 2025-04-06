@@ -4,19 +4,31 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime, timedelta
 import numpy as np
-from auth import check_password, init_session_state, show_login_page
-from functools import lru_cache
 import time
 
-def check_authentication():
-    """Check if user is authenticated and handle session management"""
-    # Initialize session state variables if they don't exist
+def init_session_state():
+    """Initialize session state variables"""
     if 'is_logged_in' not in st.session_state:
         st.session_state.is_logged_in = False
     if 'username' not in st.session_state:
         st.session_state.username = None
     if 'last_activity' not in st.session_state:
         st.session_state.last_activity = time.time()
+    if 'login_attempts' not in st.session_state:
+        st.session_state.login_attempts = 0
+    if 'locked_until' not in st.session_state:
+        st.session_state.locked_until = 0
+    if 'df' not in st.session_state:
+        st.session_state.df = None
+
+def check_credentials(username, password):
+    """Check if the provided credentials are valid"""
+    # This is a simple example - in production, use proper authentication
+    return username.strip() == "admin" and password.strip() == "admin"
+
+def check_authentication():
+    """Check if user is authenticated and handle session management"""
+    init_session_state()
     
     # Check session timeout (30 minutes)
     current_time = time.time()
@@ -31,6 +43,67 @@ def check_authentication():
     
     # Return authentication status
     return st.session_state.is_logged_in
+
+def show_login_page():
+    """Display the login page"""
+    init_session_state()
+    
+    st.title("Login")
+    
+    # Check if account is locked
+    current_time = time.time()
+    if st.session_state.locked_until > current_time:
+        remaining_time = int(st.session_state.locked_until - current_time)
+        minutes = remaining_time // 60
+        seconds = remaining_time % 60
+        st.error(f"Account locked. Please try again in {minutes} minutes and {seconds} seconds.")
+        return
+    
+    # Display remaining attempts
+    if st.session_state.login_attempts > 0:
+        remaining_attempts = 3 - st.session_state.login_attempts
+        st.warning(f"Remaining attempts: {remaining_attempts}")
+    
+    # Login form
+    with st.form("login_form"):
+        username = st.text_input("Username", placeholder="Enter your username", key="login_username")
+        password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_password")
+        submit = st.form_submit_button("Login")
+        
+        if submit:
+            try:
+                # Validate input
+                if not username or not password:
+                    st.error("Please enter both username and password.")
+                    return
+                
+                # Check credentials
+                if check_credentials(username, password):
+                    st.session_state.is_logged_in = True
+                    st.session_state.username = username.strip()
+                    st.session_state.login_attempts = 0
+                    st.session_state.locked_until = 0
+                    st.success(f"Welcome, {st.session_state.username}! Redirecting...")
+                    st.experimental_rerun()
+                else:
+                    st.session_state.login_attempts += 1
+                    st.session_state.last_attempt = current_time
+                    
+                    if st.session_state.login_attempts >= 3:
+                        st.session_state.locked_until = current_time + 300  # Lock for 5 minutes
+                        st.error("Too many failed attempts. Account locked for 5 minutes.")
+                    else:
+                        st.error("Invalid username or password. Please try again.")
+            except Exception as e:
+                st.error(f"An error occurred during login: {str(e)}")
+    
+    # Add a logout button if logged in
+    if st.session_state.is_logged_in:
+        if st.button("Logout"):
+            st.session_state.is_logged_in = False
+            st.session_state.username = None
+            st.success("Logged out successfully!")
+            st.experimental_rerun()
 
 def require_authentication():
     """Decorator to require authentication for view functions"""
@@ -847,75 +920,3 @@ def show_previous_data_view():
             
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
-
-def show_login_page():
-    """Display the login page"""
-    # Initialize session state variables if they don't exist
-    if 'is_logged_in' not in st.session_state:
-        st.session_state.is_logged_in = False
-    if 'login_attempts' not in st.session_state:
-        st.session_state.login_attempts = 0
-    if 'last_attempt' not in st.session_state:
-        st.session_state.last_attempt = 0
-    if 'locked_until' not in st.session_state:
-        st.session_state.locked_until = 0
-    if 'username' not in st.session_state:
-        st.session_state.username = None
-    
-    st.title("Login")
-    
-    # Check if account is locked
-    current_time = time.time()
-    if st.session_state.locked_until > current_time:
-        remaining_time = int(st.session_state.locked_until - current_time)
-        minutes = remaining_time // 60
-        seconds = remaining_time % 60
-        st.error(f"Account locked. Please try again in {minutes} minutes and {seconds} seconds.")
-        return
-    
-    # Display remaining attempts
-    if st.session_state.login_attempts > 0:
-        remaining_attempts = 3 - st.session_state.login_attempts
-        st.warning(f"Remaining attempts: {remaining_attempts}")
-    
-    # Login form
-    with st.form("login_form"):
-        username = st.text_input("Username", placeholder="Enter your username", key="login_username")
-        password = st.text_input("Password", type="password", placeholder="Enter your password", key="login_password")
-        submit = st.form_submit_button("Login")
-        
-        if submit:
-            try:
-                # Validate input
-                if not username or not password:
-                    st.error("Please enter both username and password.")
-                    return
-                
-                # Validate credentials
-                if username.strip() == "admin" and password.strip() == "admin":
-                    st.session_state.is_logged_in = True
-                    st.session_state.username = username.strip()
-                    st.session_state.login_attempts = 0
-                    st.session_state.last_attempt = 0
-                    st.session_state.locked_until = 0
-                    st.success(f"Welcome, {st.session_state.username}! Redirecting...")
-                    st.experimental_rerun()
-                else:
-                    st.session_state.login_attempts += 1
-                    st.session_state.last_attempt = current_time
-                    
-                    if st.session_state.login_attempts >= 3:
-                        st.session_state.locked_until = current_time + 300  # Lock for 5 minutes
-                        st.error("Too many failed attempts. Account locked for 5 minutes.")
-                    else:
-                        st.error("Invalid username or password. Please try again.")
-            except Exception as e:
-                st.error(f"An error occurred during login: {str(e)}")
-    
-    # Add a logout button if logged in
-    if st.session_state.is_logged_in:
-        if st.button("Logout"):
-            st.session_state.is_logged_in = False
-            st.session_state.username = None
-            st.success("Logged out successfully!")
-            st.experimental_rerun()
