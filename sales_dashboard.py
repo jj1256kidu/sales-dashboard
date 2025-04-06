@@ -105,6 +105,47 @@ if 'last_attempt' not in st.session_state:
 if 'locked_until' not in st.session_state:
     st.session_state.locked_until = 0
 
+def load_data():
+    """Load and process the sales data"""
+    try:
+        # Check if data file exists
+        if not os.path.exists("sales_data.xlsx"):
+            st.warning("No data file found. Please upload data first.")
+            return pd.DataFrame()  # Return empty dataframe if no file exists
+        
+        # Read the Excel file
+        df = pd.read_excel("sales_data.xlsx")
+        
+        # Process dates and calculate time-based columns
+        df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
+        df['Month'] = df['Expected Close Date'].dt.strftime('%B')
+        df['Year'] = df['Year in FY']  # Use Year in FY directly
+        df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
+        
+        # Convert probability and calculate numeric values
+        def convert_probability(x):
+            try:
+                if pd.isna(x):
+                    return 0
+                if isinstance(x, str):
+                    x = x.rstrip('%')
+                return float(x)
+            except:
+                return 0
+        
+        df['Probability_Num'] = df['Probability'].apply(convert_probability)
+        
+        # Pre-calculate common flags and metrics
+        df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
+        df['Amount_Lacs'] = df['Amount'].fillna(0).div(100000).round(0).astype(int)
+        df['Weighted_Amount'] = (df['Amount_Lacs'] * df['Probability_Num'] / 100).round(0).astype(int)
+        
+        return df
+        
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return pd.DataFrame()  # Return empty dataframe on error
+
 def main():
     # Check if user is locked out
     if st.session_state.locked_until > time.time():
