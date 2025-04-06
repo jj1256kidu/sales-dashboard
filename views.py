@@ -539,24 +539,19 @@ def show_sales_team_view(st):
         filtered_df = filtered_df[mask]
     
     if len(filtered_df) > 0:
-        # Display metrics in a single row
-        metric_cols = st.columns(4)
-        
-        # Calculate total pipeline value
+        # Calculate common metrics once
         total_pipeline = filtered_df['Deal Value'].sum()
-        metric_cols[0].metric("Total Pipeline", f"${total_pipeline:,.2f}")
-        
-        # Calculate total number of deals
         total_deals = len(filtered_df)
-        metric_cols[1].metric("Total Deals", total_deals)
-        
-        # Calculate win rate
         closed_won = len(filtered_df[filtered_df['Status'] == 'Closed Won'])
         win_rate = (closed_won / total_deals * 100) if total_deals > 0 else 0
-        metric_cols[2].metric("Win Rate", f"{win_rate:.1f}%")
-        
-        # Calculate average deal size
         avg_deal_size = total_pipeline / total_deals if total_deals > 0 else 0
+        
+        # Display summary metrics
+        st.subheader("Summary Metrics")
+        metric_cols = st.columns(4)
+        metric_cols[0].metric("Total Pipeline", f"${total_pipeline:,.2f}")
+        metric_cols[1].metric("Total Deals", total_deals)
+        metric_cols[2].metric("Win Rate", f"{win_rate:.1f}%")
         metric_cols[3].metric("Average Deal Size", f"${avg_deal_size:,.2f}")
         
         # Team Performance Section
@@ -580,21 +575,15 @@ def show_sales_team_view(st):
         }))
         
         # Team performance visualization
-        st.subheader("Team Performance Visualization")
         fig = px.bar(team_metrics, x='Sales Team Member', y=['Total Pipeline', 'Closed Won'],
                      title='Pipeline vs Closed Won by Team Member', barmode='group')
         st.plotly_chart(fig)
         
-        # Practice distribution
+        # Practice distribution and metrics
         if len(filtered_df['Practice'].unique()) > 0:
-            st.subheader("Practice Distribution")
-            practice_dist = filtered_df.groupby(['Sales Team Member', 'Practice'])['Deal Value'].sum().reset_index()
-            fig2 = px.bar(practice_dist, x='Sales Team Member', y='Deal Value',
-                         color='Practice', title='Practice Distribution by Team Member')
-            st.plotly_chart(fig2)
+            st.subheader("Practice Analysis")
             
-            # Practice metrics
-            st.subheader("Practice Performance")
+            # Calculate practice metrics
             practice_metrics = filtered_df.groupby('Practice').agg({
                 'Deal Value': ['sum', 'count'],
                 'Status': lambda x: (x == 'Closed Won').sum()
@@ -604,10 +593,11 @@ def show_sales_team_view(st):
             practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Total Deals'] * 100).round(1)
             practice_metrics['Average Deal Size'] = (practice_metrics['Total Pipeline'] / practice_metrics['Total Deals']).round(2)
             
-            # Display practice metrics in two columns
+            # Display practice metrics and visualizations in two columns
             col1, col2 = st.columns(2)
             
             with col1:
+                st.subheader("Practice Metrics")
                 st.dataframe(practice_metrics.style.format({
                     'Total Pipeline': '${:,.2f}',
                     'Average Deal Size': '${:,.2f}',
@@ -615,9 +605,17 @@ def show_sales_team_view(st):
                 }))
             
             with col2:
+                st.subheader("Practice Win Rates")
                 fig3 = px.bar(practice_metrics, x='Practice', y='Win Rate',
                              title='Win Rate by Practice', color='Practice')
                 st.plotly_chart(fig3)
+            
+            # Practice distribution by team member
+            st.subheader("Practice Distribution by Team")
+            practice_dist = filtered_df.groupby(['Sales Team Member', 'Practice'])['Deal Value'].sum().reset_index()
+            fig2 = px.bar(practice_dist, x='Sales Team Member', y='Deal Value',
+                         color='Practice', title='Practice Distribution by Team Member')
+            st.plotly_chart(fig2)
     else:
         st.warning("No data available for the selected filters")
 
