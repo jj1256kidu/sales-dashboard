@@ -54,11 +54,26 @@ def load_excel_data(file_path):
     """Load and process Excel data from both sheets"""
     try:
         # Read both sheets
+        st.write("Loading Excel file...")
         current_df = pd.read_excel(file_path, sheet_name="Raw_Data")
         previous_df = pd.read_excel(file_path, sheet_name="Previous Data")
         
+        st.write("Raw_Data columns:", current_df.columns.tolist())
+        st.write("Previous Data columns:", previous_df.columns.tolist())
+        
         # Select required columns
         required_columns = ['Sales Owner', 'Committed', 'Upside', 'Closed Won', 'Function']
+        
+        # Check if all required columns exist
+        missing_columns = [col for col in required_columns if col not in current_df.columns]
+        if missing_columns:
+            st.error(f"Missing required columns in Raw_Data: {missing_columns}")
+            return None, None
+            
+        missing_columns = [col for col in required_columns if col not in previous_df.columns]
+        if missing_columns:
+            st.error(f"Missing required columns in Previous Data: {missing_columns}")
+            return None, None
         
         # Process current week data
         current_df = current_df[required_columns].copy()
@@ -68,9 +83,11 @@ def load_excel_data(file_path):
         previous_df = previous_df[required_columns].copy()
         previous_df['Week'] = 'Previous'
         
+        st.write("Data loaded successfully!")
         return current_df, previous_df
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
+        st.error("Please make sure your Excel file has two sheets named 'Raw_Data' and 'Previous Data'")
         return None, None
 
 def calculate_summaries(current_df, previous_df):
@@ -147,39 +164,54 @@ def main():
     st.sidebar.title("Data Source")
     data_source = st.sidebar.radio("Select data source:", ["File Upload", "Data Folder"])
     
+    current_df = None
+    previous_df = None
+    
     if data_source == "File Upload":
         uploaded_file = st.sidebar.file_uploader("Upload Excel file", type=['xlsx'])
         if uploaded_file:
+            st.write("Processing uploaded file...")
             current_df, previous_df = load_excel_data(uploaded_file)
     else:
         data_folder = Path("data")
         if not data_folder.exists():
             data_folder.mkdir()
+            st.info("Created data folder. Please add your Excel files here.")
         
         files = list(data_folder.glob("*.xlsx"))
         if files:
             selected_file = st.sidebar.selectbox("Select file:", files)
             if selected_file:
+                st.write(f"Processing file: {selected_file}")
                 current_df, previous_df = load_excel_data(selected_file)
         else:
-            st.warning("No Excel files found in the data folder.")
+            st.warning("No Excel files found in the data folder. Please add your Excel files to the 'data' folder.")
             return
     
-    if 'current_df' in locals() and current_df is not None:
-        # Calculate summaries
-        sales_df, function_df = calculate_summaries(current_df, previous_df)
-        
-        # Create comparison dataframes
-        sales_comparison = create_comparison_df(sales_df, 'Sales Owner')
-        function_comparison = create_comparison_df(function_df, 'Function')
-        
-        # Display Sales Owner Summary
-        st.markdown('<h2 style="color: #2a5298;">👤 Sales Owner Summary</h2>', unsafe_allow_html=True)
-        st.dataframe(style_dataframe(sales_comparison), use_container_width=True)
-        
-        # Display Function Overview
-        st.markdown('<h2 style="color: #2a5298;">🏢 Function Overview</h2>', unsafe_allow_html=True)
-        st.dataframe(style_dataframe(function_comparison), use_container_width=True)
+    if current_df is not None and previous_df is not None:
+        try:
+            # Calculate summaries
+            st.write("Calculating summaries...")
+            sales_df, function_df = calculate_summaries(current_df, previous_df)
+            
+            # Create comparison dataframes
+            st.write("Creating comparison views...")
+            sales_comparison = create_comparison_df(sales_df, 'Sales Owner')
+            function_comparison = create_comparison_df(function_df, 'Function')
+            
+            # Display Sales Owner Summary
+            st.markdown('<h2 style="color: #2a5298;">👤 Sales Owner Summary</h2>', unsafe_allow_html=True)
+            st.dataframe(style_dataframe(sales_comparison), use_container_width=True)
+            
+            # Display Function Overview
+            st.markdown('<h2 style="color: #2a5298;">🏢 Function Overview</h2>', unsafe_allow_html=True)
+            st.dataframe(style_dataframe(function_comparison), use_container_width=True)
+            
+        except Exception as e:
+            st.error(f"Error processing data: {str(e)}")
+            st.error("Please check your data format and try again.")
+    else:
+        st.info("Please upload or select an Excel file to view the dashboard.")
 
 if __name__ == "__main__":
     main() 
