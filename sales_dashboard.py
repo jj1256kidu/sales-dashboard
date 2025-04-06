@@ -1275,6 +1275,51 @@ def show_sales_team():
     filtered_df = filtered_df.reset_index(drop=True)
     filtered_df.index = filtered_df.index + 1
     
+    # First show the team metrics summary
+    team_metrics = df.groupby('Sales Owner').agg({
+        'Amount': lambda x: round(x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000, 1),
+        'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
+    }).reset_index()
+    team_metrics.columns = ['Sales Owner', 'Closed Won', 'Closed Deals']
+    
+    pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
+    total_pipeline = round(pipeline_df.groupby('Sales Owner')['Amount'].sum() / 100000, 1)
+    team_metrics['Current Pipeline'] = team_metrics['Sales Owner'].map(total_pipeline)
+    
+    def calculate_weighted_projection(owner):
+        owner_pipeline = pipeline_df[pipeline_df['Sales Owner'] == owner]
+        weighted_sum = sum((amt * pr / 100) 
+                           for amt, pr in zip(owner_pipeline['Amount'], owner_pipeline['Probability_Num']))
+        return round(weighted_sum / 100000, 1)
+    
+    team_metrics['Weighted Projections'] = team_metrics['Sales Owner'].apply(calculate_weighted_projection)
+    
+    total_deals_owner = pipeline_df.groupby('Sales Owner').size()
+    team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(total_deals_owner)
+    team_metrics['Win Rate'] = round((team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100), 1)
+    team_metrics = team_metrics.sort_values('Current Pipeline', ascending=False)
+    
+    summary_data = team_metrics.copy()
+    summary_data['Current Pipeline'] = summary_data['Current Pipeline'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Weighted Projections'] = summary_data['Weighted Projections'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Closed Won'] = summary_data['Closed Won'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x}%")
+    
+    st.dataframe(
+        summary_data[[
+            'Sales Owner',
+            'Current Pipeline',
+            'Weighted Projections',
+            'Closed Won',
+            'Pipeline Deals',
+            'Closed Deals',
+            'Win Rate'
+        ]],
+        use_container_width=True
+    )
+    
+    st.markdown("### Detailed Opportunities")
+    
     display_df = filtered_df[['Organization Name', 'Opportunity Name', 'Geography', 
                             'Expected Close Date', 'Probability', 'Amount', 
                             'Sales Owner', 'Pre-sales Technical Lead', 'Business Owner', 
@@ -1321,68 +1366,6 @@ def show_sales_team():
                 help="Expected closing date"
             )
         }
-    )
-    
-    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
-
-    st.markdown("""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 25px 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        '>
-            <h3 style='
-                color: #2a5298;
-                margin: 0;
-                font-size: 1.4em;
-                font-weight: 600;
-                font-family: "Segoe UI", sans-serif;
-            '>Team Member Performance</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    team_metrics = df.groupby('Sales Owner').agg({
-        'Amount': lambda x: round(x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000, 1),
-        'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
-    }).reset_index()
-    team_metrics.columns = ['Sales Owner', 'Closed Won', 'Closed Deals']
-    
-    pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
-    total_pipeline = round(pipeline_df.groupby('Sales Owner')['Amount'].sum() / 100000, 1)
-    team_metrics['Current Pipeline'] = team_metrics['Sales Owner'].map(total_pipeline)
-    
-    def calculate_weighted_projection(owner):
-        owner_pipeline = pipeline_df[pipeline_df['Sales Owner'] == owner]
-        weighted_sum = sum((amt * pr / 100) 
-                           for amt, pr in zip(owner_pipeline['Amount'], owner_pipeline['Probability_Num']))
-        return round(weighted_sum / 100000, 1)
-    
-    team_metrics['Weighted Projections'] = team_metrics['Sales Owner'].apply(calculate_weighted_projection)
-    
-    total_deals_owner = pipeline_df.groupby('Sales Owner').size()
-    team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(total_deals_owner)
-    team_metrics['Win Rate'] = round((team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100), 1)
-    team_metrics = team_metrics.sort_values('Current Pipeline', ascending=False)
-    
-    summary_data = team_metrics.copy()
-    summary_data['Current Pipeline'] = summary_data['Current Pipeline'].apply(lambda x: f"₹{x:,}L")
-    summary_data['Weighted Projections'] = summary_data['Weighted Projections'].apply(lambda x: f"₹{x:,}L")
-    summary_data['Closed Won'] = summary_data['Closed Won'].apply(lambda x: f"₹{x:,}L")
-    summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x}%")
-    
-    st.dataframe(
-        summary_data[[
-            'Sales Owner',
-            'Current Pipeline',
-            'Weighted Projections',
-            'Closed Won',
-            'Pipeline Deals',
-            'Closed Deals',
-            'Win Rate'
-        ]],
-        use_container_width=True
     )
 
 def show_detailed():
