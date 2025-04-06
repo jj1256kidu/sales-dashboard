@@ -1052,20 +1052,51 @@ def show_sales_team_view(df):
     # Column selection and ordering UI
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown("**Select and order columns:**")
+        st.markdown("**Drag and drop to reorder columns:**")
     with col2:
         if st.button("Reset to Default"):
             st.session_state.column_order = list(available_columns.keys())
 
     # Create a container for the column selection
     with st.expander("Column Selection", expanded=True):
-        # Create a list of selected columns
+        # Create a list of selected columns with drag and drop
         selected_columns = st.multiselect(
             "Select columns to display",
             options=list(available_columns.keys()),
             default=st.session_state.column_order,
             key="column_selector"
         )
+        
+        # Add drag and drop functionality
+        st.markdown("""
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    const container = document.querySelector('.stMultiSelect');
+                    if (container) {
+                        container.setAttribute('draggable', 'true');
+                        container.addEventListener('dragstart', function(e) {
+                            e.dataTransfer.setData('text/plain', e.target.textContent);
+                        });
+                        container.addEventListener('dragover', function(e) {
+                            e.preventDefault();
+                        });
+                        container.addEventListener('drop', function(e) {
+                            e.preventDefault();
+                            const data = e.dataTransfer.getData('text/plain');
+                            const target = e.target;
+                            if (target && target.classList.contains('stMultiSelect')) {
+                                const items = Array.from(target.querySelectorAll('div'));
+                                const draggedItem = items.find(item => item.textContent === data);
+                                const targetIndex = items.indexOf(target);
+                                if (draggedItem && targetIndex !== -1) {
+                                    target.parentNode.insertBefore(draggedItem, target);
+                                }
+                            }
+                        });
+                    }
+                });
+            </script>
+        """, unsafe_allow_html=True)
         
         # Update session state with selected columns
         st.session_state.column_order = selected_columns
@@ -1100,6 +1131,22 @@ def show_sales_team_view(df):
     
     # Reorder columns based on user selection
     display_df = display_df[st.session_state.column_order]
+    
+    # Add drag and drop styling
+    st.markdown("""
+        <style>
+            .stMultiSelect {
+                cursor: move;
+                user-select: none;
+            }
+            .stMultiSelect:hover {
+                background-color: #f0f2f6;
+            }
+            .stMultiSelect:active {
+                opacity: 0.7;
+            }
+        </style>
+    """, unsafe_allow_html=True)
     
     st.dataframe(
         display_df,
