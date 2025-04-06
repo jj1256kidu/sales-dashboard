@@ -2,9 +2,77 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np
-from auth import check_password, init_session_state
+from auth import check_password, init_session_state, show_login_page
+
+# Custom CSS for the dashboard
+st.markdown("""
+    <style>
+        /* Custom header styles */
+        .custom-header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            color: white;
+        }
+        
+        .custom-header h1 {
+            margin: 0;
+            font-size: 2em;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        /* Metric styles */
+        .metric-label {
+            color: #2a5298;
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .metric-value {
+            color: #1e3c72;
+            font-size: 1.8em;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+        
+        /* Upload container */
+        .upload-container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        /* Info box */
+        .info-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .info-box h4 {
+            color: #2a5298;
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .info-box li {
+            margin-bottom: 5px;
+            color: #666;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 def show_data_input_view(df):
     """Display the data input section with both file upload and manual input options"""
@@ -235,4 +303,156 @@ def show_detailed_data_view(df):
 
     # Display filtered data
     st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">Filtered Data</h4>', unsafe_allow_html=True)
-    st.dataframe(filtered_df, use_container_width=True) 
+    st.dataframe(filtered_df, use_container_width=True)
+
+def show_quarterly_summary(df):
+    if df is None:
+        st.warning("Please upload your sales data to view quarterly summary")
+        return
+    
+    st.title("Quarterly Sales Summary")
+    
+    # Add quarter selection
+    quarters = sorted(df['Quarter'].unique())
+    selected_quarter = st.selectbox("Select Quarter", quarters)
+    
+    # Filter data for selected quarter
+    quarter_data = df[df['Quarter'] == selected_quarter]
+    
+    # Calculate metrics
+    total_pipeline = quarter_data[~quarter_data['Is_Won']]['Amount_Lacs'].sum()
+    total_closed = quarter_data[quarter_data['Is_Won']]['Amount_Lacs'].sum()
+    total_deals = len(quarter_data)
+    closed_deals = len(quarter_data[quarter_data['Is_Won']])
+    win_rate = (closed_deals / total_deals * 100) if total_deals > 0 else 0
+    
+    # Display metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total Pipeline", f"₹{int(total_pipeline)}L")
+    with col2:
+        st.metric("Closed Won", f"₹{int(total_closed)}L")
+    with col3:
+        st.metric("Total Deals", total_deals)
+    with col4:
+        st.metric("Win Rate", f"{int(win_rate)}%")
+    
+    # Practice-wise summary
+    st.subheader("Practice-wise Summary")
+    practice_summary = quarter_data.groupby('Practice').agg({
+        'Amount_Lacs': ['sum', 'count'],
+        'Is_Won': 'sum'
+    }).reset_index()
+    
+    practice_summary.columns = ['Practice', 'Total Amount', 'Total Deals', 'Closed Deals']
+    practice_summary['Win Rate'] = (practice_summary['Closed Deals'] / practice_summary['Total Deals'] * 100).round(1)
+    
+    st.dataframe(practice_summary, use_container_width=True)
+    
+    # Monthly trend
+    st.subheader("Monthly Trend")
+    monthly_data = quarter_data.groupby('Month').agg({
+        'Amount_Lacs': 'sum',
+        'Is_Won': 'sum'
+    }).reset_index()
+    
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=monthly_data['Month'],
+        y=monthly_data['Amount_Lacs'],
+        name='Total Amount',
+        marker_color='#4A90E2'
+    ))
+    fig.add_trace(go.Bar(
+        x=monthly_data['Month'],
+        y=monthly_data['Is_Won'],
+        name='Closed Deals',
+        marker_color='#2ECC71'
+    ))
+    
+    fig.update_layout(
+        barmode='group',
+        title='Monthly Sales Performance',
+        xaxis_title='Month',
+        yaxis_title='Amount (Lakhs)',
+        height=500
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+def show_previous_data_view(df):
+    if df is None:
+        st.warning("Please upload your sales data to view previous data")
+        return
+    
+    st.title("Previous Data Tracking")
+    
+    # Add year selection
+    years = sorted(df['Year'].unique())
+    selected_year = st.selectbox("Select Year", years)
+    
+    # Filter data for selected year
+    year_data = df[df['Year'] == selected_year]
+    
+    # Calculate metrics
+    total_pipeline = year_data[~year_data['Is_Won']]['Amount_Lacs'].sum()
+    total_closed = year_data[year_data['Is_Won']]['Amount_Lacs'].sum()
+    total_deals = len(year_data)
+    closed_deals = len(year_data[year_data['Is_Won']])
+    win_rate = (closed_deals / total_deals * 100) if total_deals > 0 else 0
+    
+    # Display metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric("Total Pipeline", f"₹{int(total_pipeline)}L")
+    with col2:
+        st.metric("Closed Won", f"₹{int(total_closed)}L")
+    with col3:
+        st.metric("Total Deals", total_deals)
+    with col4:
+        st.metric("Win Rate", f"{int(win_rate)}%")
+    
+    # Quarterly trend
+    st.subheader("Quarterly Trend")
+    quarterly_data = year_data.groupby('Quarter').agg({
+        'Amount_Lacs': 'sum',
+        'Is_Won': 'sum'
+    }).reset_index()
+    
+    fig = go.Figure()
+    fig.add_trace(go.Bar(
+        x=quarterly_data['Quarter'],
+        y=quarterly_data['Amount_Lacs'],
+        name='Total Amount',
+        marker_color='#4A90E2'
+    ))
+    fig.add_trace(go.Bar(
+        x=quarterly_data['Quarter'],
+        y=quarterly_data['Is_Won'],
+        name='Closed Deals',
+        marker_color='#2ECC71'
+    ))
+    
+    fig.update_layout(
+        barmode='group',
+        title='Quarterly Sales Performance',
+        xaxis_title='Quarter',
+        yaxis_title='Amount (Lakhs)',
+        height=500
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Practice-wise summary
+    st.subheader("Practice-wise Summary")
+    practice_summary = year_data.groupby('Practice').agg({
+        'Amount_Lacs': ['sum', 'count'],
+        'Is_Won': 'sum'
+    }).reset_index()
+    
+    practice_summary.columns = ['Practice', 'Total Amount', 'Total Deals', 'Closed Deals']
+    practice_summary['Win Rate'] = (practice_summary['Closed Deals'] / practice_summary['Total Deals'] * 100).round(1)
+    
+    st.dataframe(practice_summary, use_container_width=True) 
