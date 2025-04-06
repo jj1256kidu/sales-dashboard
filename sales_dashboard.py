@@ -491,6 +491,40 @@ def show_quarterly_summary():
     else:
         st.info("Please upload or select an Excel file to view the dashboard.")
 
+def show_login_page():
+    """Display the login page"""
+    st.markdown("""
+        <div class="custom-header">
+            <h1>Sales Dashboard Login</h1>
+            <p>Please enter your password to access the dashboard</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Create a centered container for the login form
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.markdown("""
+            <style>
+            .stTextInput > div > div > input {
+                background-color: white;
+                border-radius: 8px;
+                padding: 10px;
+                font-size: 1.1em;
+                border: 2px solid #e0e0e0;
+                transition: border-color 0.3s ease;
+            }
+            .stTextInput > div > div > input:focus {
+                border-color: #2a5298;
+                box-shadow: 0 0 0 2px rgba(42, 82, 152, 0.2);
+            }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        # Check password
+        if check_password():
+            st.rerun()
+
 def main():
     # Initialize session state
     init_session_state()
