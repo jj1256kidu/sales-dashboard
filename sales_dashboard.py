@@ -10,6 +10,7 @@ import os
 import glob
 import time
 from io import StringIO
+from pathlib import Path
 
 # Page configuration
 st.set_page_config(
@@ -327,6 +328,169 @@ def show_previous_data_view():
                 4. If parsing fails, try copying a smaller section first
             """)
 
+def load_excel_data(file_path):
+    """Load and process Excel data from both sheets"""
+    try:
+        # Read both sheets
+        st.write("Loading Excel file...")
+        current_df = pd.read_excel(file_path, sheet_name="Raw_Data")
+        previous_df = pd.read_excel(file_path, sheet_name="Previous Data")
+        
+        st.write("Raw_Data columns:", current_df.columns.tolist())
+        st.write("Previous Data columns:", previous_df.columns.tolist())
+        
+        # Select required columns
+        required_columns = ['Sales Owner', 'Committed', 'Upside', 'Closed Won', 'Function']
+        
+        # Check if all required columns exist
+        missing_columns = [col for col in required_columns if col not in current_df.columns]
+        if missing_columns:
+            st.error(f"Missing required columns in Raw_Data: {missing_columns}")
+            return None, None
+            
+        missing_columns = [col for col in required_columns if col not in previous_df.columns]
+        if missing_columns:
+            st.error(f"Missing required columns in Previous Data: {missing_columns}")
+            return None, None
+        
+        # Process current week data
+        current_df = current_df[required_columns].copy()
+        current_df['Week'] = 'Current'
+        
+        # Process previous week data
+        previous_df = previous_df[required_columns].copy()
+        previous_df['Week'] = 'Previous'
+        
+        st.write("Data loaded successfully!")
+        return current_df, previous_df
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        st.error("Please make sure your Excel file has two sheets named 'Raw_Data' and 'Previous Data'")
+        return None, None
+
+def calculate_summaries(current_df, previous_df):
+    """Calculate summaries for both Sales Owner and Function groups"""
+    # Combine current and previous data
+    combined_df = pd.concat([current_df, previous_df])
+    
+    # Group by Sales Owner
+    sales_df = combined_df.groupby(['Sales Owner', 'Week']).agg({
+        'Committed': 'sum',
+        'Upside': 'sum',
+        'Closed Won': 'sum'
+    }).reset_index()
+    
+    # Group by Function
+    function_df = combined_df.groupby(['Function', 'Week']).agg({
+        'Committed': 'sum',
+        'Upside': 'sum',
+        'Closed Won': 'sum'
+    }).reset_index()
+    
+    return sales_df, function_df
+
+def create_comparison_df(df, group_column):
+    """Create a comparison dataframe with current, previous, and delta values"""
+    # Pivot the data
+    pivot_df = df.pivot(index=group_column, columns='Week', values=['Committed', 'Upside', 'Closed Won'])
+    
+    # Calculate deltas
+    for metric in ['Committed', 'Upside', 'Closed Won']:
+        pivot_df[(metric, 'Delta')] = pivot_df[(metric, 'Current')] - pivot_df[(metric, 'Previous')]
+    
+    # Calculate total (Committed + Closed Won)
+    pivot_df[('Total', 'Current')] = pivot_df[('Committed', 'Current')] + pivot_df[('Closed Won', 'Current')]
+    pivot_df[('Total', 'Previous')] = pivot_df[('Committed', 'Previous')] + pivot_df[('Closed Won', 'Previous')]
+    pivot_df[('Total', 'Delta')] = pivot_df[('Total', 'Current')] - pivot_df[('Total', 'Previous')]
+    
+    return pivot_df
+
+def style_dataframe(df):
+    """Style the dataframe with color highlights for deltas"""
+    def color_delta(val):
+        if isinstance(val, (int, float)):
+            if val < 0:
+                return 'color: red'
+            elif val > 0:
+                return 'color: green'
+        return ''
+    
+    styled_df = df.style.applymap(color_delta, subset=pd.IndexSlice[:, [('Committed', 'Delta'), 
+                                                                       ('Upside', 'Delta'),
+                                                                       ('Closed Won', 'Delta'),
+                                                                       ('Total', 'Delta')]])
+    
+    # Format numbers
+    for col in df.columns:
+        if col[1] != 'Delta':
+            styled_df = styled_df.format({col: '{:,.0f}'})
+        else:
+            styled_df = styled_df.format({col: '{:+,.0f}'})
+    
+    return styled_df
+
+def show_quarterly_summary():
+    """Display the quarterly summary dashboard"""
+    st.markdown("""
+        <div class="custom-header">
+            <h1>📊 Quarterly Summary Dashboard</h1>
+            <p>Track and compare sales performance across weeks</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Create sidebar for file selection
+    st.sidebar.title("Data Source")
+    data_source = st.sidebar.radio("Select data source:", ["File Upload", "Data Folder"])
+    
+    current_df = None
+    previous_df = None
+    
+    if data_source == "File Upload":
+        uploaded_file = st.sidebar.file_uploader("Upload Excel file", type=['xlsx'])
+        if uploaded_file:
+            st.write("Processing uploaded file...")
+            current_df, previous_df = load_excel_data(uploaded_file)
+    else:
+        data_folder = Path("data")
+        if not data_folder.exists():
+            data_folder.mkdir()
+            st.info("Created data folder. Please add your Excel files here.")
+        
+        files = list(data_folder.glob("*.xlsx"))
+        if files:
+            selected_file = st.sidebar.selectbox("Select file:", files)
+            if selected_file:
+                st.write(f"Processing file: {selected_file}")
+                current_df, previous_df = load_excel_data(selected_file)
+        else:
+            st.warning("No Excel files found in the data folder. Please add your Excel files to the 'data' folder.")
+            return
+    
+    if current_df is not None and previous_df is not None:
+        try:
+            # Calculate summaries
+            st.write("Calculating summaries...")
+            sales_df, function_df = calculate_summaries(current_df, previous_df)
+            
+            # Create comparison dataframes
+            st.write("Creating comparison views...")
+            sales_comparison = create_comparison_df(sales_df, 'Sales Owner')
+            function_comparison = create_comparison_df(function_df, 'Function')
+            
+            # Display Sales Owner Summary
+            st.markdown('<h2 style="color: #2a5298;">👤 Sales Owner Summary</h2>', unsafe_allow_html=True)
+            st.dataframe(style_dataframe(sales_comparison), use_container_width=True)
+            
+            # Display Function Overview
+            st.markdown('<h2 style="color: #2a5298;">🏢 Function Overview</h2>', unsafe_allow_html=True)
+            st.dataframe(style_dataframe(function_comparison), use_container_width=True)
+            
+        except Exception as e:
+            st.error(f"Error processing data: {str(e)}")
+            st.error("Please check your data format and try again.")
+    else:
+        st.info("Please upload or select an Excel file to view the dashboard.")
+
 def main():
     # Initialize session state
     init_session_state()
@@ -352,9 +516,7 @@ def main():
     elif page == "Sales Team":
         show_sales_team_view(st.session_state.df)
     elif page == "Quarterly Summary":
-        # Import and run the quarterly dashboard
-        from quarterly_dashboard import main as quarterly_main
-        quarterly_main()
+        show_quarterly_summary()
     elif page == "Previous Data":
         show_previous_data_view()
 
