@@ -1607,13 +1607,14 @@ def main():
         )
         st.session_state.current_view = selected.lower().replace(" ", "_")
         
-        # File upload section
+        # Single data input area
         st.markdown("""
             <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
                 <h3 style='color: #2a5298; margin: 0; font-size: 1.2em; font-weight: 600;'>📤 Upload Data</h3>
             </div>
         """, unsafe_allow_html=True)
         
+        # Current week data upload
         uploaded_file = st.file_uploader("Upload Current Week Data", type=['xlsx', 'xls'])
         if uploaded_file is not None:
             try:
@@ -1623,7 +1624,7 @@ def main():
                 
                 # Show sheet selection dropdown
                 selected_sheet = st.selectbox(
-                    "Select Sheet to View",
+                    "Select Current Week Sheet",
                     options=sheet_names,
                     key="current_sheet_select"
                 )
@@ -1633,17 +1634,12 @@ def main():
                 st.session_state.df = df
                 st.session_state.raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
                 st.session_state.selected_sheet = selected_sheet
-                st.success(f"Successfully loaded sheet '{selected_sheet}' with {len(df):,} records")
+                st.success(f"Successfully loaded current week sheet '{selected_sheet}' with {len(df):,} records")
                 
             except Exception as e:
-                st.error(f"Error reading file: {str(e)}")
+                st.error(f"Error reading current week file: {str(e)}")
         
-        st.markdown("""
-            <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
-                <h3 style='color: #2a5298; margin: 0; font-size: 1.2em; font-weight: 600;'>📤 Upload Previous Week Data</h3>
-            </div>
-        """, unsafe_allow_html=True)
-        
+        # Previous week data upload
         previous_week_file = st.file_uploader("Upload Previous Week Data", type=['xlsx', 'xls'])
         if previous_week_file is not None:
             try:
