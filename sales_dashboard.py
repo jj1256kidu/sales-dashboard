@@ -998,7 +998,7 @@ def show_sales_team():
         
         with col1:
             # Sales Owner filter
-            team_members = sorted(df['Sales Team Member'].unique())
+            team_members = sorted(df['Sales Owner'].unique())
             selected_team = col1.selectbox("👤 Sales Owner", ["All Team Members"] + list(team_members))
         
         with col2:
@@ -1019,7 +1019,7 @@ def show_sales_team():
         
         with col5:
             # Year filter
-            years = sorted(df['Date'].dt.year.unique())
+            years = sorted(df['Expected Close Date'].dt.year.unique())
             selected_year = col5.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
         
         with col6:
@@ -1029,7 +1029,7 @@ def show_sales_team():
         
         with col7:
             # Status filter
-            statuses = sorted(df['Status'].unique())
+            statuses = sorted(df['Sales Stage'].unique())
             selected_status = col7.selectbox("🎯 Status", ["All Status"] + list(statuses))
         
         with col8:
@@ -1052,9 +1052,9 @@ def show_sales_team():
     
     if len(filtered_df) > 0:
         # Calculate common metrics once
-        total_pipeline = filtered_df['Deal Value'].sum()
+        total_pipeline = filtered_df['Amount'].sum() / 100000  # Convert to lakhs
         total_deals = len(filtered_df)
-        closed_won = len(filtered_df[filtered_df['Status'] == 'Closed Won'])
+        closed_won = len(filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)])
         win_rate = (closed_won / total_deals * 100) if total_deals > 0 else 0
         avg_deal_size = total_pipeline / total_deals if total_deals > 0 else 0
         
@@ -1090,12 +1090,13 @@ def show_sales_team():
         st.markdown("### 👥 Team Performance")
         
         # Calculate team metrics once
-        team_metrics = filtered_df.groupby('Sales Team Member').agg({
-            'Deal Value': ['sum', 'count'],
-            'Status': lambda x: (x == 'Closed Won').sum()
+        team_metrics = filtered_df.groupby('Sales Owner').agg({
+            'Amount': lambda x: x.sum() / 100000,  # Convert to lakhs
+            'Sales Stage': 'count',
+            'Sales Stage': lambda x: x.str.contains('Won', case=False, na=False).sum()
         }).reset_index()
         
-        team_metrics.columns = ['Sales Team Member', 'Total Pipeline', 'Total Deals', 'Closed Won']
+        team_metrics.columns = ['Sales Owner', 'Total Pipeline', 'Total Deals', 'Closed Won']
         team_metrics['Win Rate'] = (team_metrics['Closed Won'] / team_metrics['Total Deals'] * 100).round(1)
         team_metrics['Average Deal Size'] = (team_metrics['Total Pipeline'] / team_metrics['Total Deals']).round(2)
         
@@ -1112,7 +1113,7 @@ def show_sales_team():
         # Team performance visualization
         fig = px.bar(
             team_metrics,
-            x='Sales Team Member',
+            x='Sales Owner',
             y=['Total Pipeline', 'Closed Won'],
             title='Pipeline vs Closed Won by Team Member',
             barmode='group',
@@ -1126,8 +1127,9 @@ def show_sales_team():
             
             # Calculate practice metrics once
             practice_metrics = filtered_df.groupby('Practice').agg({
-                'Deal Value': ['sum', 'count'],
-                'Status': lambda x: (x == 'Closed Won').sum()
+                'Amount': lambda x: x.sum() / 100000,  # Convert to lakhs
+                'Sales Stage': 'count',
+                'Sales Stage': lambda x: x.str.contains('Won', case=False, na=False).sum()
             }).reset_index()
             
             practice_metrics.columns = ['Practice', 'Total Pipeline', 'Total Deals', 'Closed Won']
@@ -1162,11 +1164,12 @@ def show_sales_team():
             
             # Practice distribution by team member
             st.markdown("#### Practice Distribution by Team")
-            practice_dist = filtered_df.groupby(['Sales Team Member', 'Practice'])['Deal Value'].sum().reset_index()
+            practice_dist = filtered_df.groupby(['Sales Owner', 'Practice'])['Amount'].sum().reset_index()
+            practice_dist['Amount'] = practice_dist['Amount'] / 100000  # Convert to lakhs
             fig = px.bar(
                 practice_dist,
-                x='Sales Team Member',
-                y='Deal Value',
+                x='Sales Owner',
+                y='Amount',
                 color='Practice',
                 title='Practice Distribution by Team Member',
                 template='plotly_white'
