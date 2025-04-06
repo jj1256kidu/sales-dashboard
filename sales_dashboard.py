@@ -1108,7 +1108,9 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
 
+    # Create a single row with all filters
     col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    
     with col1:
         filters = {
             'selected_member': st.selectbox(
@@ -1117,8 +1119,10 @@ def show_sales_team():
                 key="team_member_filter"
             )
         }
+    
     with col2:
         filters['search'] = st.text_input("🔍 Search", placeholder="Search...")
+    
     with col3:
         if 'Practice' in df.columns:
             practices = sorted(df['Practice'].dropna().unique())
@@ -1132,44 +1136,40 @@ def show_sales_team():
         else:
             st.error("Practice column not found in the data")
             filters['practices'] = []
+    
     with col4:
         fiscal_order = ['April', 'May', 'June', 'July', 'August', 'September', 
                        'October', 'November', 'December', 'January', 'February', 'March']
         available_months = df['Month'].dropna().unique().tolist()
         available_months.sort(key=lambda x: fiscal_order.index(x) if x in fiscal_order else len(fiscal_order))
         filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months)
+    
     with col5:
         filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
+    
     with col6:
         filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
+    
     with col7:
         probability_options = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%", "Custom Range"]
         filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_options)
-        # Step 1: Get current values safely
-        min_prob_init = str(filters.get('min_prob', 0))
-        max_prob_init = str(filters.get('max_prob', 100))
-        if filters.get('probability_filter') == "Custom Range":
-            col6a, col6b = st.columns(2)
-            with col6a:
-                min_prob_input = st.text_input("Min %", value=min_prob_init, key="custom_min_prob_input")
-
-            with col6b:
-                max_prob_input = st.text_input("Max %", value=max_prob_init, key="custom_max_prob_input")
-                    # Step 3: Validate and convert
+        if filters['probability_filter'] == "Custom Range":
+            col7a, col7b = st.columns(2)
+            with col7a:
+                min_prob_input = st.text_input("Min %", value="0", key="custom_min_prob_input")
+            with col7b:
+                max_prob_input = st.text_input("Max %", value="100", key="custom_max_prob_input")
             try:
                 min_prob = int(min_prob_input)
-            except ValueError:
-                min_prob = 0
-        
-            try:
                 max_prob = int(max_prob_input)
+                filters['min_prob'] = min_prob
+                filters['max_prob'] = max_prob
+                filters['custom_prob_range'] = f"{min_prob}-{max_prob}%"
             except ValueError:
-                max_prob = 100
-
-            filters['min_prob'] = min_prob
-            filters['max_prob'] = max_prob
-            filters['custom_prob_range'] = f"{min_prob}-{max_prob}%"
-
+                filters['min_prob'] = 0
+                filters['max_prob'] = 100
+                filters['custom_prob_range'] = "0-100%"
+    
     with col8:
         status_options = ["All Status", "Committed for the Month", "Upsides for the Month"]
         filters['status_filter'] = st.selectbox("🎯 Status", options=status_options)
@@ -1181,6 +1181,7 @@ def show_sales_team():
             current_month = pd.Timestamp.now().strftime('%B')
             mask = (df['Month'] == current_month) & (df['Probability_Num'].between(25, 75))
             filtered_df = df[mask]
+    
     with col8:
         filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All Focus"] + sorted(df['KritiKal Focus Areas'].dropna().unique().tolist()))
 
