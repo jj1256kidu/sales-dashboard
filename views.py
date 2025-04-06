@@ -1028,48 +1028,6 @@ def show_sales_team_view(df):
         </div>
     """, unsafe_allow_html=True)
 
-    # Column selection and ordering
-    available_columns = {
-        'Organization Name': 'Organization Name',
-        'Opportunity Name': 'Opportunity Name',
-        'Geography': 'Geography',
-        'Expected Close Date': 'Expected Close Date',
-        'Probability': 'Probability',
-        'Amount (In Lacs)': 'Amount (In Lacs)',
-        'Weighted Revenue (In Lacs)': 'Weighted Revenue (In Lacs)',
-        'Sales Owner': 'Sales Owner',
-        'Tech Owner': 'Tech Owner',
-        'Business Owner': 'Business Owner',
-        'Hunting /farming': 'Hunting /farming',
-        'KritiKal Focus Areas': 'KritiKal Focus Areas',
-        'Practice': 'Practice'
-    }
-
-    # Initialize session state for column order if not exists
-    if 'column_order' not in st.session_state:
-        st.session_state.column_order = list(available_columns.keys())
-
-    # Column selection UI
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.markdown("**Select columns to display:**")
-    with col2:
-        if st.button("Reset to Default"):
-            st.session_state.column_order = list(available_columns.keys())
-
-    # Create a container for the column selection
-    with st.expander("Column Selection", expanded=True):
-        # Create a list of selected columns
-        selected_columns = st.multiselect(
-            "Select columns to display",
-            options=list(available_columns.keys()),
-            default=st.session_state.column_order,
-            key="column_selector"
-        )
-        
-        # Update session state with selected columns
-        st.session_state.column_order = selected_columns
-
     filtered_df = filtered_df.reset_index(drop=True)
     filtered_df.index = filtered_df.index + 1
     
@@ -1097,9 +1055,6 @@ def show_sales_team_view(df):
     
     display_df.index = range(1, len(display_df) + 1)
     display_df.index.name = 'S.No'
-    
-    # Reorder columns based on user selection
-    display_df = display_df[st.session_state.column_order]
     
     st.dataframe(
         display_df,
