@@ -434,23 +434,22 @@ def show_sales_team_view(st):
     
     df = st.session_state.df
     
-    # Team filters
-    st.sidebar.header("Team Filters")
+    # Filters section
+    st.sidebar.header("Filters")
+    
+    # Practice filter
+    practices = df['Practice'].unique()
+    selected_practices = st.sidebar.multiselect("Select Practices", practices)
     
     # Team member filter
     team_members = df['Sales Team Member'].unique()
     selected_team = st.sidebar.multiselect("Select Team Members", team_members)
     
-    # Practice filter
-    st.sidebar.subheader("Practice Filters")
-    practices = df['Practice'].unique()
-    selected_practices = st.sidebar.multiselect("Select Practices", practices)
-    
     # Apply filters
-    if selected_team:
-        df = df[df['Sales Team Member'].isin(selected_team)]
     if selected_practices:
         df = df[df['Practice'].isin(selected_practices)]
+    if selected_team:
+        df = df[df['Sales Team Member'].isin(selected_team)]
     
     # Calculate team metrics
     team_metrics = df.groupby('Sales Team Member').agg({
