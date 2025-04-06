@@ -1420,152 +1420,123 @@ def show_week_over_week_delta():
     previous_data = previous_df[previous_sheet] if isinstance(previous_df, dict) else previous_df
     
     # Ensure both dataframes have the same structure
-    required_columns = ['Organization Name', 'Opportunity Name', 'Deal Value', 'Status', 'Sales Team Member', 'Practice']
+    required_columns = ['Organization Name', 'Opportunity Name', 'Deal Value', 'Status', 'Sales Team Member', 'Practice', 'Quarter']
     for col in required_columns:
         if col not in current_data.columns or col not in previous_data.columns:
             st.error(f"Required column '{col}' not found in one or both datasets")
             return
     
-    # Calculate metrics for current week
-    current_metrics = {
-        'Total Pipeline': current_data['Deal Value'].sum(),
-        'Total Deals': len(current_data),
-        'Closed Won': current_data[current_data['Status'] == 'Closed Won']['Deal Value'].sum(),
-        'Total Deals Count': len(current_data),
-        'Closed Won Count': len(current_data[current_data['Status'] == 'Closed Won'])
-    }
+    # Quarter filter
+    quarters = sorted(current_data['Quarter'].unique())
+    selected_quarter = st.selectbox("Select Quarter", options=["All Quarters"] + quarters.tolist())
     
-    # Calculate metrics for previous week
-    previous_metrics = {
-        'Total Pipeline': previous_data['Deal Value'].sum(),
-        'Total Deals': len(previous_data),
-        'Closed Won': previous_data[previous_data['Status'] == 'Closed Won']['Deal Value'].sum(),
-        'Total Deals Count': len(previous_data),
-        'Closed Won Count': len(previous_data[previous_data['Status'] == 'Closed Won'])
-    }
+    # Filter data by quarter if selected
+    if selected_quarter != "All Quarters":
+        current_data = current_data[current_data['Quarter'] == selected_quarter]
+        previous_data = previous_data[previous_data['Quarter'] == selected_quarter]
     
-    # Calculate deltas
-    delta_metrics = {
-        'Total Pipeline': current_metrics['Total Pipeline'] - previous_metrics['Total Pipeline'],
-        'Total Deals': current_metrics['Total Deals'] - previous_metrics['Total Deals'],
-        'Closed Won': current_metrics['Closed Won'] - previous_metrics['Closed Won'],
-        'Total Deals Count': current_metrics['Total Deals Count'] - previous_metrics['Total Deals Count'],
-        'Closed Won Count': current_metrics['Closed Won Count'] - previous_metrics['Closed Won Count']
-    }
+    # Calculate committed deals (assuming committed means deals with high probability)
+    current_committed = current_data[current_data['Status'].str.contains('Committed', case=False, na=False)]
+    previous_committed = previous_data[previous_data['Status'].str.contains('Committed', case=False, na=False)]
     
-    # Display metrics in cards
-    col1, col2, col3, col4, col5 = st.columns(5)
+    # Sales Owner Commitment Table
+    st.markdown("### Sales Owner Commitment Comparison")
     
-    with col1:
-        st.metric(
-            "Total Pipeline",
-            f"₹{current_metrics['Total Pipeline']/100000:,.0f}L",
-            f"₹{delta_metrics['Total Pipeline']/100000:,.0f}L",
-            delta_color="normal"
-        )
-    
-    with col2:
-        st.metric(
-            "Total Deals",
-            f"{current_metrics['Total Deals']:,}",
-            f"{delta_metrics['Total Deals']:,}",
-            delta_color="normal"
-        )
-    
-    with col3:
-        st.metric(
-            "Closed Won",
-            f"₹{current_metrics['Closed Won']/100000:,.0f}L",
-            f"₹{delta_metrics['Closed Won']/100000:,.0f}L",
-            delta_color="normal"
-        )
-    
-    with col4:
-        st.metric(
-            "Total Deals Count",
-            f"{current_metrics['Total Deals Count']:,}",
-            f"{delta_metrics['Total Deals Count']:,}",
-            delta_color="normal"
-        )
-    
-    with col5:
-        st.metric(
-            "Closed Won Count",
-            f"{current_metrics['Closed Won Count']:,}",
-            f"{delta_metrics['Closed Won Count']:,}",
-            delta_color="normal"
-        )
-    
-    # Team-wise comparison
-    st.subheader("Team-wise Comparison")
-    current_team = current_data.groupby('Sales Team Member').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Closed Won').sum()
+    # Group by Sales Owner
+    current_owner_metrics = current_committed.groupby('Sales Team Member').agg({
+        'Deal Value': 'sum'
     }).reset_index()
     
-    previous_team = previous_data.groupby('Sales Team Member').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Closed Won').sum()
+    previous_owner_metrics = previous_committed.groupby('Sales Team Member').agg({
+        'Deal Value': 'sum'
     }).reset_index()
     
     # Merge current and previous data
-    team_comparison = pd.merge(
-        current_team,
-        previous_team,
+    owner_comparison = pd.merge(
+        current_owner_metrics,
+        previous_owner_metrics,
         on='Sales Team Member',
+        how='outer',
         suffixes=('_current', '_previous')
-    )
+    ).fillna(0)
     
     # Calculate deltas
-    team_comparison['Pipeline Delta'] = team_comparison['Deal Value_current'] - team_comparison['Deal Value_previous']
-    team_comparison['Closed Won Delta'] = team_comparison['Status_current'] - team_comparison['Status_previous']
+    owner_comparison['Delta'] = owner_comparison['Deal Value_current'] - owner_comparison['Deal Value_previous']
+    owner_comparison['Delta %'] = (owner_comparison['Delta'] / owner_comparison['Deal Value_previous'] * 100).round(1)
     
-    # Display team comparison
+    # Add total row
+    total_row = pd.DataFrame({
+        'Sales Team Member': ['Total'],
+        'Deal Value_current': [owner_comparison['Deal Value_current'].sum()],
+        'Deal Value_previous': [owner_comparison['Deal Value_previous'].sum()],
+        'Delta': [owner_comparison['Delta'].sum()],
+        'Delta %': [(owner_comparison['Delta'].sum() / owner_comparison['Deal Value_previous'].sum() * 100).round(1)]
+    })
+    owner_comparison = pd.concat([owner_comparison, total_row], ignore_index=True)
+    
+    # Format the table
+    owner_comparison['Deal Value_current'] = owner_comparison['Deal Value_current'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    owner_comparison['Deal Value_previous'] = owner_comparison['Deal Value_previous'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    owner_comparison['Delta'] = owner_comparison['Delta'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    owner_comparison['Delta %'] = owner_comparison['Delta %'].apply(lambda x: f"{x}%")
+    
+    # Display the table with styling
     st.dataframe(
-        team_comparison.style.format({
-            'Deal Value_current': '₹{:,.2f}',
-            'Deal Value_previous': '₹{:,.2f}',
-            'Pipeline Delta': '₹{:,.2f}',
-            'Status_current': '{:,.0f}',
-            'Status_previous': '{:,.0f}',
-            'Closed Won Delta': '{:,.0f}'
-        })
+        owner_comparison.style.apply(
+            lambda x: ['color: red' if float(str(x['Delta']).replace('₹', '').replace('L', '')) < 0 else 'color: green' for _ in x],
+            subset=['Delta']
+        ),
+        use_container_width=True
     )
     
-    # Practice-wise comparison
-    st.subheader("Practice-wise Comparison")
-    current_practice = current_data.groupby('Practice').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Closed Won').sum()
+    # Function Overview Commitment Table
+    st.markdown("### Function Overview Commitment Comparison")
+    
+    # Group by Practice/Function
+    current_function_metrics = current_committed.groupby('Practice').agg({
+        'Deal Value': 'sum'
     }).reset_index()
     
-    previous_practice = previous_data.groupby('Practice').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Closed Won').sum()
+    previous_function_metrics = previous_committed.groupby('Practice').agg({
+        'Deal Value': 'sum'
     }).reset_index()
     
     # Merge current and previous data
-    practice_comparison = pd.merge(
-        current_practice,
-        previous_practice,
+    function_comparison = pd.merge(
+        current_function_metrics,
+        previous_function_metrics,
         on='Practice',
+        how='outer',
         suffixes=('_current', '_previous')
-    )
+    ).fillna(0)
     
     # Calculate deltas
-    practice_comparison['Pipeline Delta'] = practice_comparison['Deal Value_current'] - practice_comparison['Deal Value_previous']
-    practice_comparison['Closed Won Delta'] = practice_comparison['Status_current'] - practice_comparison['Status_previous']
+    function_comparison['Delta'] = function_comparison['Deal Value_current'] - function_comparison['Deal Value_previous']
+    function_comparison['Delta %'] = (function_comparison['Delta'] / function_comparison['Deal Value_previous'] * 100).round(1)
     
-    # Display practice comparison
+    # Add total row
+    total_row = pd.DataFrame({
+        'Practice': ['Total'],
+        'Deal Value_current': [function_comparison['Deal Value_current'].sum()],
+        'Deal Value_previous': [function_comparison['Deal Value_previous'].sum()],
+        'Delta': [function_comparison['Delta'].sum()],
+        'Delta %': [(function_comparison['Delta'].sum() / function_comparison['Deal Value_previous'].sum() * 100).round(1)]
+    })
+    function_comparison = pd.concat([function_comparison, total_row], ignore_index=True)
+    
+    # Format the table
+    function_comparison['Deal Value_current'] = function_comparison['Deal Value_current'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    function_comparison['Deal Value_previous'] = function_comparison['Deal Value_previous'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    function_comparison['Delta'] = function_comparison['Delta'].apply(lambda x: f"₹{x/100000:,.0f}L")
+    function_comparison['Delta %'] = function_comparison['Delta %'].apply(lambda x: f"{x}%")
+    
+    # Display the table with styling
     st.dataframe(
-        practice_comparison.style.format({
-            'Deal Value_current': '₹{:,.2f}',
-            'Deal Value_previous': '₹{:,.2f}',
-            'Pipeline Delta': '₹{:,.2f}',
-            'Status_current': '{:,.0f}',
-            'Status_previous': '{:,.0f}',
-            'Closed Won Delta': '{:,.0f}'
-        })
+        function_comparison.style.apply(
+            lambda x: ['color: red' if float(str(x['Delta']).replace('₹', '').replace('L', '')) < 0 else 'color: green' for _ in x],
+            subset=['Delta']
+        ),
+        use_container_width=True
     )
 
 def main():
