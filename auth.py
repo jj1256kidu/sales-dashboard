@@ -84,6 +84,7 @@ def verify_password(username, password):
     return False
 
 def show_login_page():
+    """Display the login page with username and password fields"""
     # Hide sidebar and main menu
     st.markdown("""
         <style>
@@ -103,7 +104,7 @@ def show_login_page():
 
             /* Custom styles for form elements */
             [data-testid="stTextInput"] > div > div > input {
-                background-color: #000 !important;
+                background-color: rgba(0, 0, 0, 0.5) !important;
                 border: 2px solid #00F5FF !important;
                 border-radius: 25px !important;
                 color: #00F5FF !important;
@@ -111,6 +112,8 @@ def show_login_page():
                 padding: 12px 25px !important;
                 font-family: 'Orbitron', sans-serif !important;
                 box-shadow: 0 0 10px rgba(0, 245, 255, 0.3) !important;
+                margin-bottom: 15px !important;
+                width: 100% !important;
             }
 
             [data-testid="stTextInput"] > div > div > input:focus {
@@ -135,6 +138,7 @@ def show_login_page():
                 font-family: 'Orbitron', sans-serif !important;
                 text-transform: uppercase !important;
                 letter-spacing: 2px !important;
+                margin-top: 20px !important;
             }
 
             [data-testid="stButton"] > button:hover {
@@ -169,15 +173,36 @@ def show_login_page():
                 border: 2px solid #00F5FF;
             }
 
-            /* Title */
+            /* Title and subtitle */
             .login-box h1 {
                 color: #00F5FF;
                 text-align: center;
-                margin-bottom: 30px;
+                margin-bottom: 10px;
                 font-size: 2.5em;
                 font-weight: 700;
                 text-shadow: 0 0 10px rgba(0, 245, 255, 0.5);
                 font-family: 'Orbitron', sans-serif;
+            }
+
+            .login-box p {
+                color: rgba(0, 245, 255, 0.7);
+                text-align: center;
+                margin-bottom: 30px;
+                font-size: 1.1em;
+            }
+
+            /* Form elements */
+            .form-group {
+                margin-bottom: 20px;
+            }
+
+            .form-group label {
+                display: block;
+                color: #00F5FF;
+                margin-bottom: 8px;
+                font-size: 0.9em;
+                text-transform: uppercase;
+                letter-spacing: 1px;
             }
 
             /* Remember me and Forgot password */
@@ -267,24 +292,30 @@ def show_login_page():
             <div class="container">
                 <div class="login-box">
                     <h1>Welcome Back</h1>
+                    <p>Please sign in to continue</p>
                     <div id="login-form">
+    """, unsafe_allow_html=True)
+
+    # Add custom font
+    st.markdown("""
+        <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     """, unsafe_allow_html=True)
 
     # Create columns for centering the form
     col1, col2, col3 = st.columns([1, 2, 1])
 
     with col2:
-        username = st.text_input("", value="", placeholder="Username", key="login_username", label_visibility="collapsed")
-        password = st.text_input("", value="", placeholder="Password", type="password", key="login_password", label_visibility="collapsed")
+        # Username input
+        st.markdown('<div class="form-group"><label>Username</label></div>', unsafe_allow_html=True)
+        username = st.text_input("", value="", placeholder="Enter your username", key="login_username", label_visibility="collapsed")
 
-        if st.button("LOGIN", key="login_button"):
-            if verify_password(username, password):
-                st.session_state["authenticated"] = True
-                st.session_state["username"] = username
-                st.success("Login successful!")
+        # Password input
+        st.markdown('<div class="form-group"><label>Password</label></div>', unsafe_allow_html=True)
+        password = st.text_input("", value="", placeholder="Enter your password", type="password", key="login_password", label_visibility="collapsed")
+
+        if st.button("SIGN IN", key="login_button"):
+            if check_password():
                 st.rerun()
-            else:
-                st.error("Invalid username or password")
 
         # Remember me and Forgot password
         st.markdown("""
