@@ -196,7 +196,20 @@ def show_data_input_view(df):
             help="Upload your sales data in Excel format"
         )
         if uploaded_file is not None:
-            return uploaded_file
+            try:
+                # Save the uploaded file
+                with open("sales_data.xlsx", "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                st.success("File uploaded successfully!")
+                
+                # Reload the data
+                st.session_state.df = load_data()
+                if not st.session_state.df.empty:
+                    st.success("Data loaded successfully!")
+                else:
+                    st.error("Failed to load the uploaded data. Please check the format.")
+            except Exception as e:
+                st.error(f"Error processing uploaded file: {str(e)}")
 
     with tab2:
         st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">Manual Data Input</h4>', unsafe_allow_html=True)
@@ -438,15 +451,9 @@ def main():
         else:
             st.warning("No data available. Please upload data first.")
     elif page == "Quarterly Summary":
-        if st.session_state.df is not None and not st.session_state.df.empty:
-            show_quarterly_summary()
-        else:
-            st.warning("No data available. Please upload data first.")
+        show_quarterly_summary()
     elif page == "Previous Data":
-        if st.session_state.df is not None and not st.session_state.df.empty:
-            show_previous_data_view()
-        else:
-            st.warning("No data available. Please upload data first.")
+        show_previous_data_view()
 
 if __name__ == "__main__":
     main()
