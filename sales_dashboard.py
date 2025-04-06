@@ -303,7 +303,7 @@ def process_data(df):
     df = df.copy()
     
     # Convert dates and calculate time-based columns at once
-    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', errors='coerce')
+    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', dayfirst=True, errors='coerce')
     df['Month'] = df['Expected Close Date'].dt.strftime('%B')
     df['Year'] = df['Expected Close Date'].dt.year
     df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
