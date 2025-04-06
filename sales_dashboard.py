@@ -1580,9 +1580,34 @@ def main():
         st.session_state.previousweek_raw_data = None
     if 'selected_sheet' not in st.session_state:
         st.session_state.selected_sheet = None
+    if 'current_view' not in st.session_state:
+        st.session_state.current_view = 'data_input'
+    if 'date_filter' not in st.session_state:
+        st.session_state.date_filter = None
+    if 'selected_practice' not in st.session_state:
+        st.session_state.selected_practice = 'All'
+    if 'selected_stage' not in st.session_state:
+        st.session_state.selected_stage = 'All'
+    if 'reset_triggered' not in st.session_state:
+        st.session_state.reset_triggered = False
+    if 'selected_team_member' not in st.session_state:
+        st.session_state.selected_team_member = None
     
-    # Sidebar for file uploads
+    # Keep a single "sales_target" in session state
+    if 'sales_target' not in st.session_state:
+        st.session_state.sales_target = 0.0  # Default target in Lakhs
+    
+    # Sidebar for file uploads and navigation
     with st.sidebar:
+        st.title("Navigation")
+        selected = st.radio(
+            "Select View",
+            options=["Data Input", "Overview", "Sales Team", "Detailed Data", "Week-over-Week Delta"],
+            key="navigation"
+        )
+        st.session_state.current_view = selected.lower().replace(" ", "_")
+        
+        # File upload section
         st.markdown("""
             <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
                 <h3 style='color: #2a5298; margin: 0; font-size: 1.2em; font-weight: 600;'>📤 Upload Data</h3>
@@ -1641,24 +1666,16 @@ def main():
             except Exception as e:
                 st.error(f"Error reading previous week file: {str(e)}")
     
-    # Main content
-    st.title("📊 Sales Dashboard")
-    
-    # Navigation
-    view = st.radio(
-        "Select View",
-        ["Overview", "Sales Team", "Detailed View", "Week-over-Week Delta"],
-        horizontal=True,
-        label_visibility="collapsed"
-    )
-    
-    if view == "Overview":
+    # Main content based on selected view
+    if st.session_state.current_view == "data_input":
+        show_data_input()
+    elif st.session_state.current_view == "overview":
         show_overview()
-    elif view == "Sales Team":
+    elif st.session_state.current_view == "sales_team":
         show_sales_team()
-    elif view == "Detailed View":
+    elif st.session_state.current_view == "detailed_data":
         show_detailed()
-    elif view == "Week-over-Week Delta":
+    elif st.session_state.current_view == "week_over_week_delta":
         show_week_over_week_delta()
 
 if __name__ == "__main__":
