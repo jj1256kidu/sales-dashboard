@@ -901,10 +901,16 @@ def show_sales_team_view(df):
     with col2:
         filters['search'] = st.text_input("🔍 Search", placeholder="Search...")
     with col3:
-        fiscal_order = ['April', 'May', 'June', 'July', 'August', 'September', 
-                       'October', 'November', 'December', 'January', 'February', 'March']
+        # Define fiscal year months in order
+        fiscal_months = [
+            'April', 'May', 'June', 'July', 'August', 'September',
+            'October', 'November', 'December', 'January', 'February', 'March'
+        ]
+        
+        # Get available months from data and sort them according to fiscal year order
         available_months = df['Month'].dropna().unique().tolist()
-        available_months.sort(key=lambda x: fiscal_order.index(x) if x in fiscal_order else len(fiscal_order))
+        available_months.sort(key=lambda x: fiscal_months.index(x) if x in fiscal_months else len(fiscal_months))
+        
         filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months)
     with col4:
         filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
