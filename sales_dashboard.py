@@ -177,24 +177,22 @@ def main():
     st.sidebar.title("Navigation")
     page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team", "Meeting Data"])
 
-    # Load data
-    df = load_data()
+    # Load data for Overview and Sales Team views
+    if page in ["Overview", "Sales Team"]:
+        df = load_data()
+        if df.empty:
+            st.warning("Please upload sales data in the Data Input section first.")
+            return
 
     # Show appropriate view based on selection
     if page == "Data Input":
-        show_data_input_view(df)
+        show_data_input_view(None)  # No need to load data for Data Input
     elif page == "Overview":
-        if not df.empty:
-            show_overview_view(df)
-        else:
-            st.warning("Please upload data first to view the Overview.")
+        show_overview_view(df)
     elif page == "Sales Team":
-        if not df.empty:
-            show_sales_team_view(df)
-        else:
-            st.warning("Please upload data first to view the Sales Team data.")
+        show_sales_team_view(df)
     elif page == "Meeting Data":
-        show_meeting_data_view()
+        show_meeting_data_view()  # Meeting Data has its own data loading logic
 
 def show_meeting_data_view():
     """Display the Meeting Data Viewer section"""
