@@ -4,6 +4,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from datetime import datetime
 import numpy as np
+import os
 from views import show_data_input_view, show_overview_view, show_sales_team_view, show_detailed_data_view, show_login_page
 from auth import check_password, init_session_state
 
@@ -104,11 +105,71 @@ if 'locked_until' not in st.session_state:
 if 'is_logged_in' not in st.session_state:
     st.session_state.is_logged_in = False
 
+def load_data():
+    """Load and process the sales data"""
+    try:
+        # Check if data file exists
+        if not os.path.exists("sales_data.xlsx"):
+            st.warning("No data file found. Please upload data first.")
+            return pd.DataFrame()  # Return empty dataframe if no file exists
+        
+        # Read the Excel file
+        df = pd.read_excel("sales_data.xlsx")
+        
+        # Check if dataframe is empty
+        if df.empty:
+            st.warning("The data file is empty. Please upload valid data.")
+            return pd.DataFrame()
+            
+        # Check for required columns
+        required_columns = ['Expected Close Date', 'Year in FY', 'Probability', 
+                          'Sales Stage', 'Amount', 'Sales Owner']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            st.error(f"Missing required columns: {', '.join(missing_columns)}")
+            return pd.DataFrame()
+        
+        # Process dates and calculate time-based columns
+        df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
+        df['Month'] = df['Expected Close Date'].dt.strftime('%B')
+        df['Year'] = df['Year in FY']  # Use Year in FY directly
+        df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
+        
+        # Convert probability and calculate numeric values
+        def convert_probability(x):
+            try:
+                if pd.isna(x):
+                    return 0
+                if isinstance(x, str):
+                    x = x.rstrip('%')
+                return float(x)
+            except:
+                return 0
+        
+        df['Probability_Num'] = df['Probability'].apply(convert_probability)
+        
+        # Pre-calculate common flags and metrics
+        df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
+        df['Amount_Lacs'] = df['Amount'].fillna(0).div(100000).round(0).astype(int)
+        df['Weighted_Amount'] = (df['Amount_Lacs'] * df['Probability_Num'] / 100).round(0).astype(int)
+        
+        # Store the processed dataframe in session state
+        st.session_state.df = df
+        return df
+        
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return pd.DataFrame()  # Return empty dataframe on error
+
 def main():
     # Check authentication
     if not st.session_state.authenticated:
         show_login_page()
         return
+
+    # Load data if not in session state
+    if st.session_state.df is None:
+        st.session_state.df = load_data()
 
     # Sidebar navigation
     with st.sidebar:
