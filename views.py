@@ -434,103 +434,65 @@ def show_sales_team_view(st):
     
     df = st.session_state.df
     
-    # Add CSS for filter container
-    st.markdown("""
-        <style>
-            .filter-container {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-                padding: 10px;
-                background: #f0f2f6;
-                border-radius: 5px;
-                margin-bottom: 20px;
-            }
-            
-            .filter-item {
-                flex: 1;
-                min-width: 200px;
-            }
-            
-            .stSelectbox, .stMultiSelect {
-                min-width: 200px;
-            }
-
-            /* Custom styling for filters */
-            div[data-testid="stSelectbox"] label {
-                font-size: 14px !important;
-                font-weight: 500 !important;
-                color: #333 !important;
-            }
-
-            div[data-testid="stSelectbox"] > div > div {
-                background: white !important;
-                border: 1px solid #ddd !important;
-                border-radius: 4px !important;
-            }
-
-            div[data-testid="stTextInput"] label {
-                font-size: 14px !important;
-                font-weight: 500 !important;
-                color: #333 !important;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    # Filter section header
-    st.markdown("### 🔍 Filters")
-    
-    # Create filter container
-    filter_container = st.container()
+    # Debug: Print DataFrame columns
+    st.write("Available columns:", df.columns.tolist())
     
     # First row of filters
-    with filter_container:
-        col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns(9)
-        
-        with col1:
-            # Sales Owner (Team Member) filter
-            team_members = sorted(df['Sales Team Member'].unique())
-            selected_team = st.selectbox("👤 Sales Owner", ["All Team Members"] + list(team_members))
-        
-        with col2:
-            # Search
-            search_term = st.text_input("🔍 Search", placeholder="Search...")
-        
-        with col3:
+    col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns(9)
+    
+    with col1:
+        # Sales Owner (Team Member) filter
+        team_members = sorted(df['Sales Team Member'].unique())
+        selected_team = st.selectbox("👤 Sales Owner", ["All Team Members"] + list(team_members))
+    
+    with col2:
+        # Search
+        search_term = st.text_input("🔍 Search", placeholder="Search...")
+    
+    with col3:
+        try:
             # Practice filter
-            practices = sorted(df['Practice'].unique())
-            selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + list(practices))
-        
-        with col4:
-            # Month filter
-            months = ["All Months", "April", "May", "June", "July", "August", "September",
-                     "October", "November", "December", "January", "February", "March"]
-            selected_month = st.selectbox("📅 Month", months)
-        
-        with col5:
-            # Quarter filter
-            quarters = ["All Quarters", "Q1", "Q2", "Q3", "Q4"]
-            selected_quarter = st.selectbox("📊 Quarter", quarters)
-        
-        with col6:
-            # Year filter
-            years = sorted(df['Date'].dt.year.unique())
-            selected_year = st.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
-        
-        with col7:
-            # Probability filter
-            probabilities = ["All Probability", "High", "Medium", "Low"]
-            selected_probability = st.selectbox("📈 Probability", probabilities)
-        
-        with col8:
-            # Status filter
-            statuses = sorted(df['Status'].unique())
-            selected_status = st.selectbox("🎯 Status", ["All Status"] + list(statuses))
-        
-        with col9:
-            # Focus filter
-            focus_options = ["All Focus", "New Business", "Existing Business"]
-            selected_focus = st.selectbox("🎯 Focus", focus_options)
+            if 'Practice' in df.columns:
+                practices = sorted(df['Practice'].dropna().unique())
+                st.write("Available practices:", practices)  # Debug: Show available practices
+                selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + list(practices))
+            else:
+                st.error("Practice column not found in the data")
+                selected_practice = "All Practices"
+        except Exception as e:
+            st.error(f"Error loading practice filter: {str(e)}")
+            selected_practice = "All Practices"
+    
+    with col4:
+        # Month filter
+        months = ["All Months", "April", "May", "June", "July", "August", "September",
+                 "October", "November", "December", "January", "February", "March"]
+        selected_month = st.selectbox("📅 Month", months)
+    
+    with col5:
+        # Quarter filter
+        quarters = ["All Quarters", "Q1", "Q2", "Q3", "Q4"]
+        selected_quarter = st.selectbox("📊 Quarter", quarters)
+    
+    with col6:
+        # Year filter
+        years = sorted(df['Date'].dt.year.unique())
+        selected_year = st.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
+    
+    with col7:
+        # Probability filter
+        probabilities = ["All Probability", "High", "Medium", "Low"]
+        selected_probability = st.selectbox("📈 Probability", probabilities)
+    
+    with col8:
+        # Status filter
+        statuses = sorted(df['Status'].unique())
+        selected_status = st.selectbox("🎯 Status", ["All Status"] + list(statuses))
+    
+    with col9:
+        # Focus filter
+        focus_options = ["All Focus", "New Business", "Existing Business"]
+        selected_focus = st.selectbox("🎯 Focus", focus_options)
     
     # Apply filters
     filtered_df = df.copy()
