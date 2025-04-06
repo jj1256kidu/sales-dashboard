@@ -506,20 +506,47 @@ def main():
     page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team", "Quarterly Summary", "Previous Data"])
     
     # Load data if not in session state
-    if 'df' not in st.session_state:
+    if 'df' not in st.session_state or st.session_state.df is None:
         st.session_state.df = load_data()
     
     # Display selected page
     if page == "Data Input":
-        show_data_input_view(st.session_state.df)
+        uploaded_file = show_data_input_view(st.session_state.df)
+        if uploaded_file is not None:
+            try:
+                # Save the uploaded file
+                with open("sales_data.xlsx", "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                st.success("File uploaded successfully!")
+                
+                # Reload the data
+                st.session_state.df = load_data()
+                if not st.session_state.df.empty:
+                    st.success("Data loaded successfully!")
+                else:
+                    st.error("Failed to load the uploaded data. Please check the format.")
+            except Exception as e:
+                st.error(f"Error processing uploaded file: {str(e)}")
     elif page == "Overview":
-        show_overview_view(st.session_state.df)
+        if st.session_state.df is not None and not st.session_state.df.empty:
+            show_overview_view(st.session_state.df)
+        else:
+            st.warning("No data available. Please upload data first.")
     elif page == "Sales Team":
-        show_sales_team_view(st.session_state.df)
+        if st.session_state.df is not None and not st.session_state.df.empty:
+            show_sales_team_view(st.session_state.df)
+        else:
+            st.warning("No data available. Please upload data first.")
     elif page == "Quarterly Summary":
-        show_quarterly_summary()
+        if st.session_state.df is not None and not st.session_state.df.empty:
+            show_quarterly_summary()
+        else:
+            st.warning("No data available. Please upload data first.")
     elif page == "Previous Data":
-        show_previous_data_view()
+        if st.session_state.df is not None and not st.session_state.df.empty:
+            show_previous_data_view()
+        else:
+            st.warning("No data available. Please upload data first.")
 
 if __name__ == "__main__":
     main()
