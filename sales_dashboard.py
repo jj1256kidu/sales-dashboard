@@ -364,19 +364,10 @@ def filter_dataframe(df, filters):
         for col in ['Organization Name', 'Opportunity Name', 'Sales Owner', 'Sales Stage']:
             search_mask |= df[col].astype(str).str.lower().str.contains(search, na=False)
         mask &= search_mask
-    with col3:
-        # Practice filter - Multi-select
-        if 'Practice' in df.columns:
-            practices = sorted(df['Practice'].dropna().unique())
-            selected_practice = st.multiselect(
-                "🏢 Practice",
-                options=practices,
-                default=st.session_state.filters['practices'],
-                key="practice_filter"
-            )
-            st.session_state.filters['practices'] = selected_practice
-        else:
-            st.error("Practice column not found in the data")
+    
+    # Practice filter
+    if filters.get('practices'):
+        mask &= df['Practice'].isin(filters['practices'])
             
     if filters.get('month_filter') != "All Months":
         mask &= df['Month'] == filters['month_filter']
@@ -1129,16 +1120,29 @@ def show_sales_team():
     with col2:
         filters['search'] = st.text_input("🔍 Search", placeholder="Search...")
     with col3:
+        if 'Practice' in df.columns:
+            practices = sorted(df['Practice'].dropna().unique())
+            selected_practices = st.multiselect(
+                "🏢 Practice",
+                options=practices,
+                default=[],
+                key="practice_filter"
+            )
+            filters['practices'] = selected_practices
+        else:
+            st.error("Practice column not found in the data")
+            filters['practices'] = []
+    with col4:
         fiscal_order = ['April', 'May', 'June', 'July', 'August', 'September', 
                        'October', 'November', 'December', 'January', 'February', 'March']
         available_months = df['Month'].dropna().unique().tolist()
         available_months.sort(key=lambda x: fiscal_order.index(x) if x in fiscal_order else len(fiscal_order))
         filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months)
-    with col4:
-        filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
     with col5:
-        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
+        filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
     with col6:
+        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
+    with col7:
         probability_options = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%", "Custom Range"]
         filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_options)
         # Step 1: Get current values safely
@@ -1166,7 +1170,7 @@ def show_sales_team():
             filters['max_prob'] = max_prob
             filters['custom_prob_range'] = f"{min_prob}-{max_prob}%"
 
-    with col7:
+    with col8:
         status_options = ["All Status", "Committed for the Month", "Upsides for the Month"]
         filters['status_filter'] = st.selectbox("🎯 Status", options=status_options)
         if filters['status_filter'] == "Committed for the Month":
