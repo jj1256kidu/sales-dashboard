@@ -1108,7 +1108,7 @@ def process_data(df):
     # Convert dates and calculate time-based columns at once
     df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], errors='coerce')
     df['Month'] = df['Expected Close Date'].dt.strftime('%B')
-    df['Year'] = df['Expected Close Date'].dt.year
+    df['Year'] = df['Year in FY']  # Use Year in FY directly instead of deriving from date
     df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
     
     # Convert probability and calculate numeric values at once with safe null handling
