@@ -1034,7 +1034,7 @@ def show_sales_team_view(df):
     display_df = filtered_df[['Organization Name', 'Opportunity Name', 'Geography', 
                             'Expected Close Date', 'Probability', 'Amount', 
                             'Sales Owner', 'Pre-sales Technical Lead', 'Business Owner', 
-                            'Type', 'KritiKal Focus Areas']].copy()
+                            'Type', 'KritiKal Focus Areas', 'Practice']].copy()
     
     display_df = display_df.rename(columns={
         'Amount': 'Amount (In Lacs)',
@@ -1075,6 +1075,10 @@ def show_sales_team_view(df):
             'Expected Close Date': st.column_config.TextColumn(
                 'Expected Close Date',
                 help="Expected closing date"
+            ),
+            'Practice': st.column_config.TextColumn(
+                'Practice',
+                help="Practice area"
             )
         }
     )
