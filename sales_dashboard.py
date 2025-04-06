@@ -6,6 +6,9 @@ from datetime import datetime
 import numpy as np
 from views import show_data_input_view, show_overview_view, show_sales_team_view, show_detailed_data_view, show_login_page
 from auth import check_password, init_session_state
+import os
+import glob
+import time
 
 # Page configuration
 st.set_page_config(
@@ -95,37 +98,129 @@ if 'current_view' not in st.session_state:
     st.session_state.current_view = 'data_input'
 if 'sales_target' not in st.session_state:
     st.session_state.sales_target = 0.0
+if 'login_attempts' not in st.session_state:
+    st.session_state.login_attempts = 0
+if 'last_attempt' not in st.session_state:
+    st.session_state.last_attempt = 0
+if 'locked_until' not in st.session_state:
+    st.session_state.locked_until = 0
 
 def main():
-    # Check authentication
+    # Check if user is locked out
+    if st.session_state.locked_until > time.time():
+        remaining_time = int(st.session_state.locked_until - time.time())
+        st.error(f"Account locked. Please try again in {remaining_time} seconds.")
+        return
+
+    # Show login form if not authenticated
     if not st.session_state.authenticated:
         show_login_page()
         return
 
-    # Sidebar navigation
-    with st.sidebar:
-        st.title("Navigation")
-        selected = st.radio(
-            "Select View",
-            options=["Data Input", "Overview", "Sales Team", "Detailed Data"],
-            key="navigation"
-        )
-        st.session_state.current_view = selected.lower().replace(" ", "_")
-        
-        # Logout button
-        if st.button("Logout"):
-            st.session_state.authenticated = False
-            st.rerun()
+    # Main dashboard content
+    st.sidebar.title("Navigation")
+    page = st.sidebar.radio("Go to", ["Data Input", "Overview", "Sales Team"])
 
-    # Main content
-    if st.session_state.current_view == "data_input":
-        show_data_input_view(st.session_state.df)
-    elif st.session_state.current_view == "overview":
-        show_overview_view(st.session_state.df)
-    elif st.session_state.current_view == "sales_team":
-        show_sales_team_view(st.session_state.df)
-    elif st.session_state.current_view == "detailed_data":
-        show_detailed_data_view(st.session_state.df)
+    # Load data
+    df = load_data()
+
+    if page == "Data Input":
+        show_data_input_view(df)
+        show_meeting_data_view()  # Add meeting data viewer under data input
+    elif page == "Overview":
+        show_overview_view(df)
+    elif page == "Sales Team":
+        show_sales_team_view(df)
+
+def show_meeting_data_view():
+    """Display the Meeting Data Viewer section"""
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin: 0;
+                font-size: 1.4em;
+                font-weight: 600;
+                font-family: "Segoe UI", sans-serif;
+            '>📊 Meeting Data Viewer</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Create data directory if it doesn't exist
+    if not os.path.exists("data"):
+        os.makedirs("data")
+
+    # File upload section
+    st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📤 Upload New Meeting Data</h4>', unsafe_allow_html=True)
+    uploaded_file = st.file_uploader(
+        "Choose an Excel file",
+        type=['xlsx'],
+        help="Upload your meeting data in Excel format"
+    )
+
+    if uploaded_file is not None:
+        try:
+            # Generate filename with current date
+            current_date = datetime.now().strftime("%Y-%m-%d")
+            filename = f"meeting_{current_date}.xlsx"
+            filepath = os.path.join("data", filename)
+            
+            # Save the file
+            with open(filepath, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            
+            st.success(f"File saved successfully as {filename}")
+        except Exception as e:
+            st.error(f"Error saving file: {str(e)}")
+
+    # File selection section
+    st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📂 Select Meeting Data</h4>', unsafe_allow_html=True)
+
+    # Get list of files in data directory
+    files = glob.glob(os.path.join("data", "meeting_*.xlsx"))
+    files.sort(key=os.path.getmtime, reverse=True)  # Sort by most recent
+
+    if not files:
+        st.warning("No meeting data files found in the data directory.")
+    else:
+        # Create dropdown with filenames
+        selected_file = st.selectbox(
+            "Select a file",
+            options=files,
+            format_func=lambda x: os.path.basename(x)
+        )
+
+        if selected_file:
+            try:
+                # Read the Excel file
+                df = pd.read_excel(
+                    selected_file,
+                    sheet_name="Quarter Summary Dashboard",
+                    skiprows=2,
+                    usecols="B:T"
+                )
+                
+                # Display the data
+                st.markdown('<h4 style="color: #2a5298; margin: 20px 0 10px 0;">📋 Meeting Data</h4>', unsafe_allow_html=True)
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    hide_index=True
+                )
+                
+            except ValueError as e:
+                if "Worksheet named" in str(e):
+                    st.error("The selected file does not contain a sheet named 'Quarter Summary Dashboard'.")
+                else:
+                    st.error(f"Error reading file: {str(e)}")
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":
     main()
