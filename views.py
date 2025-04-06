@@ -8,6 +8,41 @@ from auth import check_password, init_session_state, show_login_page
 from functools import lru_cache
 import time
 
+def check_authentication():
+    """Check if user is authenticated and handle session management"""
+    # Initialize session state variables if they don't exist
+    if 'is_logged_in' not in st.session_state:
+        st.session_state.is_logged_in = False
+    if 'username' not in st.session_state:
+        st.session_state.username = None
+    if 'last_activity' not in st.session_state:
+        st.session_state.last_activity = time.time()
+    
+    # Check session timeout (30 minutes)
+    current_time = time.time()
+    if st.session_state.is_logged_in and (current_time - st.session_state.last_activity) > 1800:
+        st.session_state.is_logged_in = False
+        st.session_state.username = None
+        st.warning("Session expired. Please login again.")
+        st.experimental_rerun()
+    
+    # Update last activity time
+    st.session_state.last_activity = current_time
+    
+    # Return authentication status
+    return st.session_state.is_logged_in
+
+def require_authentication():
+    """Decorator to require authentication for view functions"""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            if not check_authentication():
+                show_login_page()
+                return
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
 # Format helper functions
 def format_amount(value):
     """Format amount in lakhs"""
@@ -884,38 +919,3 @@ def show_login_page():
             st.session_state.username = None
             st.success("Logged out successfully!")
             st.experimental_rerun()
-
-def check_authentication():
-    """Check if user is authenticated and handle session management"""
-    # Initialize session state variables if they don't exist
-    if 'is_logged_in' not in st.session_state:
-        st.session_state.is_logged_in = False
-    if 'username' not in st.session_state:
-        st.session_state.username = None
-    if 'last_activity' not in st.session_state:
-        st.session_state.last_activity = time.time()
-    
-    # Check session timeout (30 minutes)
-    current_time = time.time()
-    if st.session_state.is_logged_in and (current_time - st.session_state.last_activity) > 1800:
-        st.session_state.is_logged_in = False
-        st.session_state.username = None
-        st.warning("Session expired. Please login again.")
-        st.experimental_rerun()
-    
-    # Update last activity time
-    st.session_state.last_activity = current_time
-    
-    # Return authentication status
-    return st.session_state.is_logged_in
-
-def require_authentication():
-    """Decorator to require authentication for view functions"""
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-            if not check_authentication():
-                show_login_page()
-                return
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
