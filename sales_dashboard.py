@@ -7,14 +7,6 @@ import numpy as np
 import io
 from functools import lru_cache
 
-# Set page config must be the first Streamlit command
-st.set_page_config(
-    page_title="Sales Dashboard",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
 # Format helper functions
 def format_amount(x):
     try:
@@ -49,6 +41,14 @@ def format_number(x):
     except:
         return "0"
 
+# Set page config
+st.set_page_config(
+    page_title="Sales Dashboard",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # Initialize session state
 if 'df' not in st.session_state:
     st.session_state.df = None
@@ -64,12 +64,6 @@ if 'reset_triggered' not in st.session_state:
     st.session_state.reset_triggered = False
 if 'selected_team_member' not in st.session_state:
     st.session_state.selected_team_member = None
-if 'raw_data' not in st.session_state:
-    st.session_state.raw_data = None
-if 'previousweek_raw_data' not in st.session_state:
-    st.session_state.previousweek_raw_data = None
-if 'selected_sheet' not in st.session_state:
-    st.session_state.selected_sheet = None
 
 # Keep a single "sales_target" in session state
 if 'sales_target' not in st.session_state:
@@ -303,7 +297,7 @@ def process_data(df):
     df = df.copy()
     
     # Convert dates and calculate time-based columns at once
-    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', dayfirst=True, errors='coerce')
+    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', errors='coerce')
     df['Month'] = df['Expected Close Date'].dt.strftime('%B')
     df['Year'] = df['Expected Close Date'].dt.year
     df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
@@ -411,59 +405,62 @@ def filter_dataframe(df, filters):
     return df[mask]
 
 def show_data_input():
+    # Custom header
     st.markdown("""
-        <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
-            <h3 style='color: #2a5298; margin: 0; font-size: 1.2em; font-weight: 600;'>📤 Upload Data</h3>
+        <div class="custom-header">
+            <h1>Sales Performance Dashboard</h1>
+            <p style="font-size: 1.2em; margin: 0;">Upload your sales data to begin analysis</p>
         </div>
     """, unsafe_allow_html=True)
+
+    # Main upload section
+    col1, col2 = st.columns([2, 1])
     
-    # Single file uploader for both current and previous week data
-    uploaded_file = st.file_uploader(
-        "Upload Excel File", 
-        type=['xlsx', 'xls'],
-        key="excel_uploader"
-    )
+    with col1:
+        st.markdown('<div class="upload-container">', unsafe_allow_html=True)
+        uploaded_file = st.file_uploader(
+            "Upload Sales Data",
+            type=['xlsx', 'csv'],
+            help="Upload your sales data file in Excel or CSV format"
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+        
+        if uploaded_file:
+            try:
+                if uploaded_file.name.endswith('.xlsx'):
+                    excel_file = pd.ExcelFile(uploaded_file)
+                    sheet_name = st.selectbox("Select Worksheet", excel_file.sheet_names)
+                    df = pd.read_excel(uploaded_file, sheet_name=sheet_name)
+                else:
+                    df = pd.read_csv(uploaded_file)
+                
+                st.session_state.df = df
+                st.success(f"Successfully loaded {len(df):,} records")
+                
+                # Preview the data
+                st.subheader("Data Preview")
+                st.dataframe(df.head(), use_container_width=True)
+                
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
     
-    if uploaded_file is not None:
-        try:
-            # Read all sheets from the Excel file
-            excel_file = pd.ExcelFile(uploaded_file)
-            sheet_names = excel_file.sheet_names
-            
-            # Create columns for sheet selection
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("### Current Week Sheet")
-                selected_sheet = st.selectbox(
-                    "Select Current Week Sheet",
-                    options=sheet_names,
-                    key="current_sheet_select"
-                )
-                
-                # Load current week data
-                current_df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
-                st.success(f"Successfully loaded current week sheet '{selected_sheet}' with {len(current_df):,} records")
-            
-            with col2:
-                st.markdown("### Previous Week Sheet")
-                previous_sheet = st.selectbox(
-                    "Select Previous Week Sheet",
-                    options=sheet_names,
-                    key="previous_sheet_select"
-                )
-                
-                # Load previous week data
-                previous_df = pd.read_excel(uploaded_file, sheet_name=previous_sheet)
-                st.success(f"Successfully loaded previous week sheet '{previous_sheet}' with {len(previous_df):,} records")
-            
-            # Store data in session state
-            st.session_state.raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
-            st.session_state.previousweek_raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
-            st.session_state.selected_sheet = selected_sheet
-            
-        except Exception as e:
-            st.error(f"Error reading Excel file: {str(e)}")
+    with col2:
+        st.markdown("""
+        <div class="info-box">
+            <h4>Required Data Fields</h4>
+            <ul>
+                <li>Amount</li>
+                <li>Sales Stage</li>
+                <li>Expected Close Date</li>
+                <li>Practice/Region</li>
+            </ul>
+            <h4>File Formats</h4>
+            <ul>
+                <li>Excel (.xlsx)</li>
+                <li>CSV (.csv)</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
 
 def show_overview():
     if st.session_state.df is None:
@@ -1389,202 +1386,16 @@ def show_detailed():
     
     st.dataframe(df, use_container_width=True)
 
-def show_week_over_week_delta():
-    st.markdown("""
-        <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
-            <h3 style='color: #2a5298; margin: 0; font-size: 1.2em; font-weight: 600;'>📊 Week-over-Week Delta Analysis</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    if 'raw_data' not in st.session_state or 'previousweek_raw_data' not in st.session_state:
-        st.warning("Please upload your Excel file to view delta analysis")
-        return
-    
-    current_df = st.session_state.raw_data
-    previous_df = st.session_state.previousweek_raw_data
-    
-    # Get sheet names from both files
-    current_sheets = list(current_df.keys()) if isinstance(current_df, dict) else ['Sheet1']
-    previous_sheets = list(previous_df.keys()) if isinstance(previous_df, dict) else ['Sheet1']
-    
-    # Create sheet selection dropdowns
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("### Current Week Sheet")
-        current_sheet = st.selectbox(
-            "Select Current Week Sheet",
-            options=current_sheets,
-            key="current_sheet_select_delta"
-        )
-    
-    with col2:
-        st.markdown("### Previous Week Sheet")
-        previous_sheet = st.selectbox(
-            "Select Previous Week Sheet",
-            options=previous_sheets,
-            key="previous_sheet_select_delta"
-        )
-    
-    # Get the selected sheets
-    current_data = current_df[current_sheet] if isinstance(current_df, dict) else current_df
-    previous_data = previous_df[previous_sheet] if isinstance(previous_df, dict) else previous_df
-    
-    # Ensure both dataframes have the same structure
-    required_columns = ['Organization Name', 'Opportunity Name', 'Deal Value', 'Status', 'Sales Team Member', 'Practice', 'Quarter']
-    for col in required_columns:
-        if col not in current_data.columns or col not in previous_data.columns:
-            st.error(f"Required column '{col}' not found in one or both datasets")
-            return
-    
-    # Quarter filter
-    quarters = sorted(current_data['Quarter'].unique())
-    selected_quarter = st.selectbox("Select Quarter", options=["All Quarters"] + quarters.tolist())
-    
-    # Filter data by selected quarter
-    if selected_quarter != "All Quarters":
-        current_data = current_data[current_data['Quarter'] == selected_quarter]
-        previous_data = previous_data[previous_data['Quarter'] == selected_quarter]
-    
-    # Sales Owner Commitment Table
-    st.markdown("### Sales Owner Commitment Table")
-    
-    # Calculate metrics for each sales owner
-    current_owner_metrics = current_data.groupby('Sales Team Member').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Committed').sum()
-    }).reset_index()
-    
-    previous_owner_metrics = previous_data.groupby('Sales Team Member').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Committed').sum()
-    }).reset_index()
-    
-    # Merge current and previous data
-    owner_comparison = pd.merge(
-        current_owner_metrics,
-        previous_owner_metrics,
-        on='Sales Team Member',
-        suffixes=('_current', '_previous'),
-        how='outer'
-    ).fillna(0)
-    
-    # Calculate deltas
-    owner_comparison['Delta'] = owner_comparison['Deal Value_current'] - owner_comparison['Deal Value_previous']
-    owner_comparison['Delta %'] = (owner_comparison['Delta'] / owner_comparison['Deal Value_previous'] * 100).round(1)
-    
-    # Add total row
-    total_row = pd.DataFrame({
-        'Sales Team Member': ['Total'],
-        'Deal Value_current': [owner_comparison['Deal Value_current'].sum()],
-        'Deal Value_previous': [owner_comparison['Deal Value_previous'].sum()],
-        'Delta': [owner_comparison['Delta'].sum()],
-        'Delta %': [(owner_comparison['Delta'].sum() / owner_comparison['Deal Value_previous'].sum() * 100).round(1)]
-    })
-    owner_comparison = pd.concat([owner_comparison, total_row], ignore_index=True)
-    
-    # Format the table
-    owner_comparison['Deal Value_current'] = owner_comparison['Deal Value_current'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    owner_comparison['Deal Value_previous'] = owner_comparison['Deal Value_previous'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    owner_comparison['Delta'] = owner_comparison['Delta'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    owner_comparison['Delta %'] = owner_comparison['Delta %'].apply(lambda x: f"{x}%")
-    
-    # Display the table with styling
-    st.dataframe(
-        owner_comparison.style.applymap(
-            lambda x: 'color: red' if x.startswith('₹-') else 'color: green',
-            subset=['Delta']
-        )
-    )
-    
-    # Function Overview Commitment Table
-    st.markdown("### Function Overview Commitment Table")
-    
-    # Calculate metrics for each function
-    current_function_metrics = current_data.groupby('Practice').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Committed').sum()
-    }).reset_index()
-    
-    previous_function_metrics = previous_data.groupby('Practice').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Committed').sum()
-    }).reset_index()
-    
-    # Merge current and previous data
-    function_comparison = pd.merge(
-        current_function_metrics,
-        previous_function_metrics,
-        on='Practice',
-        suffixes=('_current', '_previous'),
-        how='outer'
-    ).fillna(0)
-    
-    # Calculate deltas
-    function_comparison['Delta'] = function_comparison['Deal Value_current'] - function_comparison['Deal Value_previous']
-    function_comparison['Delta %'] = (function_comparison['Delta'] / function_comparison['Deal Value_previous'] * 100).round(1)
-    
-    # Add total row
-    total_row = pd.DataFrame({
-        'Practice': ['Total'],
-        'Deal Value_current': [function_comparison['Deal Value_current'].sum()],
-        'Deal Value_previous': [function_comparison['Deal Value_previous'].sum()],
-        'Delta': [function_comparison['Delta'].sum()],
-        'Delta %': [(function_comparison['Delta'].sum() / function_comparison['Deal Value_previous'].sum() * 100).round(1)]
-    })
-    function_comparison = pd.concat([function_comparison, total_row], ignore_index=True)
-    
-    # Format the table
-    function_comparison['Deal Value_current'] = function_comparison['Deal Value_current'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    function_comparison['Deal Value_previous'] = function_comparison['Deal Value_previous'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    function_comparison['Delta'] = function_comparison['Delta'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    function_comparison['Delta %'] = function_comparison['Delta %'].apply(lambda x: f"{x}%")
-    
-    # Display the table with styling
-    st.dataframe(
-        function_comparison.style.applymap(
-            lambda x: 'color: red' if x.startswith('₹-') else 'color: green',
-            subset=['Delta']
-        )
-    )
-
 def main():
-    # Initialize session state variables
-    if 'df' not in st.session_state:
-        st.session_state.df = None
-    if 'raw_data' not in st.session_state:
-        st.session_state.raw_data = None
-    if 'previousweek_raw_data' not in st.session_state:
-        st.session_state.previousweek_raw_data = None
-    if 'selected_sheet' not in st.session_state:
-        st.session_state.selected_sheet = None
-    if 'current_view' not in st.session_state:
-        st.session_state.current_view = 'data_input'
-    if 'date_filter' not in st.session_state:
-        st.session_state.date_filter = None
-    if 'selected_practice' not in st.session_state:
-        st.session_state.selected_practice = 'All'
-    if 'selected_stage' not in st.session_state:
-        st.session_state.selected_stage = 'All'
-    if 'reset_triggered' not in st.session_state:
-        st.session_state.reset_triggered = False
-    if 'selected_team_member' not in st.session_state:
-        st.session_state.selected_team_member = None
-    
-    # Keep a single "sales_target" in session state
-    if 'sales_target' not in st.session_state:
-        st.session_state.sales_target = 0.0  # Default target in Lakhs
-    
-    # Sidebar for navigation only
     with st.sidebar:
         st.title("Navigation")
         selected = st.radio(
             "Select View",
-            options=["Data Input", "Overview", "Sales Team", "Detailed Data", "Week-over-Week Delta"],
+            options=["Data Input", "Overview", "Sales Team", "Detailed Data"],
             key="navigation"
         )
         st.session_state.current_view = selected.lower().replace(" ", "_")
     
-    # Main content based on selected view
     if st.session_state.current_view == "data_input":
         show_data_input()
     elif st.session_state.current_view == "overview":
@@ -1593,8 +1404,6 @@ def main():
         show_sales_team()
     elif st.session_state.current_view == "detailed_data":
         show_detailed()
-    elif st.session_state.current_view == "week_over_week_delta":
-        show_week_over_week_delta()
 
 if __name__ == "__main__":
     main()
