@@ -334,81 +334,29 @@ def show_data_input_view(st):
             <div class="upload-header">Upload Sales Data</div>
     """, unsafe_allow_html=True)
     
-    # Initialize session state for file upload if not exists
-    if 'uploaded_file' not in st.session_state:
-        st.session_state.uploaded_file = None
-    if 'current_sheet' not in st.session_state:
-        st.session_state.current_sheet = None
-    if 'previous_sheet' not in st.session_state:
-        st.session_state.previous_sheet = None
-    
     uploaded_file = st.file_uploader("Choose a file", type=['xlsx', 'csv'])
     
-    # If a new file is uploaded or we have a file in session state
-    if uploaded_file is not None or st.session_state.uploaded_file is not None:
+    if uploaded_file is not None:
         try:
-            # Update session state if new file is uploaded
-            if uploaded_file is not None:
-                st.session_state.uploaded_file = uploaded_file
+            if uploaded_file.name.endswith('.xlsx'):
+                df = pd.read_excel(uploaded_file)
+            else:
+                df = pd.read_csv(uploaded_file)
             
-            # Read the Excel file (either new upload or from session state)
-            excel_file = pd.ExcelFile(st.session_state.uploaded_file)
-            sheet_names = excel_file.sheet_names
+            st.session_state.df = df
+            st.success("File uploaded successfully!")
             
-            # Create columns for sheet selection
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("### Current Week Sheet")
-                selected_sheet = st.selectbox(
-                    "Select Current Week Sheet",
-                    options=sheet_names,
-                    key="current_sheet_select",
-                    index=sheet_names.index(st.session_state.current_sheet) if st.session_state.current_sheet in sheet_names else 0
-                )
-                
-                # Update session state with selected sheet
-                st.session_state.current_sheet = selected_sheet
-                
-                # Load current week data
-                current_df = pd.read_excel(st.session_state.uploaded_file, sheet_name=selected_sheet)
-                st.success(f"Successfully loaded current week sheet '{selected_sheet}' with {len(current_df):,} records")
-                
-                # Store the selected sheet data in df for overview and sales team views
-                st.session_state.df = current_df
-            
-            with col2:
-                st.markdown("### Previous Week Sheet")
-                previous_sheet = st.selectbox(
-                    "Select Previous Week Sheet",
-                    options=sheet_names,
-                    key="previous_sheet_select",
-                    index=sheet_names.index(st.session_state.previous_sheet) if st.session_state.previous_sheet in sheet_names else 0
-                )
-                
-                # Update session state with selected sheet
-                st.session_state.previous_sheet = previous_sheet
-                
-                # Load previous week data
-                previous_df = pd.read_excel(st.session_state.uploaded_file, sheet_name=previous_sheet)
-                st.success(f"Successfully loaded previous week sheet '{previous_sheet}' with {len(previous_df):,} records")
-            
-            # Store all sheets data in session state for week-over-week analysis
-            all_sheets_data = {sheet: pd.read_excel(st.session_state.uploaded_file, sheet_name=sheet) for sheet in sheet_names}
-            st.session_state.raw_data = all_sheets_data
-            st.session_state.previousweek_raw_data = all_sheets_data
-            
-            # Display data preview of the current week data
+            # Display data preview
             st.subheader("Data Preview")
-            st.dataframe(current_df.head())
+            st.dataframe(df.head())
             
             # Display data summary
             st.subheader("Data Summary")
-            st.write(f"Total Records: {len(current_df)}")
-            st.write(f"Columns: {', '.join(current_df.columns)}")
+            st.write(f"Total Records: {len(df)}")
+            st.write(f"Columns: {', '.join(df.columns)}")
             
         except Exception as e:
-            st.error(f"Error reading Excel file: {str(e)}")
+            st.error(f"Error reading file: {str(e)}")
     
     st.markdown("""
             <div class="file-format-info">
@@ -434,15 +382,11 @@ def show_data_input_view(st):
 
 def show_overview_view(st):
     """Display the overview view with key metrics and visualizations"""
-    if 'df' not in st.session_state or st.session_state.df is None:
+    if 'df' not in st.session_state:
         st.warning("Please upload data first")
         return
     
-    df = st.session_state.df.copy()
-    
-    # Ensure Date column is datetime
-    if 'Date' in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'])
+    df = st.session_state.df
     
     # Calculate metrics
     total_closed_won = df[df['Status'] == 'Closed Won']['Deal Value'].sum()
@@ -474,25 +418,21 @@ def show_overview_view(st):
     st.plotly_chart(fig2)
     
     # Monthly trend
-    if 'Date' in df.columns:
-        st.subheader("Monthly Sales Trend")
-        monthly_trend = df.groupby(df['Date'].dt.to_period('M'))['Deal Value'].sum().reset_index()
-        monthly_trend['Date'] = monthly_trend['Date'].astype(str)
-        fig3 = px.line(monthly_trend, x='Date', y='Deal Value',
-                       title='Monthly Sales Trend')
-        st.plotly_chart(fig3)
+    st.subheader("Monthly Sales Trend")
+    df['Date'] = pd.to_datetime(df['Date'])
+    monthly_trend = df.groupby(df['Date'].dt.to_period('M'))['Deal Value'].sum().reset_index()
+    monthly_trend['Date'] = monthly_trend['Date'].astype(str)
+    fig3 = px.line(monthly_trend, x='Date', y='Deal Value',
+                   title='Monthly Sales Trend')
+    st.plotly_chart(fig3)
 
 def show_sales_team_view(st):
     """Display the sales team view with team performance metrics"""
-    if 'df' not in st.session_state or st.session_state.df is None:
+    if 'df' not in st.session_state:
         st.warning("Please upload data first")
         return
     
-    df = st.session_state.df.copy()
-    
-    # Ensure Date column is datetime
-    if 'Date' in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'])
+    df = st.session_state.df
     
     # First row of filters with adjusted column sizes
     col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns([1.2, 1.2, 1.2, 1, 1, 1, 1, 1.2, 1.2])
@@ -521,12 +461,9 @@ def show_sales_team_view(st):
     
     with col4:
         # Month filter
-        if 'Date' in df.columns:
-            months = ["All Months", "April", "May", "June", "July", "August", "September",
-                     "October", "November", "December", "January", "February", "March"]
-            selected_month = st.selectbox("📅 Month", months)
-        else:
-            selected_month = "All Months"
+        months = ["All Months", "April", "May", "June", "July", "August", "September",
+                 "October", "November", "December", "January", "February", "March"]
+        selected_month = st.selectbox("📅 Month", months)
     
     with col5:
         # Quarter filter
@@ -535,35 +472,23 @@ def show_sales_team_view(st):
     
     with col6:
         # Year filter
-        if 'Date' in df.columns:
-            years = sorted(df['Date'].dt.year.unique())
-            selected_year = st.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
-        else:
-            selected_year = "All Years"
+        years = sorted(df['Date'].dt.year.unique())
+        selected_year = st.selectbox("📆 Year", ["All Years"] + [str(year) for year in years])
     
     with col7:
         # Probability filter
-        if 'Probability' in df.columns:
-            probabilities = ["All Probability", "High", "Medium", "Low"]
-            selected_probability = st.selectbox("📈 Probability", probabilities)
-        else:
-            selected_probability = "All Probability"
+        probabilities = ["All Probability", "High", "Medium", "Low"]
+        selected_probability = st.selectbox("📈 Probability", probabilities)
     
     with col8:
         # Status filter
-        if 'Status' in df.columns:
-            statuses = sorted(df['Status'].unique())
-            selected_status = st.selectbox("🎯 Status", ["All Status"] + list(statuses))
-        else:
-            selected_status = "All Status"
+        statuses = sorted(df['Status'].unique())
+        selected_status = st.selectbox("🎯 Status", ["All Status"] + list(statuses))
     
     with col9:
         # Focus filter
-        if 'Focus' in df.columns:
-            focus_options = ["All Focus", "New Business", "Existing Business"]
-            selected_focus = st.selectbox("🎯 Focus", focus_options)
-        else:
-            selected_focus = "All Focus"
+        focus_options = ["All Focus", "New Business", "Existing Business"]
+        selected_focus = st.selectbox("🎯 Focus", focus_options)
     
     # Apply filters
     filtered_df = df.copy()
@@ -577,7 +502,7 @@ def show_sales_team_view(st):
         filtered_df = filtered_df[filtered_df['Practice'] == selected_practice]
     
     # Apply Month filter
-    if selected_month != "All Months" and 'Date' in filtered_df.columns:
+    if selected_month != "All Months":
         month_map = {
             "January": 1, "February": 2, "March": 3, "April": 4,
             "May": 5, "June": 6, "July": 7, "August": 8,
@@ -586,26 +511,26 @@ def show_sales_team_view(st):
         filtered_df = filtered_df[filtered_df['Date'].dt.month == month_map[selected_month]]
     
     # Apply Quarter filter
-    if selected_quarter != "All Quarters" and 'Date' in filtered_df.columns:
+    if selected_quarter != "All Quarters":
         quarter_map = {"Q1": [1, 2, 3], "Q2": [4, 5, 6], 
                       "Q3": [7, 8, 9], "Q4": [10, 11, 12]}
         if selected_quarter in quarter_map:
             filtered_df = filtered_df[filtered_df['Date'].dt.month.isin(quarter_map[selected_quarter])]
     
     # Apply Year filter
-    if selected_year != "All Years" and 'Date' in filtered_df.columns:
+    if selected_year != "All Years":
         filtered_df = filtered_df[filtered_df['Date'].dt.year == int(selected_year)]
     
     # Apply Probability filter
-    if selected_probability != "All Probability" and 'Probability' in filtered_df.columns:
+    if selected_probability != "All Probability":
         filtered_df = filtered_df[filtered_df['Probability'] == selected_probability]
     
     # Apply Status filter
-    if selected_status != "All Status" and 'Status' in filtered_df.columns:
+    if selected_status != "All Status":
         filtered_df = filtered_df[filtered_df['Status'] == selected_status]
     
     # Apply Focus filter
-    if selected_focus != "All Focus" and 'Focus' in filtered_df.columns:
+    if selected_focus != "All Focus":
         filtered_df = filtered_df[filtered_df['Focus'] == selected_focus]
     
     # Apply Search filter
@@ -642,62 +567,56 @@ def show_sales_team_view(st):
         
         # Detailed Opportunities
         st.subheader("Detailed Opportunities")
-        display_columns = ['Organization Name', 'Opportunity Name', 'Deal Value', 'Sales Team Member']
-        if 'Geography' in filtered_df.columns:
-            display_columns.append('Geography')
-        if 'Date' in filtered_df.columns:
-            display_columns.append('Date')
-        if 'Probability' in filtered_df.columns:
-            display_columns.append('Probability')
-        if 'Technical Lead' in filtered_df.columns:
-            display_columns.append('Technical Lead')
-        if 'Business Owner' in filtered_df.columns:
-            display_columns.append('Business Owner')
-        if 'Type' in filtered_df.columns:
-            display_columns.append('Type')
-        if 'Focus' in filtered_df.columns:
-            display_columns.append('Focus')
+        display_df = filtered_df[['Organization Name', 'Opportunity Name', 'Geography', 
+                                'Date', 'Probability', 'Deal Value', 
+                                'Sales Team Member', 'Technical Lead', 'Business Owner', 
+                                'Type', 'Focus']].copy()
         
-        display_df = filtered_df[display_columns].copy()
-        
-        # Rename columns if they exist
-        column_renames = {
+        display_df = display_df.rename(columns={
             'Deal Value': 'Amount (In Lacs)',
             'Technical Lead': 'Tech Owner',
             'Type': 'Hunting /farming'
-        }
-        display_df = display_df.rename(columns={k: v for k, v in column_renames.items() if k in display_df.columns})
+        })
         
-        # Format Amount
-        if 'Amount (In Lacs)' in display_df.columns:
-            display_df['Amount (In Lacs)'] = display_df['Amount (In Lacs)'].apply(lambda x: int(x/100000) if pd.notnull(x) else 0)
+        display_df['Amount (In Lacs)'] = display_df['Amount (In Lacs)'].apply(lambda x: int(x/100000) if pd.notnull(x) else 0)
+        display_df['Probability'] = display_df['Probability'].apply(lambda x: f"{x}%")
+        display_df['Weighted Revenue (In Lacs)'] = display_df.apply(
+            lambda row: int((row['Amount (In Lacs)']) * float(str(row['Probability']).rstrip('%'))/100) if pd.notnull(row['Amount (In Lacs)']) else 0, 
+            axis=1
+        )
         
-        # Format Probability
-        if 'Probability' in display_df.columns:
-            display_df['Probability'] = display_df['Probability'].apply(lambda x: f"{x}%" if pd.notnull(x) else "")
-        
-        # Calculate Weighted Revenue if both Amount and Probability are available
-        if 'Amount (In Lacs)' in display_df.columns and 'Probability' in display_df.columns:
-            display_df['Weighted Revenue (In Lacs)'] = display_df.apply(
-                lambda row: int((row['Amount (In Lacs)']) * float(str(row['Probability']).rstrip('%'))/100) if pd.notnull(row['Amount (In Lacs)']) else 0, 
-                axis=1
-            )
-        
-        # Format Date
-        if 'Date' in display_df.columns:
-            display_df['Date'] = pd.to_datetime(display_df['Date']).dt.strftime('%d-%b-%Y')
-        
-        # Sort by Amount
-        if 'Amount (In Lacs)' in display_df.columns:
-            display_df = display_df.sort_values('Amount (In Lacs)', ascending=False)
+        display_df['Date'] = pd.to_datetime(display_df['Date']).dt.strftime('%d-%b-%Y')
+        display_df = display_df.sort_values('Amount (In Lacs)', ascending=False)
         
         display_df.index = range(1, len(display_df) + 1)
         display_df.index.name = 'S.No'
         
-        st.dataframe(display_df)
+        st.dataframe(
+            display_df,
+            column_config={
+                'Amount (In Lacs)': st.column_config.NumberColumn(
+                    'Amount (In Lacs)',
+                    format="₹%d L",
+                    help="Amount in Lakhs"
+                ),
+                'Weighted Revenue (In Lacs)': st.column_config.NumberColumn(
+                    'Weighted Revenue (In Lacs)',
+                    format="₹%d L",
+                    help="Weighted Revenue in Lakhs"
+                ),
+                'Probability': st.column_config.TextColumn(
+                    'Probability',
+                    help="Probability of winning the deal"
+                ),
+                'Date': st.column_config.TextColumn(
+                    'Date',
+                    help="Expected closing date"
+                )
+            }
+        )
         
         # Practice distribution
-        if 'Practice' in filtered_df.columns and len(filtered_df['Practice'].unique()) > 0:
+        if len(filtered_df['Practice'].unique()) > 0:
             st.subheader("Practice Distribution")
             practice_dist = filtered_df.groupby(['Sales Team Member', 'Practice'])['Deal Value'].sum().reset_index()
             fig2 = px.bar(practice_dist, x='Sales Team Member', y='Deal Value',
@@ -705,40 +624,38 @@ def show_sales_team_view(st):
             st.plotly_chart(fig2)
         
         # Practice metrics
-        if 'Practice' in filtered_df.columns:
-            st.subheader("Practice Performance")
-            practice_metrics = filtered_df.groupby('Practice').agg({
-                'Deal Value': ['sum', 'count'],
-                'Status': lambda x: (x == 'Closed Won').sum()
-            }).reset_index()
-            
-            practice_metrics.columns = ['Practice', 'Total Pipeline', 'Total Deals', 'Closed Won']
-            practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Total Deals'] * 100).round(1)
-            practice_metrics['Average Deal Size'] = (practice_metrics['Total Pipeline'] / practice_metrics['Total Deals']).round(2)
-            
-            # Display practice metrics in two columns
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.dataframe(practice_metrics.style.format({
-                    'Total Pipeline': '${:,.2f}',
-                    'Average Deal Size': '${:,.2f}',
-                    'Win Rate': '{:.1f}%'
-                }))
-            
-            with col2:
-                fig3 = px.bar(practice_metrics, x='Practice', y='Win Rate',
-                             title='Win Rate by Practice', color='Practice')
-                st.plotly_chart(fig3)
-            
-            # Practice trend
-            if 'Date' in filtered_df.columns:
-                st.subheader("Practice Pipeline Trend")
-                practice_trend = filtered_df.groupby(['Practice', filtered_df['Date'].dt.to_period('M')])['Deal Value'].sum().reset_index()
-                practice_trend['Date'] = practice_trend['Date'].astype(str)
-                fig4 = px.line(practice_trend, x='Date', y='Deal Value',
-                               color='Practice', title='Practice-wise Pipeline Trend')
-                st.plotly_chart(fig4)
+        st.subheader("Practice Performance")
+        practice_metrics = filtered_df.groupby('Practice').agg({
+            'Deal Value': ['sum', 'count'],
+            'Status': lambda x: (x == 'Closed Won').sum()
+        }).reset_index()
+        
+        practice_metrics.columns = ['Practice', 'Total Pipeline', 'Total Deals', 'Closed Won']
+        practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Total Deals'] * 100).round(1)
+        practice_metrics['Average Deal Size'] = (practice_metrics['Total Pipeline'] / practice_metrics['Total Deals']).round(2)
+        
+        # Display practice metrics in two columns
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.dataframe(practice_metrics.style.format({
+                'Total Pipeline': '${:,.2f}',
+                'Average Deal Size': '${:,.2f}',
+                'Win Rate': '{:.1f}%'
+            }))
+        
+        with col2:
+            fig3 = px.bar(practice_metrics, x='Practice', y='Win Rate',
+                         title='Win Rate by Practice', color='Practice')
+            st.plotly_chart(fig3)
+        
+        # Practice trend
+        st.subheader("Practice Pipeline Trend")
+        practice_trend = filtered_df.groupby(['Practice', filtered_df['Date'].dt.to_period('M')])['Deal Value'].sum().reset_index()
+        practice_trend['Date'] = practice_trend['Date'].astype(str)
+        fig4 = px.line(practice_trend, x='Date', y='Deal Value',
+                       color='Practice', title='Practice-wise Pipeline Trend')
+        st.plotly_chart(fig4)
     else:
         st.warning("No data available for the selected filters")
 
@@ -855,202 +772,44 @@ def show_detailed_data_view(st):
     else:
         st.warning("No data available for the selected filters")
 
-def show_week_over_week_delta():
-    st.markdown("""
-        <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
-            <h3 style='color: #2a5298; margin: 0; font-size: 1.2em; font-weight: 600;'>📊 Week-over-Week Delta Analysis</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    if 'raw_data' not in st.session_state or 'previousweek_raw_data' not in st.session_state:
-        st.warning("Please upload both current week and previous week data to view delta analysis")
-        return
-    
-    current_df = st.session_state.raw_data
-    previous_df = st.session_state.previousweek_raw_data
-    
-    # Get sheet names from both files
-    current_sheets = list(current_df.keys()) if isinstance(current_df, dict) else ['Sheet1']
-    previous_sheets = list(previous_df.keys()) if isinstance(previous_df, dict) else ['Sheet1']
-    
-    # Create sheet selection dropdowns
-    col1, col2 = st.columns(2)
-    with col1:
-        current_sheet = st.selectbox("Select Current Week Sheet", options=current_sheets)
-    with col2:
-        previous_sheet = st.selectbox("Select Previous Week Sheet", options=previous_sheets)
-    
-    # Get the selected sheets
-    current_data = current_df[current_sheet] if isinstance(current_df, dict) else current_df
-    previous_data = previous_df[previous_sheet] if isinstance(previous_df, dict) else previous_df
-    
-    # Ensure both dataframes have the same structure
-    required_columns = ['Organization Name', 'Opportunity Name', 'Deal Value', 'Status', 'Sales Team Member', 'Practice', 'Quarter']
-    for col in required_columns:
-        if col not in current_data.columns or col not in previous_data.columns:
-            st.error(f"Required column '{col}' not found in one or both datasets")
-            return
-    
-    # Quarter filter
-    quarters = sorted(current_data['Quarter'].unique())
-    selected_quarter = st.selectbox("Select Quarter", options=["All Quarters"] + quarters.tolist())
-    
-    # Filter data by selected quarter
-    if selected_quarter != "All Quarters":
-        current_data = current_data[current_data['Quarter'] == selected_quarter]
-        previous_data = previous_data[previous_data['Quarter'] == selected_quarter]
-    
-    # Sales Owner Commitment Table
-    st.markdown("### Sales Owner Commitment Table")
-    
-    # Calculate metrics for each sales owner
-    current_owner_metrics = current_data.groupby('Sales Team Member').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Committed').sum()
-    }).reset_index()
-    
-    previous_owner_metrics = previous_data.groupby('Sales Team Member').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Committed').sum()
-    }).reset_index()
-    
-    # Merge current and previous data
-    owner_comparison = pd.merge(
-        current_owner_metrics,
-        previous_owner_metrics,
-        on='Sales Team Member',
-        suffixes=('_current', '_previous'),
-        how='outer'
-    ).fillna(0)
-    
-    # Calculate deltas
-    owner_comparison['Delta'] = owner_comparison['Deal Value_current'] - owner_comparison['Deal Value_previous']
-    owner_comparison['Delta %'] = (owner_comparison['Delta'] / owner_comparison['Deal Value_previous'] * 100).round(1)
-    
-    # Add total row
-    total_row = pd.DataFrame({
-        'Sales Team Member': ['Total'],
-        'Deal Value_current': [owner_comparison['Deal Value_current'].sum()],
-        'Deal Value_previous': [owner_comparison['Deal Value_previous'].sum()],
-        'Delta': [owner_comparison['Delta'].sum()],
-        'Delta %': [(owner_comparison['Delta'].sum() / owner_comparison['Deal Value_previous'].sum() * 100).round(1)]
-    })
-    owner_comparison = pd.concat([owner_comparison, total_row], ignore_index=True)
-    
-    # Format the table
-    owner_comparison['Deal Value_current'] = owner_comparison['Deal Value_current'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    owner_comparison['Deal Value_previous'] = owner_comparison['Deal Value_previous'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    owner_comparison['Delta'] = owner_comparison['Delta'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    owner_comparison['Delta %'] = owner_comparison['Delta %'].apply(lambda x: f"{x}%")
-    
-    # Display the table with styling
-    st.dataframe(
-        owner_comparison.style.applymap(
-            lambda x: 'color: red' if x.startswith('₹-') else 'color: green',
-            subset=['Delta']
-        )
-    )
-    
-    # Function Overview Commitment Table
-    st.markdown("### Function Overview Commitment Table")
-    
-    # Calculate metrics for each function
-    current_function_metrics = current_data.groupby('Practice').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Committed').sum()
-    }).reset_index()
-    
-    previous_function_metrics = previous_data.groupby('Practice').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Committed').sum()
-    }).reset_index()
-    
-    # Merge current and previous data
-    function_comparison = pd.merge(
-        current_function_metrics,
-        previous_function_metrics,
-        on='Practice',
-        suffixes=('_current', '_previous'),
-        how='outer'
-    ).fillna(0)
-    
-    # Calculate deltas
-    function_comparison['Delta'] = function_comparison['Deal Value_current'] - function_comparison['Deal Value_previous']
-    function_comparison['Delta %'] = (function_comparison['Delta'] / function_comparison['Deal Value_previous'] * 100).round(1)
-    
-    # Add total row
-    total_row = pd.DataFrame({
-        'Practice': ['Total'],
-        'Deal Value_current': [function_comparison['Deal Value_current'].sum()],
-        'Deal Value_previous': [function_comparison['Deal Value_previous'].sum()],
-        'Delta': [function_comparison['Delta'].sum()],
-        'Delta %': [(function_comparison['Delta'].sum() / function_comparison['Deal Value_previous'].sum() * 100).round(1)]
-    })
-    function_comparison = pd.concat([function_comparison, total_row], ignore_index=True)
-    
-    # Format the table
-    function_comparison['Deal Value_current'] = function_comparison['Deal Value_current'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    function_comparison['Deal Value_previous'] = function_comparison['Deal Value_previous'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    function_comparison['Delta'] = function_comparison['Delta'].apply(lambda x: f"₹{x/100000:,.0f}L")
-    function_comparison['Delta %'] = function_comparison['Delta %'].apply(lambda x: f"{x}%")
-    
-    # Display the table with styling
-    st.dataframe(
-        function_comparison.style.applymap(
-            lambda x: 'color: red' if x.startswith('₹-') else 'color: green',
-            subset=['Delta']
-        )
-    )
-
 def main():
     """Main function to handle navigation and view selection"""
-    # Initialize session state variables
-    if 'df' not in st.session_state:
-        st.session_state.df = None
-    if 'raw_data' not in st.session_state:
-        st.session_state.raw_data = None
-    if 'previousweek_raw_data' not in st.session_state:
-        st.session_state.previousweek_raw_data = None
-    if 'selected_sheet' not in st.session_state:
-        st.session_state.selected_sheet = None
+    # Initialize session state
+    if 'authenticated' not in st.session_state:
+        st.session_state.authenticated = False
     if 'current_view' not in st.session_state:
-        st.session_state.current_view = 'data_input'
-    if 'date_filter' not in st.session_state:
-        st.session_state.date_filter = None
-    if 'selected_practice' not in st.session_state:
-        st.session_state.selected_practice = 'All'
-    if 'selected_stage' not in st.session_state:
-        st.session_state.selected_stage = 'All'
-    if 'reset_triggered' not in st.session_state:
-        st.session_state.reset_triggered = False
-    if 'selected_team_member' not in st.session_state:
-        st.session_state.selected_team_member = None
+        st.session_state.current_view = 'login'
     
-    # Keep a single "sales_target" in session state
-    if 'sales_target' not in st.session_state:
-        st.session_state.sales_target = 0.0  # Default target in Lakhs
-    
-    # Sidebar for navigation only
-    with st.sidebar:
-        st.title("Navigation")
-        selected = st.radio(
-            "Select View",
-            options=["Data Input", "Overview", "Sales Team", "Detailed Data", "Week-over-Week Delta"],
-            key="navigation"
-        )
-        st.session_state.current_view = selected.lower().replace(" ", "_")
-    
-    # Main content based on selected view
-    if st.session_state.current_view == "data_input":
-        show_data_input_view(st)
-    elif st.session_state.current_view == "overview":
-        show_overview_view(st)
-    elif st.session_state.current_view == "sales_team":
-        show_sales_team_view(st)
-    elif st.session_state.current_view == "detailed_data":
-        show_detailed_data_view(st)
-    elif st.session_state.current_view == "week_over_week_delta":
-        show_week_over_week_delta()
+    # Navigation
+    if not st.session_state.authenticated:
+        show_login_page(st)
+    else:
+        # Sidebar navigation
+        st.sidebar.title("Navigation")
+        view_options = {
+            "Data Input": "data_input",
+            "Overview": "overview",
+            "Sales Team": "sales_team",
+            "Detailed Data": "detailed_data"
+        }
+        selected_view = st.sidebar.radio("Select View", list(view_options.keys()))
+        st.session_state.current_view = view_options[selected_view]
+        
+        # Logout button
+        if st.sidebar.button("Logout"):
+            st.session_state.authenticated = False
+            st.session_state.current_view = 'login'
+            st.rerun()
+        
+        # Display selected view
+        if st.session_state.current_view == 'data_input':
+            show_data_input_view(st)
+        elif st.session_state.current_view == 'overview':
+            show_overview_view(st)
+        elif st.session_state.current_view == 'sales_team':
+            show_sales_team_view(st)
+        elif st.session_state.current_view == 'detailed_data':
+            show_detailed_data_view(st)
 
 if __name__ == "__main__":
     main() 
