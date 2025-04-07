@@ -334,12 +334,25 @@ def show_data_input_view(st):
             <div class="upload-header">Upload Sales Data</div>
     """, unsafe_allow_html=True)
     
+    # Initialize session state for file upload if not exists
+    if 'uploaded_file' not in st.session_state:
+        st.session_state.uploaded_file = None
+    if 'current_sheet' not in st.session_state:
+        st.session_state.current_sheet = None
+    if 'previous_sheet' not in st.session_state:
+        st.session_state.previous_sheet = None
+    
     uploaded_file = st.file_uploader("Choose a file", type=['xlsx', 'csv'])
     
-    if uploaded_file is not None:
+    # If a new file is uploaded or we have a file in session state
+    if uploaded_file is not None or st.session_state.uploaded_file is not None:
         try:
-            # Read all sheets from the Excel file
-            excel_file = pd.ExcelFile(uploaded_file)
+            # Update session state if new file is uploaded
+            if uploaded_file is not None:
+                st.session_state.uploaded_file = uploaded_file
+            
+            # Read the Excel file (either new upload or from session state)
+            excel_file = pd.ExcelFile(st.session_state.uploaded_file)
             sheet_names = excel_file.sheet_names
             
             # Create columns for sheet selection
@@ -350,11 +363,15 @@ def show_data_input_view(st):
                 selected_sheet = st.selectbox(
                     "Select Current Week Sheet",
                     options=sheet_names,
-                    key="current_sheet_select"
+                    key="current_sheet_select",
+                    index=sheet_names.index(st.session_state.current_sheet) if st.session_state.current_sheet in sheet_names else 0
                 )
                 
+                # Update session state with selected sheet
+                st.session_state.current_sheet = selected_sheet
+                
                 # Load current week data
-                current_df = pd.read_excel(uploaded_file, sheet_name=selected_sheet)
+                current_df = pd.read_excel(st.session_state.uploaded_file, sheet_name=selected_sheet)
                 st.success(f"Successfully loaded current week sheet '{selected_sheet}' with {len(current_df):,} records")
                 
                 # Store the selected sheet data in df for overview and sales team views
@@ -365,19 +382,23 @@ def show_data_input_view(st):
                 previous_sheet = st.selectbox(
                     "Select Previous Week Sheet",
                     options=sheet_names,
-                    key="previous_sheet_select"
+                    key="previous_sheet_select",
+                    index=sheet_names.index(st.session_state.previous_sheet) if st.session_state.previous_sheet in sheet_names else 0
                 )
                 
+                # Update session state with selected sheet
+                st.session_state.previous_sheet = previous_sheet
+                
                 # Load previous week data
-                previous_df = pd.read_excel(uploaded_file, sheet_name=previous_sheet)
+                previous_df = pd.read_excel(st.session_state.uploaded_file, sheet_name=previous_sheet)
                 st.success(f"Successfully loaded previous week sheet '{previous_sheet}' with {len(previous_df):,} records")
             
-            # Store data in session state for week-over-week analysis
-            st.session_state.raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
-            st.session_state.previousweek_raw_data = {sheet: pd.read_excel(uploaded_file, sheet_name=sheet) for sheet in sheet_names}
-            st.session_state.selected_sheet = selected_sheet
+            # Store all sheets data in session state for week-over-week analysis
+            all_sheets_data = {sheet: pd.read_excel(st.session_state.uploaded_file, sheet_name=sheet) for sheet in sheet_names}
+            st.session_state.raw_data = all_sheets_data
+            st.session_state.previousweek_raw_data = all_sheets_data
             
-            # Display data preview of the current week data (which is used in overview and sales team views)
+            # Display data preview of the current week data
             st.subheader("Data Preview")
             st.dataframe(current_df.head())
             
