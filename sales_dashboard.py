@@ -1542,13 +1542,6 @@ def show_quarterly_summary():
     df_current = st.session_state.df_current
     df_previous = st.session_state.df_previous
     
-    # Convert dates properly with explicit format and dayfirst=True for both datasets
-    df_current['Expected Close Date'] = pd.to_datetime(df_current['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
-    df_current['Month'] = df_current['Expected Close Date'].dt.strftime('%B')
-    
-    df_previous['Expected Close Date'] = pd.to_datetime(df_previous['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
-    df_previous['Month'] = df_previous['Expected Close Date'].dt.strftime('%B')
-    
     # Modern header with glassmorphism effect
     st.markdown("""
         <div style='
@@ -1573,14 +1566,49 @@ def show_quarterly_summary():
         </div>
     """, unsafe_allow_html=True)
     
-    # Modern filter section
-    st.markdown("""
-        <div class="filter-section">
-            <div class="filter-title">🎯 Performance Filters</div>
-        </div>
-    """, unsafe_allow_html=True)
+    # Create filters
+    col1, col2, col3 = st.columns(3)
     
-    # Filter layout and logic remains the same...
+    with col1:
+        quarters = ["All"] + sorted(df_current['Quarter'].unique().tolist())
+        selected_quarter = st.selectbox(
+            "📅 Select Quarter",
+            quarters,
+            help="Filter data by quarter"
+        )
+    
+    with col2:
+        practices = ["All"] + sorted(df_current['Practice'].dropna().unique().tolist())
+        selected_practice = st.selectbox(
+            "🏢 Select Practice",
+            practices,
+            help="Filter data by practice area"
+        )
+    
+    with col3:
+        statuses = ["All", "Pipeline", "Closed Won", "In Progress"]
+        selected_status = st.selectbox(
+            "🎯 Select Status",
+            statuses,
+            help="Filter data by deal status"
+        )
+    
+    # Filter data based on selections
+    def filter_data(df):
+        filtered_df = df.copy()
+        if selected_quarter != "All":
+            filtered_df = filtered_df[filtered_df['Quarter'] == selected_quarter]
+        if selected_practice != "All":
+            filtered_df = filtered_df[filtered_df['Practice'] == selected_practice]
+        if selected_status != "All":
+            if selected_status == "Pipeline":
+                filtered_df = filtered_df[~filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
+            elif selected_status == "Closed Won":
+                filtered_df = filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
+        return filtered_df
+    
+    quarter_data_current = filter_data(df_current)
+    quarter_data_previous = filter_data(df_previous)
     
     # Calculate metrics
     metrics = {
@@ -1639,7 +1667,52 @@ def show_quarterly_summary():
     
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Rest of the function (Monthly Breakdown, Practice Performance, etc.) remains the same...
+    # Add practice distribution visualization
+    if len(quarter_data_current) > 0:
+        st.subheader("Practice Distribution")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            practice_current = quarter_data_current.groupby('Practice')['Amount'].sum().reset_index()
+            fig_current = px.pie(
+                practice_current, 
+                values='Amount', 
+                names='Practice',
+                title='Current Week Practice Distribution',
+                hole=0.4
+            )
+            fig_current.update_traces(textposition='outside', textinfo='percent+label')
+            st.plotly_chart(fig_current, use_container_width=True)
+        
+        with col2:
+            practice_previous = quarter_data_previous.groupby('Practice')['Amount'].sum().reset_index()
+            fig_previous = px.pie(
+                practice_previous, 
+                values='Amount', 
+                names='Practice',
+                title='Previous Week Practice Distribution',
+                hole=0.4
+            )
+            fig_previous.update_traces(textposition='outside', textinfo='percent+label')
+            st.plotly_chart(fig_previous, use_container_width=True)
+    
+    # Add trend visualization
+    st.subheader("Pipeline Trend")
+    trend_data = pd.concat([
+        quarter_data_current.assign(Week='Current Week'),
+        quarter_data_previous.assign(Week='Previous Week')
+    ])
+    
+    fig_trend = px.bar(
+        trend_data,
+        x='Sales Stage',
+        y='Amount',
+        color='Week',
+        barmode='group',
+        title='Pipeline by Sales Stage',
+        labels={'Amount': 'Amount (₹L)', 'Sales Stage': 'Stage'}
+    )
+    st.plotly_chart(fig_trend, use_container_width=True)
 
 def format_metric(value, metric_type):
     """Helper function to format metric values"""
