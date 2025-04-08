@@ -294,38 +294,10 @@ st.markdown("""
 @st.cache_data
 def process_data(df):
     """Process and prepare data for the dashboard"""
-    # Create a copy and reset index to handle any duplicate indices
-    df = df.copy().reset_index(drop=True)
+    df = df.copy()
     
-    # Handle duplicate columns by keeping only the first occurrence
-    df = df.loc[:, ~df.columns.duplicated()]
-    
-    # Standardize column names
-    column_mapping = {
-        'Sales Team Member': 'Sales Owner',
-        'Deal Value': 'Amount',
-        'Status': 'Sales Stage',
-        'Technical Lead': 'Pre-sales Technical Lead',
-        'Expected Close Date': 'Expected Close Date',
-        'Hunting/Farming': 'Type',
-        'Hunting /farming': 'Type',
-        'Sales_Stage': 'Sales Stage',
-        'Month_1': 'Month',
-        'Short Month': 'Month',
-        'Short Year(25)': 'Year',
-        'Year in FY': 'Year',
-        'FY': 'Year',
-        'Merge COlumn': 'Practice',
-        'P & L Centre': 'Practice'
-    }
-    
-    # Rename columns if they exist
-    for old_col, new_col in column_mapping.items():
-        if old_col in df.columns:
-            df = df.rename(columns={old_col: new_col})
-    
-    # Convert dates and calculate time-based columns at once with explicit dayfirst parameter
-    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', dayfirst=True, errors='coerce')
+    # Convert dates and calculate time-based columns at once
+    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', errors='coerce')
     df['Month'] = df['Expected Close Date'].dt.strftime('%B')
     df['Year'] = df['Expected Close Date'].dt.year
     df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
@@ -333,7 +305,7 @@ def process_data(df):
     # Convert probability and calculate numeric values at once with safe null handling
     def convert_probability(x):
         try:
-            if isinstance(x, float) and np.isnan(x):
+            if pd.isna(x):
                 return 0
             if isinstance(x, str):
                 x = x.rstrip('%')
@@ -344,14 +316,7 @@ def process_data(df):
     df['Probability_Num'] = df['Probability'].apply(convert_probability)
     
     # Pre-calculate common flags and metrics with safe null handling
-    def check_won_status(x):
-        if isinstance(x, float) and np.isnan(x):
-            return False
-        if x is None:
-            return False
-        return 'Won' in str(x)
-
-    df['Is_Won'] = df['Sales Stage'].apply(check_won_status)
+    df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
     df['Amount_Lacs'] = df['Amount'].fillna(0).div(100000).round(0).astype(int)
     df['Weighted_Amount'] = (df['Amount_Lacs'] * df['Probability_Num'] / 100).round(0).astype(int)
     
@@ -455,191 +420,44 @@ def show_data_input():
         st.markdown('<div class="upload-container">', unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
             "Upload Sales Data",
-            type=['xlsx'],
-            help="Upload your sales data file in Excel format (.xlsx)"
+            type=['xlsx', 'csv'],
+            help="Upload your sales data file in Excel or CSV format"
         )
         st.markdown("</div>", unsafe_allow_html=True)
         
         if uploaded_file:
             try:
-                # Read Excel file and get sheet names
-                excel_file = pd.ExcelFile(uploaded_file)
-                sheet_names = excel_file.sheet_names
+                if uploaded_file.name.endswith('.xlsx'):
+                    excel_file = pd.ExcelFile(uploaded_file)
+                    sheet_name = st.selectbox("Select Worksheet", excel_file.sheet_names)
+                    df = pd.read_excel(uploaded_file, sheet_name=sheet_name)
+                else:
+                    df = pd.read_csv(uploaded_file)
                 
-                # Display sheet selection with better UI
-                st.markdown("""
-                    <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; margin: 20px 0;'>
-                        <h3 style='color: #2a5298; margin: 0 0 15px 0;'>Sheet Selection</h3>
-                    </div>
-                """, unsafe_allow_html=True)
+                st.session_state.df = df
+                st.success(f"Successfully loaded {len(df):,} records")
                 
-                col_a, col_b = st.columns(2)
+                # Preview the data
+                st.subheader("Data Preview")
+                st.dataframe(df.head(), use_container_width=True)
                 
-                with col_a:
-                    st.markdown("""
-                        <div style='padding: 10px; background: #e8f0fe; border-radius: 5px;'>
-                            <p style='color: #2a5298; margin: 0;'>📅 Current Week Data</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    selected_current_sheet = st.selectbox(
-                        "Select sheet containing current week's data",
-                        sheet_names,
-                        key="current_week",
-                        help="Choose the sheet with your most recent data"
-                    )
-                
-                with col_b:
-                    st.markdown("""
-                        <div style='padding: 10px; background: #e8f0fe; border-radius: 5px;'>
-                            <p style='color: #2a5298; margin: 0;'>📅 Previous Week Data</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    # Filter out the current sheet from previous week options
-                    prev_sheet_options = [sheet for sheet in sheet_names if sheet != selected_current_sheet]
-                    selected_previous_sheet = st.selectbox(
-                        "Select sheet containing previous week's data",
-                        prev_sheet_options,
-                        key="previous_week",
-                        help="Choose the sheet with your previous week's data"
-                    )
-                
-                # Read the data with better error handling
-                try:
-                    df_current = pd.read_excel(uploaded_file, sheet_name=selected_current_sheet)
-                    df_previous = pd.read_excel(uploaded_file, sheet_name=selected_previous_sheet)
-                    
-                    # Function to clean and standardize column names
-                    def clean_column_names(df):
-                        # Strip whitespace and convert to lowercase for comparison
-                        df.columns = df.columns.str.strip()
-                        
-                        # Find duplicate columns
-                        duplicates = df.columns[df.columns.duplicated()].tolist()
-                        if duplicates:
-                            st.warning(f"Found duplicate columns: {', '.join(duplicates)}")
-                            
-                            # Create a mapping of duplicate columns with suffixes
-                            col_mapping = {}
-                            seen_cols = set()
-                            for col in df.columns:
-                                if col in seen_cols:
-                                    count = sum(1 for c in col_mapping if c.startswith(col))
-                                    new_col = f"{col}_{count + 1}"
-                                    col_mapping[col] = new_col
-                                else:
-                                    seen_cols.add(col)
-                                    col_mapping[col] = col
-                            
-                            # Rename columns using the mapping
-                            df.columns = [col_mapping[col] for col in df.columns]
-                        
-                        return df
-                    
-                    # Clean and standardize column names
-                    df_current = clean_column_names(df_current)
-                    df_previous = clean_column_names(df_previous)
-                    
-                    # Display data preview with error handling
-                    st.markdown("### Data Preview")
-                    
-                    # Current week preview
-                    st.markdown(f"""
-                        <div style='background: #f0f2f6; padding: 15px; border-radius: 10px; margin: 10px 0;'>
-                            <h4 style='color: #2a5298; margin: 0;'>Current Week Data ({selected_current_sheet})</h4>
-                            <p style='color: #666; margin: 5px 0 0 0;'>{len(df_current)} rows × {len(df_current.columns)} columns</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-                    try:
-                        st.dataframe(
-                            df_current.head(),
-                            use_container_width=True
-                        )
-                        
-                        # Show column names and types
-                        with st.expander("Show Current Week Column Details"):
-                            col_info = pd.DataFrame({
-                                'Column Name': df_current.columns,
-                                'Data Type': df_current.dtypes.astype(str),
-                                'Non-Null Count': df_current.count(),
-                                'Null Count': df_current.isna().sum()
-                            })
-                            st.dataframe(col_info, use_container_width=True)
-                    
-                    except Exception as e:
-                        st.error(f"Error displaying current week data: {str(e)}")
-                    
-                    # Previous week preview
-                    st.markdown(f"""
-                        <div style='background: #f0f2f6; padding: 15px; border-radius: 10px; margin: 10px 0;'>
-                            <h4 style='color: #2a5298; margin: 0;'>Previous Week Data ({selected_previous_sheet})</h4>
-                            <p style='color: #666; margin: 5px 0 0 0;'>{len(df_previous)} rows × {len(df_previous.columns)} columns</p>
-                        </div>
-                    """, unsafe_allow_html=True)
-                    
-                    try:
-                        st.dataframe(
-                            df_previous.head(),
-                            use_container_width=True
-                        )
-                        
-                        # Show column names and types
-                        with st.expander("Show Previous Week Column Details"):
-                            col_info = pd.DataFrame({
-                                'Column Name': df_previous.columns,
-                                'Data Type': df_previous.dtypes.astype(str),
-                                'Non-Null Count': df_previous.count(),
-                                'Null Count': df_previous.isna().sum()
-                            })
-                            st.dataframe(col_info, use_container_width=True)
-                    
-                    except Exception as e:
-                        st.error(f"Error displaying previous week data: {str(e)}")
-                    
-                    # Store processed data in session state
-                    st.session_state.df_current = df_current
-                    st.session_state.df_previous = df_previous
-                    st.session_state.df = df_current  # Keep main df as current week for compatibility
-                    
-                    # Success message
-                    st.success(f"""
-                        Successfully loaded:
-                        - Current week ({selected_current_sheet}): {len(df_current):,} records
-                        - Previous week ({selected_previous_sheet}): {len(df_previous):,} records
-                    """)
-                
-                except Exception as e:
-                    st.error(f"Error reading Excel sheets: {str(e)}")
-                    st.error("Please make sure the selected sheets contain valid data.")
-            
             except Exception as e:
-                st.error(f"Error processing file: {str(e)}")
-                st.error("Please make sure your Excel file is properly formatted and not corrupted.")
+                st.error(f"Error: {str(e)}")
     
     with col2:
         st.markdown("""
         <div class="info-box">
             <h4>Required Data Fields</h4>
             <ul>
-                <li>Amount (or Deal Value)</li>
-                <li>Sales Stage (or Status)</li>
+                <li>Amount</li>
+                <li>Sales Stage</li>
                 <li>Expected Close Date</li>
-                <li>Sales Owner (or Sales Team Member)</li>
                 <li>Practice/Region</li>
             </ul>
-            <h4>File Format</h4>
+            <h4>File Formats</h4>
             <ul>
-                <li>Excel (.xlsx) with two sheets:</li>
-                <ul>
-                    <li>Current week's data</li>
-                    <li>Previous week's data</li>
-                </ul>
-            </ul>
-            <h4>Tips</h4>
-            <ul>
-                <li>Ensure column names are consistent across sheets</li>
-                <li>Remove any empty columns</li>
-                <li>Check for duplicate column names</li>
+                <li>Excel (.xlsx)</li>
+                <li>CSV (.csv)</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -652,27 +470,42 @@ def show_overview():
     st.title("Sales Performance Overview")
     df = st.session_state.df.copy()
 
-    # Sales Target Section
+    # --------------------------------------------------------
+    # (1) Let user edit the target as an integer
+    # --------------------------------------------------------
+    #st.markdown("### Enter Your Sales Target (Optional)")
+    #user_target = st.number_input(
+     #   "Sales Target (in Lakhs)",
+      #   value=float(st.session_state.sales_target),  # existing value or 0
+       #  step=0.1,  # or 1.0 if you want full numbers
+        # format="%.1f"
+    #)
+    #try:
+     #   user_target = float(user_target_input)
+    #except ValueError:
+    #    user_target = 0 
     st.markdown("### Enter Your Sales Target (Optional)")
+
+# Get existing value from session state or default to "0"
     default_target = str(int(st.session_state.get("sales_target", 0)))
+
+# Input as string (no steppers)
     user_target_input = st.text_input("Sales Target (in Lakhs)", value=default_target)
 
+# Try to convert it to int
     try:
         user_target = int(user_target_input)
     except ValueError:
-        user_target = 0
+        user_target = 0  # fallback value if user input is invalid
 
+    st.write("You entered:", user_target)
+
+    # Store as float if you like, or keep it integer
     st.session_state.sales_target = float(user_target)
 
-    # Safely handle the Sales Stage column for won deals
-    def is_won_deal(stage):
-        if pd.isna(stage):
-            return False
-        return 'won' in str(stage).lower()
-
-    # Calculate total "Closed Won" with safe handling
-    won_deals = df[df['Sales Stage'].apply(is_won_deal)]
-    won_amount_lacs = won_deals['Amount'].fillna(0).sum() / 100000  # convert to Lakhs
+    # Calculate total "Closed Won"
+    won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
+    won_amount_lacs = won_deals['Amount'].sum() / 100000  # convert to Lakhs
 
     # Show "Target vs Closed Won" progress
     if st.session_state.sales_target > 0:
@@ -700,6 +533,8 @@ def show_overview():
         """,
         unsafe_allow_html=True
     )
+
+    # ---- The rest of your existing Overview code remains below ----
 
     # II. Practice
     st.markdown("""
@@ -1151,12 +986,12 @@ def show_overview():
         st.info("Required columns (Expected Close Date, Amount, Sales Stage) not found in the dataset")
 
 def show_sales_team():
-    if st.session_state.df_current is None:
+    if st.session_state.df is None:
         st.warning("Please upload your sales data to view team information")
         return
     
     # Process data once with caching
-    df = process_data(st.session_state.df_current)
+    df = process_data(st.session_state.df)
     
     # Team members
     team_members = sorted(df['Sales Owner'].dropna().unique().tolist())
@@ -1181,143 +1016,6 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
 
-    # Add new section for Team Performance Trends
-    st.markdown("""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 25px 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        '>
-            <h3 style='
-                color: #2a5298;
-                margin: 0;
-                font-size: 1.4em;
-                font-weight: 600;
-                font-family: "Segoe UI", sans-serif;
-            '>Team Performance Trends</h3>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Add time-based trend analysis
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Monthly trend of closed deals
-        monthly_closed = df[df['Is_Won']].groupby('Month').size().reset_index()
-        monthly_closed.columns = ['Month', 'Closed Deals']
-        fig_monthly = px.line(monthly_closed, x='Month', y='Closed Deals', 
-                             title='Monthly Closed Deals Trend',
-                             markers=True)
-        fig_monthly.update_layout(height=300)
-        st.plotly_chart(fig_monthly, use_container_width=True)
-    
-    with col2:
-        # Quarterly pipeline value trend
-        quarterly_pipeline = df[~df['Is_Won']].groupby('Quarter')['Amount'].sum() / 100000
-        quarterly_pipeline = quarterly_pipeline.reset_index()
-        quarterly_pipeline.columns = ['Quarter', 'Pipeline Value (Lacs)']
-        fig_quarterly = px.bar(quarterly_pipeline, x='Quarter', y='Pipeline Value (Lacs)',
-                              title='Quarterly Pipeline Value Trend',
-                              text='Pipeline Value (Lacs)')
-        fig_quarterly.update_traces(texttemplate='₹%{text:.0f}L', textposition='outside')
-        fig_quarterly.update_layout(height=300)
-        st.plotly_chart(fig_quarterly, use_container_width=True)
-
-    # Add new section for Team Member Comparison
-    st.markdown("""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 25px 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        '>
-            <h3 style='
-                color: #2a5298;
-                margin: 0;
-                font-size: 1.4em;
-                font-weight: 600;
-                font-family: "Segoe UI", sans-serif;
-            '>Team Member Comparison</h3>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Add team member comparison charts
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Win rate comparison
-        team_win_rates = df.groupby('Sales Owner').apply(
-            lambda x: (x['Is_Won'].sum() / len(x) * 100) if len(x) > 0 else 0
-        ).reset_index()
-        team_win_rates.columns = ['Sales Owner', 'Win Rate']
-        fig_win_rates = px.bar(team_win_rates, x='Sales Owner', y='Win Rate',
-                              title='Team Member Win Rates',
-                              text='Win Rate')
-        fig_win_rates.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-        fig_win_rates.update_layout(height=300)
-        st.plotly_chart(fig_win_rates, use_container_width=True)
-    
-    with col2:
-        # Average deal size comparison
-        team_deal_sizes = df.groupby('Sales Owner').apply(
-            lambda x: x['Amount'].mean() / 100000 if len(x) > 0 else 0
-        ).reset_index()
-        team_deal_sizes.columns = ['Sales Owner', 'Avg Deal Size (Lacs)']
-        fig_deal_sizes = px.bar(team_deal_sizes, x='Sales Owner', y='Avg Deal Size (Lacs)',
-                               title='Team Member Average Deal Sizes',
-                               text='Avg Deal Size (Lacs)')
-        fig_deal_sizes.update_traces(texttemplate='₹%{text:.1f}L', textposition='outside')
-        fig_deal_sizes.update_layout(height=300)
-        st.plotly_chart(fig_deal_sizes, use_container_width=True)
-
-    # Add new section for Practice Analysis
-    if 'Practice' in df.columns:
-        st.markdown("""
-            <div style='
-                background: linear-gradient(to right, #f8f9fa, #e9ecef);
-                padding: 20px;
-                border-radius: 15px;
-                margin: 25px 0;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-            '>
-                <h3 style='
-                    color: #2a5298;
-                    margin: 0;
-                    font-size: 1.4em;
-                    font-weight: 600;
-                    font-family: "Segoe UI", sans-serif;
-                '>Practice Analysis</h3>
-            </div>
-        """, unsafe_allow_html=True)
-
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Practice distribution by team member
-            practice_dist = df.groupby(['Sales Owner', 'Practice']).size().reset_index()
-            practice_dist.columns = ['Sales Owner', 'Practice', 'Deal Count']
-            fig_practice = px.bar(practice_dist, x='Sales Owner', y='Deal Count', color='Practice',
-                                title='Practice Distribution by Team Member')
-            fig_practice.update_layout(height=300)
-            st.plotly_chart(fig_practice, use_container_width=True)
-        
-        with col2:
-            # Practice win rates
-            practice_win_rates = df.groupby('Practice').apply(
-                lambda x: (x['Is_Won'].sum() / len(x) * 100) if len(x) > 0 else 0
-            ).reset_index()
-            practice_win_rates.columns = ['Practice', 'Win Rate']
-            fig_practice_win = px.bar(practice_win_rates, x='Practice', y='Win Rate',
-                                    title='Practice Win Rates',
-                                    text='Win Rate')
-            fig_practice_win.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
-            fig_practice_win.update_layout(height=300)
-            st.plotly_chart(fig_practice_win, use_container_width=True)
-
-    # Keep existing metrics and filters section
     metrics = calculate_team_metrics(df)
     
     col1, col2, col3, col4 = st.columns(4)
@@ -1348,6 +1046,7 @@ def show_sales_team():
         text-transform: uppercase;
         letter-spacing: 1px;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        -webkit-font-smoothing: antialiased;
     """
     sublabel_style = """
         color: #FFFFFF;
@@ -1403,113 +1102,161 @@ def show_sales_team():
             </div>
         """, unsafe_allow_html=True)
 
-    # Keep existing filters and detailed view
     st.markdown("""
         <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
             <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>🔍 Filters</h4>
         </div>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns(8)
+    # Create a single row with all filters using adjusted column sizes
+    col1, col2, col3, col4, col5, col6, col7, col8 = st.columns([1.2, 1.2, 1.2, 1, 1, 1, 1.2, 1.2])
+    
     with col1:
         filters = {
             'selected_member': st.selectbox(
                 "👤 Sales Owner",
-                options=["All"] + list(team_members),
+                options=["All Team Members"] + team_members,
                 key="team_member_filter"
-            ),
-            'selected_month': st.selectbox(
-                "📅 Month",
-                options=["All"] + list(months),
-                key="team_month_filter"
-            ),
-            'selected_quarter': st.selectbox(
-                "📊 Quarter",
-                options=["All"] + list(quarters),
-                key="team_quarter_filter"
-            ),
-            'selected_year': st.selectbox(
-                "📅 Year",
-                options=["All"] + list(years),
-                key="team_year_filter"
-            ),
-            'selected_probability': st.selectbox(
-                "🎯 Probability",
-                options=["All"] + list(probabilities),
-                key="team_probability_filter"
-            ),
-            'selected_status': st.selectbox(
-                "📊 Status",
-                options=["All"] + list(statuses),
-                key="team_status_filter"
-            ),
-            'selected_focus': st.selectbox(
-                "🎯 Focus Area",
-                options=["All"] + list(focus_areas),
-                key="team_focus_filter"
             )
         }
+    
     with col2:
         filters['search'] = st.text_input("🔍 Search", placeholder="Search...")
+    
     with col3:
+        if 'Practice' in df.columns:
+            practices = sorted(df['Practice'].dropna().unique())
+            selected_practices = st.multiselect(
+                "🏢 Practice",
+                options=practices,
+                default=[],
+                key="practice_filter"
+            )
+            filters['practices'] = selected_practices
+        else:
+            st.error("Practice column not found in the data")
+            filters['practices'] = []
+    
+    with col4:
         fiscal_order = ['April', 'May', 'June', 'July', 'August', 'September', 
                        'October', 'November', 'December', 'January', 'February', 'March']
         available_months = df['Month'].dropna().unique().tolist()
         available_months.sort(key=lambda x: fiscal_order.index(x) if x in fiscal_order else len(fiscal_order))
-        filters['month_filter'] = st.selectbox("📅 Month", options=["All"] + available_months)
-    with col4:
-        filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All", "Q1", "Q2", "Q3", "Q4"])
+        filters['month_filter'] = st.selectbox("📅 Month", options=["All Months"] + available_months)
+    
     with col5:
-        filters['year_filter'] = st.selectbox("📅 Year", options=["All"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
+        filters['quarter_filter'] = st.selectbox("📊 Quarter", options=["All Quarters", "Q1", "Q2", "Q3", "Q4"])
+    
     with col6:
-        probability_options = ["All", "0-25%", "26-50%", "51-75%", "76-100%", "Custom Range"]
+        filters['year_filter'] = st.selectbox("📅 Year", options=["All Years"] + sorted(df['Expected Close Date'].dt.year.unique().tolist()))
+    
+    with col7:
+        probability_options = ["All Probability", "0-25%", "26-50%", "51-75%", "76-100%", "Custom Range"]
         filters['probability_filter'] = st.selectbox("📈 Probability", options=probability_options)
         if filters['probability_filter'] == "Custom Range":
-            col6a, col6b = st.columns(2)
-            with col6a:
+            col7a, col7b = st.columns(2)
+            with col7a:
                 min_prob_input = st.text_input("Min %", value="0", key="custom_min_prob_input")
-            with col6b:
+            with col7b:
                 max_prob_input = st.text_input("Max %", value="100", key="custom_max_prob_input")
             try:
                 min_prob = int(min_prob_input)
-            except ValueError:
-                min_prob = 0
-            try:
                 max_prob = int(max_prob_input)
+                filters['min_prob'] = min_prob
+                filters['max_prob'] = max_prob
+                filters['custom_prob_range'] = f"{min_prob}-{max_prob}%"
             except ValueError:
-                max_prob = 100
-            filters['min_prob'] = min_prob
-            filters['max_prob'] = max_prob
-            filters['custom_prob_range'] = f"{min_prob}-{max_prob}%"
-    with col7:
-        status_options = ["All", "Committed for the Month", "Upsides for the Month"]
-        filters['status_filter'] = st.selectbox("🎯 Status", options=status_options)
+                filters['min_prob'] = 0
+                filters['max_prob'] = 100
+                filters['custom_prob_range'] = "0-100%"
+    
     with col8:
-        filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All"] + sorted(df['KritiKal Focus Areas'].dropna().unique().tolist()))
+        status_options = ["All Status", "Committed for the Month", "Upsides for the Month"]
+        filters['status_filter'] = st.selectbox("🎯 Status", options=status_options)
+        if filters['status_filter'] == "Committed for the Month":
+            current_month = pd.Timestamp.now().strftime('%B')
+            mask = (df['Month'] == current_month) & (df['Probability_Num'] > 75)
+            filtered_df = df[mask]
+        elif filters['status_filter'] == "Upsides for the Month":
+            current_month = pd.Timestamp.now().strftime('%B')
+            mask = (df['Month'] == current_month) & (df['Probability_Num'].between(25, 75))
+            filtered_df = df[mask]
+    
+    with col8:
+        filters['focus_filter'] = st.selectbox("🎯 Focus", options=["All Focus"] + sorted(df['KritiKal Focus Areas'].dropna().unique().tolist()))
 
     filtered_df = filter_dataframe(df, filters)
     
-    # Keep existing detailed view
     st.markdown("""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 25px 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        '>
-            <h3 style='
-                color: #2a5298;
-                margin: 0;
-                font-size: 1.4em;
-                font-weight: 600;
-                font-family: "Segoe UI", sans-serif;
-            '>Detailed Opportunities</h3>
+        <div style='margin-bottom: 20px;'>
+            <h3 style='color: #2a5298; margin: 0; font-size: 1.4em; font-weight: 600;'>Performance Metrics</h3>
         </div>
     """, unsafe_allow_html=True)
-    
-    filtered_df = filtered_df.reset_index(drop=True)
-    filtered_df.index = filtered_df.index + 1
+
+    m1, m2, m3 = st.columns(3)
+    current_pipeline = filtered_df[~filtered_df['Is_Won']]['Amount_Lacs'].sum()
+    weighted_projections = filtered_df[~filtered_df['Is_Won']]['Weighted_Amount'].sum()
+    closed_won = filtered_df[filtered_df['Is_Won']]['Amount_Lacs'].sum()
+
+    with m1:
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+                height: 100%;
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                    🌊 Current Pipeline
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(current_pipeline)}L
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with m2:
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #6B5B95 0%, #846EA9 100%);
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                    ⚖️ Weighted Projections
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(weighted_projections)}L
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    with m3:
+        st.markdown(f"""
+            <div style='
+                background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                text-align: center;
+            '>
+                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
+                    💰 Closed Won
+                </div>
+                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
+                    ₹{int(closed_won)}L
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<div style='margin: 25px 0;'></div>", unsafe_allow_html=True)
+
+    # First show Detailed Opportunities
+    st.markdown("""### Detailed Opportunities""", unsafe_allow_html=True)
     
     display_df = filtered_df[['Organization Name', 'Opportunity Name', 'Geography', 
                             'Expected Close Date', 'Probability', 'Amount', 
@@ -1518,7 +1265,8 @@ def show_sales_team():
     
     display_df = display_df.rename(columns={
         'Amount': 'Amount (In Lacs)',
-        'Pre-sales Technical Lead': 'Tech Owner'
+        'Pre-sales Technical Lead': 'Tech Owner',
+        'Type': 'Hunting /farming'
     })
     
     display_df['Amount (In Lacs)'] = display_df['Amount (In Lacs)'].apply(lambda x: int(x/100000) if pd.notnull(x) else 0)
@@ -1558,6 +1306,70 @@ def show_sales_team():
         }
     )
 
+    st.markdown("<div style='margin: 25px 0;'></div>", unsafe_allow_html=True)
+
+    # Then show Team Member Performance
+    st.markdown(f"""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin: 0;
+                font-size: 1.4em;
+                font-weight: 600;
+                font-family: "Segoe UI", sans-serif;
+            '>Team Member Performance</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Calculate team metrics
+    team_metrics = df.groupby('Sales Owner').agg({
+        'Amount': lambda x: round(x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000, 1),
+        'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
+    }).reset_index()
+    team_metrics.columns = ['Sales Owner', 'Closed Won', 'Closed Deals']
+    
+    pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
+    total_pipeline = round(pipeline_df.groupby('Sales Owner')['Amount'].sum() / 100000, 1)
+    team_metrics['Current Pipeline'] = team_metrics['Sales Owner'].map(total_pipeline)
+    
+    def calculate_weighted_projection(owner):
+        owner_pipeline = pipeline_df[pipeline_df['Sales Owner'] == owner]
+        weighted_sum = sum((amt * pr / 100) 
+                           for amt, pr in zip(owner_pipeline['Amount'], owner_pipeline['Probability_Num']))
+        return round(weighted_sum / 100000, 1)
+    
+    team_metrics['Weighted Projections'] = team_metrics['Sales Owner'].apply(calculate_weighted_projection)
+    
+    total_deals_owner = pipeline_df.groupby('Sales Owner').size()
+    team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(total_deals_owner)
+    team_metrics['Win Rate'] = round((team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100), 1)
+    team_metrics = team_metrics.sort_values('Current Pipeline', ascending=False)
+    
+    summary_data = team_metrics.copy()
+    summary_data['Current Pipeline'] = summary_data['Current Pipeline'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Weighted Projections'] = summary_data['Weighted Projections'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Closed Won'] = summary_data['Closed Won'].apply(lambda x: f"₹{x:,}L")
+    summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x}%")
+    
+    st.dataframe(
+        summary_data[[
+            'Sales Owner',
+            'Current Pipeline',
+            'Weighted Projections',
+            'Closed Won',
+            'Pipeline Deals',
+            'Closed Deals',
+            'Win Rate'
+        ]],
+        use_container_width=True
+    )
+
 def show_detailed():
     if st.session_state.df is None:
         st.warning("Please upload your sales data to view detailed information")
@@ -1574,154 +1386,12 @@ def show_detailed():
     
     st.dataframe(df, use_container_width=True)
 
-def show_quarter_summary():
-    st.title("Quarter Summary Dashboard")
-    
-    # Check if both current and previous week data are loaded
-    if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
-        st.warning("Please upload both current and previous week data first!")
-        return
-    
-    # Get current and previous week data
-    df_current = st.session_state.df_current.copy()
-    df_previous = st.session_state.df_previous.copy()
-    
-    # Filters
-    col1, col2, col3 = st.columns([1.2, 1.2, 1.2])
-    
-    with col1:
-        sales_owners = sorted(df_current['Sales Owner'].dropna().unique().tolist())
-        selected_sales_owner = st.selectbox("👤 Sales Owner", ["All Sales Owners"] + sales_owners)
-    
-    with col2:
-        quarters = ['Q1', 'Q2', 'Q3', 'Q4']
-        selected_quarter = st.selectbox("📊 Quarter", ["All Quarters"] + quarters)
-    
-    with col3:
-        practices = sorted(df_current['Practice'].dropna().unique().tolist())
-        selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + practices)
-    
-    # Apply filters to both current and previous week data
-    if selected_sales_owner != "All Sales Owners":
-        df_current = df_current[df_current['Sales Owner'] == selected_sales_owner]
-        df_previous = df_previous[df_previous['Sales Owner'] == selected_sales_owner]
-    
-    if selected_quarter != "All Quarters":
-        df_current = df_current[df_current['Quarter'] == selected_quarter]
-        df_previous = df_previous[df_previous['Quarter'] == selected_quarter]
-    
-    if selected_practice != "All Practices":
-        df_current = df_current[df_current['Practice'] == selected_practice]
-        df_previous = df_previous[df_previous['Practice'] == selected_practice]
-    
-    # Calculate metrics for current week
-    committed_current = df_current[df_current['Sales Stage'] == "Committed for the Month"]['Amount'].sum()
-    upside_current = df_current[df_current['Sales Stage'] == "Upsides for the Month"]['Amount'].sum()
-    closed_won_current = df_current[df_current['Sales Stage'].apply(lambda x: 'Won' in str(x) if pd.notna(x) else False)]['Amount'].sum()
-    
-    # Calculate metrics for previous week
-    committed_previous = df_previous[df_previous['Sales Stage'] == "Committed for the Month"]['Amount'].sum()
-    upside_previous = df_previous[df_previous['Sales Stage'] == "Upsides for the Month"]['Amount'].sum()
-    closed_won_previous = df_previous[df_previous['Sales Stage'].apply(lambda x: 'Won' in str(x) if pd.notna(x) else False)]['Amount'].sum()
-    
-    # Calculate deltas and percentages
-    def calculate_delta_percentage(current, previous):
-        delta = current - previous
-        percentage = (delta / previous * 100) if previous != 0 else 0
-        return delta, percentage
-    
-    committed_delta, committed_pct = calculate_delta_percentage(committed_current, committed_previous)
-    upside_delta, upside_pct = calculate_delta_percentage(upside_current, upside_previous)
-    closed_won_delta, closed_won_pct = calculate_delta_percentage(closed_won_current, closed_won_previous)
-    
-    # Calculate overall committed
-    overall_committed_current = committed_current + closed_won_current
-    overall_committed_previous = committed_previous + closed_won_previous
-    overall_committed_delta, overall_committed_pct = calculate_delta_percentage(overall_committed_current, overall_committed_previous)
-    
-    # Helper function for trend indicator
-    def get_trend_indicator(value):
-        if value > 0:
-            return "↗️"
-        elif value < 0:
-            return "↘️"
-        return "➡️"
-    
-    # Display metrics using enhanced card-based layout
-    def create_metric_card(title, current, previous, delta, percentage):
-        trend = get_trend_indicator(delta)
-        return f"""
-            <div style='background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 10px 0;'>
-                <h3 style='color: #2a5298; margin: 0 0 15px 0; font-size: 1.2em;'>{title}</h3>
-                <div style='display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;'>
-                    <div>
-                        <div style='color: #666; font-size: 0.9em;'>Current Week</div>
-                        <div style='color: #2ecc71; font-size: 1.4em; font-weight: 600;'>₹{current / 100000:.0f}L</div>
-                    </div>
-                    <div>
-                        <div style='color: #666; font-size: 0.9em;'>Previous Week</div>
-                        <div style='color: #3498db; font-size: 1.4em; font-weight: 600;'>₹{previous / 100000:.0f}L</div>
-                    </div>
-                    <div>
-                        <div style='color: #666; font-size: 0.9em;'>Change</div>
-                        <div style='color: {"#2ecc71" if delta >= 0 else "#e74c3c"}; font-size: 1.4em; font-weight: 600;'>
-                            {trend} ₹{abs(delta) / 100000:.0f}L
-                            <div style='font-size: 0.7em;'>({percentage:.1f}%)</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        """
-    
-    # Create all metric cards
-    metrics_html = f"""
-        {create_metric_card("Committed Data", committed_current, committed_previous, committed_delta, committed_pct)}
-        {create_metric_card("Upside Data", upside_current, upside_previous, upside_delta, upside_pct)}
-        {create_metric_card("Closed Won", closed_won_current, closed_won_previous, closed_won_delta, closed_won_pct)}
-        {create_metric_card("Overall Committed", overall_committed_current, overall_committed_previous, overall_committed_delta, overall_committed_pct)}
-    """
-    
-    st.markdown(metrics_html, unsafe_allow_html=True)
-    
-    # Add summary statistics
-    st.markdown("""
-        <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
-            <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>📊 Summary Statistics</h4>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        total_deals_current = len(df_current)
-        total_deals_previous = len(df_previous)
-        deals_delta = total_deals_current - total_deals_previous
-        st.metric("Total Deals", total_deals_current, deals_delta)
-    
-    with col2:
-        avg_deal_size_current = committed_current / total_deals_current if total_deals_current > 0 else 0
-        avg_deal_size_previous = committed_previous / total_deals_previous if total_deals_previous > 0 else 0
-        avg_deal_delta = avg_deal_size_current - avg_deal_size_previous
-        st.metric("Avg Deal Size (Lakhs)", f"₹{avg_deal_size_current/100000:.1f}L", f"₹{avg_deal_delta/100000:.1f}L")
-    
-    with col3:
-        win_rate_current = (closed_won_current / committed_current * 100) if committed_current > 0 else 0
-        win_rate_previous = (closed_won_previous / committed_previous * 100) if committed_previous > 0 else 0
-        win_rate_delta = win_rate_current - win_rate_previous
-        st.metric("Win Rate", f"{win_rate_current:.1f}%", f"{win_rate_delta:.1f}%")
-    
-    with col4:
-        conversion_rate_current = (closed_won_current / upside_current * 100) if upside_current > 0 else 0
-        conversion_rate_previous = (closed_won_previous / upside_previous * 100) if upside_previous > 0 else 0
-        conversion_rate_delta = conversion_rate_current - conversion_rate_previous
-        st.metric("Conversion Rate", f"{conversion_rate_current:.1f}%", f"{conversion_rate_delta:.1f}%")
-
 def main():
     with st.sidebar:
         st.title("Navigation")
         selected = st.radio(
             "Select View",
-            options=["Data Input", "Overview", "Sales Team", "Detailed Data", "Quarter Summary"],
+            options=["Data Input", "Overview", "Sales Team", "Detailed Data"],
             key="navigation"
         )
         st.session_state.current_view = selected.lower().replace(" ", "_")
@@ -1734,8 +1404,6 @@ def main():
         show_sales_team()
     elif st.session_state.current_view == "detailed_data":
         show_detailed()
-    elif st.session_state.current_view == "quarter_summary":
-        show_quarter_summary()
 
 if __name__ == "__main__":
     main()
