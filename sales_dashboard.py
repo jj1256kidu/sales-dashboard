@@ -693,8 +693,6 @@ def show_overview():
         unsafe_allow_html=True
     )
 
-    # ---- The rest of your existing Overview code remains below ----
-
     # II. Practice
     st.markdown("""
         <div style='background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%); padding: 15px; border-radius: 10px; margin-bottom: 30px;'>
@@ -1289,6 +1287,47 @@ def show_sales_team():
         }),
         use_container_width=True
     )
+    
+    # Add back the original views
+    st.subheader("Sales Stage Distribution")
+    stage_dist = df.groupby('Sales Stage')['Amount'].sum().reset_index()
+    stage_dist['Amount'] = stage_dist['Amount'].div(100000).round(0).astype(int)
+    
+    fig = px.pie(
+        stage_dist,
+        values='Amount',
+        names='Sales Stage',
+        title='Amount Distribution by Sales Stage'
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Monthly trend
+    st.subheader("Monthly Trend")
+    df['Month'] = pd.to_datetime(df['Expected Close Date']).dt.strftime('%Y-%m')
+    monthly_trend = df.groupby('Month')['Amount'].sum().reset_index()
+    monthly_trend['Amount'] = monthly_trend['Amount'].div(100000).round(0).astype(int)
+    
+    fig = px.line(
+        monthly_trend,
+        x='Month',
+        y='Amount',
+        title='Monthly Sales Trend',
+        labels={'Amount': 'Amount (Lakhs)'}
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Win rate by practice
+    st.subheader("Win Rate by Practice")
+    win_rate_by_practice = practice_metrics[['Practice', 'Win Rate']].sort_values('Win Rate', ascending=False)
+    
+    fig = px.bar(
+        win_rate_by_practice,
+        x='Practice',
+        y='Win Rate',
+        title='Win Rate by Practice',
+        labels={'Win Rate': 'Win Rate (%)'}
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
 def show_detailed():
     if st.session_state.df is None:
