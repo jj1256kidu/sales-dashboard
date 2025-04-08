@@ -463,12 +463,20 @@ def show_data_input():
         """, unsafe_allow_html=True)
 
 def show_overview():
-    if st.session_state.df is None:
-        st.warning("Please upload your sales data to view the dashboard")
+    if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
+        st.warning("Please upload data first.")
         return
     
+    dataset_choice = st.radio(
+        "Select Dataset",
+        ["Current Week", "Previous Week"],
+        horizontal=True
+    )
+    
+    df = st.session_state.df_current if dataset_choice == "Current Week" else st.session_state.df_previous
+    st.session_state.df = df  # Set the current df in session state for compatibility
+    
     st.title("Sales Performance Overview")
-    df = st.session_state.df.copy()
 
     # --------------------------------------------------------
     # (1) Let user edit the target as an integer
@@ -1385,6 +1393,40 @@ def show_detailed():
         df = df[mask.any(axis=1)]
     
     st.dataframe(df, use_container_width=True)
+
+# Function to display data input (upload and preview)
+def display_data_input():
+    st.title("Data Input")
+
+    uploaded_file = st.file_uploader("Upload your Excel file", type=["xlsx"])
+
+    if uploaded_file:
+        excel_file = pd.ExcelFile(uploaded_file)
+        sheet_names = excel_file.sheet_names
+        st.write("Available Sheets:", sheet_names)
+
+        selected_current_sheet = st.selectbox("Select Current Week Sheet", sheet_names, key="current_week")
+        selected_previous_sheet = st.selectbox("Select Previous Week Sheet", sheet_names, key="previous_week")
+
+        df_current = pd.read_excel(uploaded_file, sheet_name=selected_current_sheet)
+        df_previous = pd.read_excel(uploaded_file, sheet_name=selected_previous_sheet)
+
+        df_current.columns = df_current.columns.str.strip()
+        df_previous.columns = df_previous.columns.str.strip()
+
+        st.session_state.df_current = df_current
+        st.session_state.df_previous = df_previous
+
+        st.write(f"Current Week Data from {selected_current_sheet}:")
+        st.dataframe(df_current.head())
+        
+        st.write(f"Previous Week Data from {selected_previous_sheet}:")
+        st.dataframe(df_previous.head())
+
+        return df_current, df_previous
+    else:
+        st.warning("Please upload a file to proceed.")
+        return None, None
 
 def main():
     # Initialize session state for navigation if not exists
