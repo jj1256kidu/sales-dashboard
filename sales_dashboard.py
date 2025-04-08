@@ -1413,17 +1413,15 @@ def show_quarterly_summary():
         st.warning("Please upload data first.")
         return
     
-    dataset_choice = st.radio(
-        "Select Dataset",
-        ["Current Week", "Previous Week"],
-        horizontal=True
-    )
+    df_current = st.session_state.df_current
+    df_previous = st.session_state.df_previous
     
-    df = st.session_state.df_current if dataset_choice == "Current Week" else st.session_state.df_previous
+    # Convert dates properly with explicit format and dayfirst=True for both datasets
+    df_current['Expected Close Date'] = pd.to_datetime(df_current['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
+    df_current['Month'] = df_current['Expected Close Date'].dt.strftime('%B')
     
-    # Convert dates properly with explicit format and dayfirst=True
-    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
-    df['Month'] = df['Expected Close Date'].dt.strftime('%B')
+    df_previous['Expected Close Date'] = pd.to_datetime(df_previous['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
+    df_previous['Month'] = df_previous['Expected Close Date'].dt.strftime('%B')
     
     st.title("Quarterly Summary")
     
@@ -1439,104 +1437,272 @@ def show_quarterly_summary():
         "Q4": ["January", "February", "March"]
     }
     
-    # Filter data for selected quarter
-    quarter_data = df[df['Month'].isin(quarter_months[selected_quarter])]
+    # Filter data for selected quarter for both datasets
+    quarter_data_current = df_current[df_current['Month'].isin(quarter_months[selected_quarter])]
+    quarter_data_previous = df_previous[df_previous['Month'].isin(quarter_months[selected_quarter])]
     
     # Quarterly Metrics
     st.subheader("Quarterly Performance Metrics")
+    
+    # Calculate metrics for both weeks
+    metrics = {
+        'Current Week': {
+            'Total Pipeline': quarter_data_current['Amount'].sum() / 100000,
+            'Closed Won': quarter_data_current[quarter_data_current['Sales Stage'] == 'Closed Won']['Amount'].sum() / 100000,
+            'Win Rate': (len(quarter_data_current[quarter_data_current['Sales Stage'] == 'Closed Won']) / len(quarter_data_current) * 100) if len(quarter_data_current) > 0 else 0,
+            'Avg Deal Size': (quarter_data_current['Amount'].sum() / 100000 / len(quarter_data_current)) if len(quarter_data_current) > 0 else 0
+        },
+        'Previous Week': {
+            'Total Pipeline': quarter_data_previous['Amount'].sum() / 100000,
+            'Closed Won': quarter_data_previous[quarter_data_previous['Sales Stage'] == 'Closed Won']['Amount'].sum() / 100000,
+            'Win Rate': (len(quarter_data_previous[quarter_data_previous['Sales Stage'] == 'Closed Won']) / len(quarter_data_previous) * 100) if len(quarter_data_previous) > 0 else 0,
+            'Avg Deal Size': (quarter_data_previous['Amount'].sum() / 100000 / len(quarter_data_previous)) if len(quarter_data_previous) > 0 else 0
+        }
+    }
+    
+    # Calculate deltas
+    deltas = {
+        'Total Pipeline': metrics['Current Week']['Total Pipeline'] - metrics['Previous Week']['Total Pipeline'],
+        'Closed Won': metrics['Current Week']['Closed Won'] - metrics['Previous Week']['Closed Won'],
+        'Win Rate': metrics['Current Week']['Win Rate'] - metrics['Previous Week']['Win Rate'],
+        'Avg Deal Size': metrics['Current Week']['Avg Deal Size'] - metrics['Previous Week']['Avg Deal Size']
+    }
+    
+    # Display metrics in columns
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        quarterly_pipeline = quarter_data['Amount'].sum() / 100000  # Convert to Lakhs
-        st.metric("Total Pipeline", f"₹{quarterly_pipeline:.0f}L")
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Total Pipeline</div>
+                    <div class="metric-value">₹{metrics['Current Week']['Total Pipeline']:.0f}L</div>
+                    <div class="metric-label">Current Week</div>
+                </div>
+                <div class="card">
+                    <div class="metric-value">₹{metrics['Previous Week']['Total Pipeline']:.0f}L</div>
+                    <div class="metric-label">Previous Week</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if deltas['Total Pipeline'] > 0 else 'delta-negative'}">
+                        ₹{deltas['Total Pipeline']:.0f}L
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
     
     with col2:
-        closed_won = quarter_data[quarter_data['Sales Stage'] == 'Closed Won']['Amount'].sum() / 100000  # Convert to Lakhs
-        st.metric("Closed Won", f"₹{closed_won:.0f}L")
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Closed Won</div>
+                    <div class="metric-value">₹{metrics['Current Week']['Closed Won']:.0f}L</div>
+                    <div class="metric-label">Current Week</div>
+                </div>
+                <div class="card">
+                    <div class="metric-value">₹{metrics['Previous Week']['Closed Won']:.0f}L</div>
+                    <div class="metric-label">Previous Week</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if deltas['Closed Won'] > 0 else 'delta-negative'}">
+                        ₹{deltas['Closed Won']:.0f}L
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
     
     with col3:
-        win_rate = (len(quarter_data[quarter_data['Sales Stage'] == 'Closed Won']) / len(quarter_data) * 100) if len(quarter_data) > 0 else 0
-        st.metric("Win Rate", f"{win_rate:.1f}%")
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Win Rate</div>
+                    <div class="metric-value">{metrics['Current Week']['Win Rate']:.1f}%</div>
+                    <div class="metric-label">Current Week</div>
+                </div>
+                <div class="card">
+                    <div class="metric-value">{metrics['Previous Week']['Win Rate']:.1f}%</div>
+                    <div class="metric-label">Previous Week</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if deltas['Win Rate'] > 0 else 'delta-negative'}">
+                        {deltas['Win Rate']:.1f}%
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
     
     with col4:
-        avg_deal_size = (quarterly_pipeline / len(quarter_data)) if len(quarter_data) > 0 else 0
-        st.metric("Average Deal Size", f"₹{avg_deal_size:.0f}L")
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Average Deal Size</div>
+                    <div class="metric-value">₹{metrics['Current Week']['Avg Deal Size']:.0f}L</div>
+                    <div class="metric-label">Current Week</div>
+                </div>
+                <div class="card">
+                    <div class="metric-value">₹{metrics['Previous Week']['Avg Deal Size']:.0f}L</div>
+                    <div class="metric-label">Previous Week</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if deltas['Avg Deal Size'] > 0 else 'delta-negative'}">
+                        ₹{deltas['Avg Deal Size']:.0f}L
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
     
     # Monthly Breakdown within Quarter
     st.subheader("Monthly Breakdown")
-    monthly_data = quarter_data.groupby('Month').agg({
-        'Amount': lambda x: x.sum() / 100000,  # Convert to Lakhs
-        'Sales Stage': lambda x: (x == 'Closed Won').sum(),
-        'Organization Name': 'count'  # Count of opportunities
-    }).reset_index()
-    monthly_data.columns = ['Month', 'Pipeline Value', 'Closed Won Deals', 'Total Deals']
     
-    # Sort months in correct order for the quarter
+    # Create monthly breakdown for both current and previous week
+    def get_monthly_data(df, suffix):
+        monthly = df.groupby('Month').agg({
+            'Amount': lambda x: x.sum() / 100000,
+            'Sales Stage': lambda x: (x == 'Closed Won').sum(),
+            'Organization Name': 'count'
+        }).reset_index()
+        monthly.columns = ['Month', f'Pipeline Value {suffix}', f'Closed Won Deals {suffix}', f'Total Deals {suffix}']
+        return monthly
+    
+    monthly_current = get_monthly_data(quarter_data_current, 'Current')
+    monthly_previous = get_monthly_data(quarter_data_previous, 'Previous')
+    
+    # Merge current and previous data
+    monthly_data = pd.merge(monthly_current, monthly_previous, on='Month', how='outer')
+    
+    # Sort months in correct order
     monthly_data['Month'] = pd.Categorical(monthly_data['Month'], categories=quarter_months[selected_quarter], ordered=True)
     monthly_data = monthly_data.sort_values('Month')
     
+    # Calculate deltas
+    monthly_data['Pipeline Delta'] = monthly_data['Pipeline Value Current'] - monthly_data['Pipeline Value Previous']
+    monthly_data['Deals Delta'] = monthly_data['Closed Won Deals Current'] - monthly_data['Closed Won Deals Previous']
+    
     st.dataframe(monthly_data.style.format({
-        'Pipeline Value': '₹{:.0f}L',
-        'Closed Won Deals': '{:.0f}',
-        'Total Deals': '{:.0f}'
+        'Pipeline Value Current': '₹{:.0f}L',
+        'Pipeline Value Previous': '₹{:.0f}L',
+        'Pipeline Delta': '₹{:.0f}L',
+        'Closed Won Deals Current': '{:.0f}',
+        'Closed Won Deals Previous': '{:.0f}',
+        'Deals Delta': '{:.0f}',
+        'Total Deals Current': '{:.0f}',
+        'Total Deals Previous': '{:.0f}'
     }), use_container_width=True)
     
-    # Practice Performance in Quarter
+    # Practice Performance
     st.subheader("Practice Performance")
-    if 'Practice' in quarter_data.columns:
-        practice_data = quarter_data.groupby('Practice').agg({
-            'Amount': lambda x: x.sum() / 100000,  # Convert to Lakhs
-            'Sales Stage': lambda x: (x == 'Closed Won').sum(),
-            'Organization Name': 'count'  # Count of opportunities
-        }).reset_index()
-        practice_data.columns = ['Practice', 'Pipeline Value', 'Closed Won Deals', 'Total Deals']
-        practice_data['Win Rate'] = (practice_data['Closed Won Deals'] / practice_data['Total Deals'] * 100).round(1)
+    if 'Practice' in quarter_data_current.columns and 'Practice' in quarter_data_previous.columns:
+        # Function to get practice metrics
+        def get_practice_data(df, suffix):
+            practice = df.groupby('Practice').agg({
+                'Amount': lambda x: x.sum() / 100000,
+                'Sales Stage': lambda x: (x == 'Closed Won').sum(),
+                'Organization Name': 'count'
+            }).reset_index()
+            practice.columns = ['Practice', f'Pipeline Value {suffix}', f'Closed Won Deals {suffix}', f'Total Deals {suffix}']
+            return practice
         
-        # Practice performance table
+        practice_current = get_practice_data(quarter_data_current, 'Current')
+        practice_previous = get_practice_data(quarter_data_previous, 'Previous')
+        
+        # Merge practice data
+        practice_data = pd.merge(practice_current, practice_previous, on='Practice', how='outer')
+        
+        # Calculate win rates and deltas
+        practice_data['Win Rate Current'] = (practice_data['Closed Won Deals Current'] / practice_data['Total Deals Current'] * 100).round(1)
+        practice_data['Win Rate Previous'] = (practice_data['Closed Won Deals Previous'] / practice_data['Total Deals Previous'] * 100).round(1)
+        practice_data['Win Rate Delta'] = (practice_data['Win Rate Current'] - practice_data['Win Rate Previous']).round(1)
+        
         st.dataframe(practice_data.style.format({
-            'Pipeline Value': '₹{:.0f}L',
-            'Closed Won Deals': '{:.0f}',
-            'Total Deals': '{:.0f}',
-            'Win Rate': '{:.1f}%'
+            'Pipeline Value Current': '₹{:.0f}L',
+            'Pipeline Value Previous': '₹{:.0f}L',
+            'Closed Won Deals Current': '{:.0f}',
+            'Closed Won Deals Previous': '{:.0f}',
+            'Total Deals Current': '{:.0f}',
+            'Total Deals Previous': '{:.0f}',
+            'Win Rate Current': '{:.1f}%',
+            'Win Rate Previous': '{:.1f}%',
+            'Win Rate Delta': '{:.1f}%'
         }), use_container_width=True)
         
-        # Practice pipeline distribution chart
-        st.subheader("Practice Pipeline Distribution")
-        fig = px.pie(practice_data, values='Pipeline Value', names='Practice',
-                     title=f'Pipeline Distribution by Practice - {selected_quarter}')
-        st.plotly_chart(fig, use_container_width=True)
+        # Practice pipeline distribution comparison chart
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            fig_current = px.pie(practice_current, values='Pipeline Value Current', names='Practice',
+                               title=f'Current Week - Pipeline Distribution by Practice ({selected_quarter})')
+            st.plotly_chart(fig_current, use_container_width=True)
+        
+        with col2:
+            fig_previous = px.pie(practice_previous, values='Pipeline Value Previous', names='Practice',
+                                title=f'Previous Week - Pipeline Distribution by Practice ({selected_quarter})')
+            st.plotly_chart(fig_previous, use_container_width=True)
     
-    # Team Performance in Quarter
+    # Team Performance
     st.subheader("Team Performance")
-    team_data = quarter_data.groupby('Sales Owner').agg({
-        'Amount': lambda x: x.sum() / 100000,  # Convert to Lakhs
-        'Sales Stage': lambda x: (x == 'Closed Won').sum(),
-        'Organization Name': 'count'  # Count of opportunities
-    }).reset_index()
-    team_data.columns = ['Sales Team Member', 'Pipeline Value', 'Closed Won Deals', 'Total Deals']
-    team_data['Win Rate'] = (team_data['Closed Won Deals'] / team_data['Total Deals'] * 100).round(1)
     
-    # Team performance table
+    # Function to get team metrics
+    def get_team_data(df, suffix):
+        team = df.groupby('Sales Owner').agg({
+            'Amount': lambda x: x.sum() / 100000,
+            'Sales Stage': lambda x: (x == 'Closed Won').sum(),
+            'Organization Name': 'count'
+        }).reset_index()
+        team.columns = ['Sales Owner', f'Pipeline Value {suffix}', f'Closed Won Deals {suffix}', f'Total Deals {suffix}']
+        return team
+    
+    team_current = get_team_data(quarter_data_current, 'Current')
+    team_previous = get_team_data(quarter_data_previous, 'Previous')
+    
+    # Merge team data
+    team_data = pd.merge(team_current, team_previous, on='Sales Owner', how='outer')
+    
+    # Calculate win rates and deltas
+    team_data['Win Rate Current'] = (team_data['Closed Won Deals Current'] / team_data['Total Deals Current'] * 100).round(1)
+    team_data['Win Rate Previous'] = (team_data['Closed Won Deals Previous'] / team_data['Total Deals Previous'] * 100).round(1)
+    team_data['Win Rate Delta'] = (team_data['Win Rate Current'] - team_data['Win Rate Previous']).round(1)
+    
     st.dataframe(team_data.style.format({
-        'Pipeline Value': '₹{:.0f}L',
-        'Closed Won Deals': '{:.0f}',
-        'Total Deals': '{:.0f}',
-        'Win Rate': '{:.1f}%'
+        'Pipeline Value Current': '₹{:.0f}L',
+        'Pipeline Value Previous': '₹{:.0f}L',
+        'Closed Won Deals Current': '{:.0f}',
+        'Closed Won Deals Previous': '{:.0f}',
+        'Total Deals Current': '{:.0f}',
+        'Total Deals Previous': '{:.0f}',
+        'Win Rate Current': '{:.1f}%',
+        'Win Rate Previous': '{:.1f}%',
+        'Win Rate Delta': '{:.1f}%'
     }), use_container_width=True)
     
     # Pipeline Trend Chart
     st.subheader("Pipeline Trend")
-    trend_data = quarter_data.groupby(['Month', 'Sales Stage'])['Amount'].sum().reset_index()
-    trend_data['Amount'] = trend_data['Amount'] / 100000  # Convert to Lakhs
+    
+    # Create trend data for both weeks
+    trend_current = quarter_data_current.groupby(['Month', 'Sales Stage'])['Amount'].sum().reset_index()
+    trend_current['Amount'] = trend_current['Amount'] / 100000
+    trend_current['Week'] = 'Current Week'
+    
+    trend_previous = quarter_data_previous.groupby(['Month', 'Sales Stage'])['Amount'].sum().reset_index()
+    trend_previous['Amount'] = trend_previous['Amount'] / 100000
+    trend_previous['Week'] = 'Previous Week'
+    
+    # Combine trend data
+    trend_data = pd.concat([trend_current, trend_previous])
     
     # Sort months in correct order
     trend_data['Month'] = pd.Categorical(trend_data['Month'], categories=quarter_months[selected_quarter], ordered=True)
-    trend_data = trend_data.sort_values('Month')
+    trend_data = trend_data.sort_values(['Month', 'Week'])
     
+    # Create grouped bar chart
     fig = px.bar(trend_data, x='Month', y='Amount', color='Sales Stage',
+                 barmode='group', facet_col='Week',
                  title=f'Pipeline Trend by Status - {selected_quarter}',
-                 labels={'Amount': 'Amount (Lakhs)'},
-                 barmode='group')
+                 labels={'Amount': 'Amount (Lakhs)'})
+    
     st.plotly_chart(fig, use_container_width=True)
 
 def display_dashboard():
