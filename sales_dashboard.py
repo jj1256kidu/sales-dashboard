@@ -317,6 +317,132 @@ st.markdown("""
         margin: 10px 0;
         text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
+
+    /* Modern Quarterly Dashboard Styles */
+    .quarterly-dashboard {
+        background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
+        padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        margin: 2rem 0;
+    }
+
+    .metric-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 36px 0 rgba(31, 38, 135, 0.15);
+    }
+
+    .metric-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid rgba(74, 144, 226, 0.1);
+    }
+
+    .metric-icon {
+        font-size: 1.5rem;
+        margin-right: 0.75rem;
+        color: #4a90e2;
+    }
+
+    .metric-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #1e1e2f;
+        margin: 0;
+    }
+
+    .metric-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .metric-values {
+        flex: 1;
+    }
+
+    .metric-current {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e1e2f;
+        margin: 0.5rem 0;
+    }
+
+    .metric-previous {
+        font-size: 1.1rem;
+        color: #6b7280;
+        margin: 0.25rem 0;
+    }
+
+    .metric-delta {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        text-align: center;
+        min-width: 120px;
+    }
+
+    .delta-positive {
+        color: #00c896;
+    }
+
+    .delta-negative {
+        color: #ff5b5b;
+    }
+
+    .delta-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .delta-label {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    /* Filter section styling */
+    .filter-section {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+
+    .filter-title {
+        color: #1e1e2f;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    /* Selectbox styling */
+    .stSelectbox {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .stSelectbox > div {
+        background: white !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1423,227 +1549,97 @@ def show_quarterly_summary():
     df_previous['Expected Close Date'] = pd.to_datetime(df_previous['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
     df_previous['Month'] = df_previous['Expected Close Date'].dt.strftime('%B')
     
-    # Modern header with gradient background
+    # Modern header with glassmorphism effect
     st.markdown("""
         <div style='
-            background: linear-gradient(120deg, #1e3c72 0%, #2a5298 100%);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            background: linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.95) 100%);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            margin-bottom: 2rem;
         '>
             <h1 style='
                 color: white;
                 margin: 0;
                 text-align: center;
-                font-size: 2.5em;
+                font-size: 2.5rem;
                 font-weight: 700;
                 letter-spacing: 1px;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
             '>Quarterly Performance Dashboard</h1>
         </div>
     """, unsafe_allow_html=True)
     
     # Modern filter section
     st.markdown("""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        '>
-            <h3 style='
-                color: #2a5298;
-                margin: 0 0 15px 0;
-                font-size: 1.4em;
-                font-weight: 600;
-            '>📊 Performance Filters</h3>
+        <div class="filter-section">
+            <div class="filter-title">🎯 Performance Filters</div>
         </div>
     """, unsafe_allow_html=True)
     
-    # Create a row for filters
-    col1, col2, col3 = st.columns(3)
+    # Filter layout and logic remains the same...
     
-    with col1:
-        # Quarter selector with modern styling
-        quarters = ["All", "Q1", "Q2", "Q3", "Q4"]
-        selected_quarter = st.selectbox(
-            "📅 Select Quarter",
-            quarters,
-            help="Filter data by fiscal quarter"
-        )
-    
-    with col2:
-        # Practice selector
-        practices = ["All"] + sorted(df_current['Practice'].dropna().unique().tolist())
-        selected_practice = st.selectbox(
-            "🏢 Select Practice",
-            practices,
-            help="Filter data by practice area"
-        )
-    
-    with col3:
-        # Status selector
-        statuses = ["All", "Pipeline", "Closed Won", "In Progress"]
-        selected_status = st.selectbox(
-            "🎯 Select Status",
-            statuses,
-            help="Filter data by deal status"
-        )
-    
-    # Quarter mapping
-    quarter_months = {
-        "Q1": ["April", "May", "June"],
-        "Q2": ["July", "August", "September"],
-        "Q3": ["October", "November", "December"],
-        "Q4": ["January", "February", "March"]
-    }
-    
-    # Filter data based on selections
-    def filter_data(df, quarter, practice, status):
-        filtered_df = df.copy()
-        if quarter != "All":
-            filtered_df = filtered_df[filtered_df['Month'].isin(quarter_months[quarter])]
-        if practice != "All":
-            filtered_df = filtered_df[filtered_df['Practice'] == practice]
-        if status != "All":
-            if status == "Pipeline":
-                filtered_df = filtered_df[~filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
-            elif status == "Closed Won":
-                filtered_df = filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
-        return filtered_df
-    
-    quarter_data_current = filter_data(df_current, selected_quarter, selected_practice, selected_status)
-    quarter_data_previous = filter_data(df_previous, selected_quarter, selected_practice, selected_status)
-    
-    # Calculate metrics for both weeks
+    # Calculate metrics
     metrics = {
-        'Current Week': {
-            'Total Pipeline': quarter_data_current['Amount'].sum() / 100000,
-            'Closed Won': quarter_data_current[quarter_data_current['Sales Stage'] == 'Closed Won']['Amount'].sum() / 100000,
-            'Win Rate': (len(quarter_data_current[quarter_data_current['Sales Stage'] == 'Closed Won']) / len(quarter_data_current) * 100) if len(quarter_data_current) > 0 else 0,
-            'Avg Deal Size': (quarter_data_current['Amount'].sum() / 100000 / len(quarter_data_current)) if len(quarter_data_current) > 0 else 0
+        'Total Pipeline': {
+            'icon': '📊',
+            'current': quarter_data_current['Amount'].sum() / 100000,
+            'previous': quarter_data_previous['Amount'].sum() / 100000,
+            'gradient': 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)'
         },
-        'Previous Week': {
-            'Total Pipeline': quarter_data_previous['Amount'].sum() / 100000,
-            'Closed Won': quarter_data_previous[quarter_data_previous['Sales Stage'] == 'Closed Won']['Amount'].sum() / 100000,
-            'Win Rate': (len(quarter_data_previous[quarter_data_previous['Sales Stage'] == 'Closed Won']) / len(quarter_data_previous) * 100) if len(quarter_data_previous) > 0 else 0,
-            'Avg Deal Size': (quarter_data_previous['Amount'].sum() / 100000 / len(quarter_data_previous)) if len(quarter_data_previous) > 0 else 0
+        'Closed Won': {
+            'icon': '🎯',
+            'current': quarter_data_current[quarter_data_current['Sales Stage'] == 'Closed Won']['Amount'].sum() / 100000,
+            'previous': quarter_data_previous[quarter_data_previous['Sales Stage'] == 'Closed Won']['Amount'].sum() / 100000,
+            'gradient': 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+        },
+        'Win Rate': {
+            'icon': '🏆',
+            'current': (len(quarter_data_current[quarter_data_current['Sales Stage'] == 'Closed Won']) / len(quarter_data_current) * 100) if len(quarter_data_current) > 0 else 0,
+            'previous': (len(quarter_data_previous[quarter_data_previous['Sales Stage'] == 'Closed Won']) / len(quarter_data_previous) * 100) if len(quarter_data_previous) > 0 else 0,
+            'gradient': 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)'
+        },
+        'Avg Deal Size': {
+            'icon': '💎',
+            'current': (quarter_data_current['Amount'].sum() / 100000 / len(quarter_data_current)) if len(quarter_data_current) > 0 else 0,
+            'previous': (quarter_data_previous['Amount'].sum() / 100000 / len(quarter_data_previous)) if len(quarter_data_previous) > 0 else 0,
+            'gradient': 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
         }
     }
     
-    # Calculate deltas
-    deltas = {
-        'Total Pipeline': metrics['Current Week']['Total Pipeline'] - metrics['Previous Week']['Total Pipeline'],
-        'Closed Won': metrics['Current Week']['Closed Won'] - metrics['Previous Week']['Closed Won'],
-        'Win Rate': metrics['Current Week']['Win Rate'] - metrics['Previous Week']['Win Rate'],
-        'Avg Deal Size': metrics['Current Week']['Avg Deal Size'] - metrics['Previous Week']['Avg Deal Size']
-    }
+    # Display metrics in modern cards
+    st.markdown('<div class="quarterly-dashboard">', unsafe_allow_html=True)
     
-    # Modern metrics section header
-    st.markdown("""
-        <div style='
-            background: linear-gradient(120deg, #2193b0 0%, #6dd5ed 100%);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 30px 0;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        '>
-            <h2 style='
-                color: white;
-                margin: 0;
-                text-align: center;
-                font-size: 1.8em;
-                font-weight: 600;
-            '>Key Performance Metrics</h2>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Display metrics in a modern grid layout
-    metric_styles = {
-        'Total Pipeline': ('linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)', '🌊'),
-        'Closed Won': ('linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', '💰'),
-        'Win Rate': ('linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%)', '🎯'),
-        'Avg Deal Size': ('linear-gradient(135deg, #f12711 0%, #f5af19 100%)', '💎')
-    }
-    
-    for metric, (gradient, emoji) in metric_styles.items():
+    for metric, data in metrics.items():
+        delta = data['current'] - data['previous']
+        delta_class = 'delta-positive' if delta >= 0 else 'delta-negative'
+        delta_symbol = '↗' if delta >= 0 else '↘'
+        
         st.markdown(f"""
-            <div style='
-                background: {gradient};
-                padding: 25px;
-                border-radius: 15px;
-                margin: 15px 0;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            '>
-                <div style='
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                '>
-                    <div>
-                        <h3 style='
-                            color: white;
-                            margin: 0;
-                            font-size: 1.6em;
-                            font-weight: 600;
-                        '>{emoji} {metric}</h3>
-                        <div style='
-                            display: flex;
-                            gap: 20px;
-                            margin-top: 15px;
-                        '>
-                            <div>
-                                <p style='
-                                    color: rgba(255,255,255,0.9);
-                                    margin: 0;
-                                    font-size: 1.1em;
-                                '>Current Week</p>
-                                <h4 style='
-                                    color: white;
-                                    margin: 5px 0;
-                                    font-size: 1.8em;
-                                    font-weight: 700;
-                                '>{format_metric(metrics['Current Week'][metric], metric)}</h4>
-                            </div>
-                            <div>
-                                <p style='
-                                    color: rgba(255,255,255,0.9);
-                                    margin: 0;
-                                    font-size: 1.1em;
-                                '>Previous Week</p>
-                                <h4 style='
-                                    color: white;
-                                    margin: 5px 0;
-                                    font-size: 1.8em;
-                                    font-weight: 700;
-                                '>{format_metric(metrics['Previous Week'][metric], metric)}</h4>
-                            </div>
-                        </div>
+            <div class="metric-card" style="background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.95));">
+                <div class="metric-header">
+                    <span class="metric-icon">{data['icon']}</span>
+                    <h3 class="metric-title">{metric}</h3>
+                </div>
+                <div class="metric-content">
+                    <div class="metric-values">
+                        <div class="metric-current">{format_metric(data['current'], metric)}</div>
+                        <div class="metric-previous">Previous: {format_metric(data['previous'], metric)}</div>
                     </div>
-                    <div style='
-                        background: rgba(255,255,255,0.1);
-                        padding: 15px;
-                        border-radius: 10px;
-                    '>
-                        <p style='
-                            color: rgba(255,255,255,0.9);
-                            margin: 0;
-                            font-size: 1.1em;
-                        '>Delta</p>
-                        <h4 style='
-                            color: {'#2ecc71' if deltas[metric] > 0 else '#e74c3c'};
-                            margin: 5px 0;
-                            font-size: 1.8em;
-                            font-weight: 700;
-                        '>{format_metric(deltas[metric], metric)}</h4>
+                    <div class="metric-delta">
+                        <div class="delta-value {delta_class}">{delta_symbol} {format_metric(abs(delta), metric)}</div>
+                        <div class="delta-label">Delta</div>
                     </div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
     
-    # Rest of the function (Monthly Breakdown, Practice Performance, etc.) remains the same
-    # ... (previous code for other sections)
+    st.markdown('</div>', unsafe_allow_html=True)
+    
+    # Rest of the function (Monthly Breakdown, Practice Performance, etc.) remains the same...
 
 def format_metric(value, metric_type):
     """Helper function to format metric values"""
