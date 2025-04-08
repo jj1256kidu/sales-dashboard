@@ -1589,6 +1589,7 @@ def main():
     with st.sidebar:
         st.title("Navigation")
         view_options = {
+            "Data Input": "data_input",
             "Overview": "overview",
             "Sales Team": "sales_team",
             "Detailed Data": "detailed_data",
@@ -1597,7 +1598,9 @@ def main():
         selected_view = st.radio("Select View", list(view_options.keys()))
         st.session_state.current_view = view_options[selected_view]
 
-    if st.session_state.current_view == "overview":
+    if st.session_state.current_view == "data_input":
+        show_data_input()
+    elif st.session_state.current_view == "overview":
         show_overview()
     elif st.session_state.current_view == "sales_team":
         show_sales_team()
