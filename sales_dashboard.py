@@ -1672,6 +1672,48 @@ def display_dashboard():
             </div>
         """, unsafe_allow_html=True)
 
+def display_data_input():
+    st.title("Data Input")
+    st.write("Please upload your Excel files for current and previous week data.")
+
+    # File upload for current week
+    current_week_file = st.file_uploader("Upload Current Week Data (Excel/CSV)", type=['xlsx', 'csv'], key='current_week')
+    
+    # File upload for previous week
+    previous_week_file = st.file_uploader("Upload Previous Week Data (Excel/CSV)", type=['xlsx', 'csv'], key='previous_week')
+
+    if current_week_file is not None and previous_week_file is not None:
+        try:
+            # Read the uploaded files
+            if current_week_file.name.endswith('.csv'):
+                df_current = pd.read_csv(current_week_file)
+            else:
+                df_current = pd.read_excel(current_week_file)
+
+            if previous_week_file.name.endswith('.csv'):
+                df_previous = pd.read_csv(previous_week_file)
+            else:
+                df_previous = pd.read_excel(previous_week_file)
+
+            # Store the dataframes in session state
+            st.session_state.df_current = df_current
+            st.session_state.df_previous = df_previous
+
+            # Show success message
+            st.success("Data uploaded successfully!")
+
+            # Preview the data
+            st.subheader("Current Week Data Preview")
+            st.dataframe(df_current.head(), use_container_width=True)
+
+            st.subheader("Previous Week Data Preview")
+            st.dataframe(df_previous.head(), use_container_width=True)
+
+        except Exception as e:
+            st.error(f"Error reading the files: {str(e)}")
+    else:
+        st.info("Please upload both current and previous week data files to proceed.")
+
 def main():
     # Initialize session state for navigation if not exists
     if 'current_page' not in st.session_state:
