@@ -1386,12 +1386,127 @@ def show_detailed():
     
     st.dataframe(df, use_container_width=True)
 
+def show_weekly_comparison():
+    if st.session_state.df is None:
+        st.warning("Please upload your sales data to view weekly comparison")
+        return
+    
+    df = st.session_state.df
+    
+    st.markdown("""
+        <div style='
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        '>
+            <h2 style='
+                color: white;
+                margin: 0;
+                text-align: center;
+                font-size: 2em;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            '>Weekly Performance Comparison</h2>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Create week selection dropdowns
+    col1, col2 = st.columns(2)
+    
+    # Get sorted unique weeks
+    weeks = sorted(df['Week'].unique())
+    
+    with col1:
+        current_week = st.selectbox("Select Current Week", weeks, index=len(weeks)-1)
+    
+    with col2:
+        previous_week = st.selectbox("Select Previous Week", weeks, index=max(0, len(weeks)-2))
+    
+    # Filter data for both weeks
+    current_week_data = df[df['Week'] == current_week]
+    previous_week_data = df[df['Week'] == previous_week]
+    
+    # Calculate metrics for both weeks
+    def calculate_metrics(week_data):
+        committed = week_data[week_data['Probability_Num'] > 75]['Amount'].sum() / 100000
+        upside = week_data[week_data['Probability_Num'].between(25, 75)]['Amount'].sum() / 100000
+        closed_won = week_data[week_data['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000
+        overall_committed = committed + closed_won
+        return {
+            'Committed for the Month': committed,
+            'Upside for the Month': upside,
+            'Closed Won': closed_won,
+            'Overall Committed': overall_committed
+        }
+    
+    current_metrics = calculate_metrics(current_week_data)
+    previous_metrics = calculate_metrics(previous_week_data)
+    
+    # Display metrics in cards with comparison
+    metrics = ['Committed for the Month', 'Upside for the Month', 'Closed Won', 'Overall Committed']
+    
+    for i in range(0, len(metrics), 2):
+        col1, col2 = st.columns(2)
+        
+        for j, metric in enumerate(metrics[i:i+2]):
+            if j == 0:
+                container = col1
+            else:
+                container = col2
+            
+            current_value = current_metrics[metric]
+            previous_value = previous_metrics[metric]
+            delta = current_value - previous_value
+            delta_percent = (delta / previous_value * 100) if previous_value != 0 else 0
+            
+            with container:
+                st.markdown(f"""
+                    <div style='
+                        background: white;
+                        padding: 20px;
+                        border-radius: 10px;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                        margin: 10px 0;
+                    '>
+                        <h3 style='
+                            color: #2a5298;
+                            margin: 0 0 15px 0;
+                            font-size: 1.2em;
+                            font-weight: 600;
+                        '>{metric}</h3>
+                        <div style='display: flex; justify-content: space-between; align-items: center;'>
+                            <div>
+                                <div style='color: #666; font-size: 0.9em;'>Current Week</div>
+                                <div style='font-size: 1.6em; font-weight: 600; color: #2a5298;'>₹{int(current_value)}L</div>
+                            </div>
+                            <div>
+                                <div style='color: #666; font-size: 0.9em;'>Previous Week</div>
+                                <div style='font-size: 1.6em; font-weight: 600; color: #666;'>₹{int(previous_value)}L</div>
+                            </div>
+                        </div>
+                        <div style='
+                            margin-top: 15px;
+                            padding: 8px;
+                            border-radius: 5px;
+                            text-align: center;
+                            background: {("#e3f7ed" if delta >= 0 else "#fde7e9")};
+                            color: {("#28a745" if delta >= 0 else "#dc3545")};
+                            font-weight: 600;
+                        '>
+                            {'+' if delta >= 0 else ''}{int(delta_percent)}% ({'+' if delta >= 0 else ''}₹{int(delta)}L)
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+
 def main():
     with st.sidebar:
         st.title("Navigation")
         selected = st.radio(
             "Select View",
-            options=["Data Input", "Overview", "Sales Team", "Detailed Data"],
+            options=["Data Input", "Overview", "Sales Team", "Weekly Comparison", "Detailed Data"],
             key="navigation"
         )
         st.session_state.current_view = selected.lower().replace(" ", "_")
@@ -1402,6 +1517,8 @@ def main():
         show_overview()
     elif st.session_state.current_view == "sales_team":
         show_sales_team()
+    elif st.session_state.current_view == "weekly_comparison":
+        show_weekly_comparison()
     elif st.session_state.current_view == "detailed_data":
         show_detailed()
 
