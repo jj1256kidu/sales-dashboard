@@ -1685,7 +1685,7 @@ def show_ytd_dashboard():
             background: linear-gradient(135deg, rgba(17, 25, 40, 0.95) 0%, rgba(28, 41, 66, 0.95) 100%);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            padding: 2.5rem;
+            padding: 2rem;
             border-radius: 24px;
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -1704,7 +1704,7 @@ def show_ytd_dashboard():
             '></div>
             <h2 style='
                 color: white;
-                margin-bottom: 1.5rem;
+                margin-bottom: 0;
                 text-align: center;
                 font-size: 2rem;
                 font-weight: 700;
@@ -1714,15 +1714,6 @@ def show_ytd_dashboard():
                 -webkit-text-fill-color: transparent;
                 position: relative;
             '>📊 Key Performance Metrics</h2>
-            <p style='
-                color: #E0E7FF;
-                text-align: center;
-                font-size: 1.1rem;
-                margin-bottom: 2.5rem;
-                opacity: 0.9;
-                font-weight: 500;
-                letter-spacing: 0.5px;
-            '>Real-time analytics and performance tracking</p>
         </div>
         <style>
             @keyframes glow {
