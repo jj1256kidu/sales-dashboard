@@ -1575,6 +1575,7 @@ def show_ytd_dashboard():
         selected_owner = st.selectbox("Sales Owner", sales_owners)
     
     with col2:
+        # Try different possible column names for P&L Centre/Practice
         practice_column = next((col for col in ['P&L Centre', 'Practice', 'Business Unit', 'Department'] 
                               if col in df_current.columns), None)
         if practice_column:
@@ -1589,6 +1590,7 @@ def show_ytd_dashboard():
         selected_type = st.selectbox("Type", types)
     
     with col4:
+        # Try different possible column names for Status
         status_column = next((col for col in ['Status', 'Sales Stage', 'Stage'] 
                             if col in df_current.columns), None)
         if status_column:
@@ -1677,123 +1679,208 @@ def show_ytd_dashboard():
         }
     }
 
-    # Display metrics with modern design
+    # Key Metrics Section with ultra-modern design
+    st.markdown("""
+        <div style='
+            background: linear-gradient(135deg, rgba(17, 25, 40, 0.95) 0%, rgba(28, 41, 66, 0.95) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 2rem;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 1.5rem 0 2.5rem 0;
+            position: relative;
+            overflow: hidden;
+        '>
+            <div class='glow-effect' style='
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+                animation: glow 8s linear infinite;
+            '></div>
+            <h2 style='
+                color: white;
+                margin-bottom: 0;
+                text-align: center;
+                font-size: 2rem;
+                font-weight: 700;
+                letter-spacing: 1.2px;
+                background: linear-gradient(135deg, #fff 0%, #e0e7ff 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                position: relative;
+            '>📊 Key Performance Metrics</h2>
+        </div>
+        <style>
+            @keyframes glow {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .metric-card {
+                animation: fadeIn 0.6s ease-out forwards;
+                transition: all 0.3s ease;
+            }
+            .metric-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+            }
+            .trend-icon {
+                transition: all 0.3s ease;
+            }
+            .metric-card:hover .trend-icon {
+                transform: scale(1.2);
+            }
+            .pulse-animation {
+                animation: pulse 2s infinite;
+            }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Display enhanced metric cards with modern design
     metric_cols = st.columns(len(metrics))
     for col, (metric_name, data) in zip(metric_cols, metrics.items()):
         with col:
             delta = data['current'] - data['previous']
             delta_color = "normal" if delta >= 0 else "inverse"
-            st.metric(
-                label=f"{data['icon']} {metric_name}",
-                value=format_metric(data['current'], metric_name),
-                delta=format_metric(abs(delta), metric_name),
-                delta_color=delta_color
-            )
-
-    # Pipeline Analysis Section
-    st.markdown("""
-        <div style='margin-top: 2rem;'>
-            <h2 style='color: #1a237e; font-weight: 600;'>Pipeline Analysis</h2>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Pipeline Funnel
-    stages = df_current_filtered['Sales Stage'].value_counts()
-    fig_funnel = go.Figure(go.Funnel(
-        y=stages.index,
-        x=stages.values,
-        textinfo="value+percent initial",
-        textposition="inside",
-        textfont=dict(size=16, color="white"),
-        marker=dict(
-            color=["#4CAF50", "#2196F3", "#9C27B0", "#FF9800", "#F44336"]
-        )
-    ))
-    fig_funnel.update_layout(
-        title="Pipeline Funnel Analysis",
-        height=500,
-        showlegend=False
-    )
-    st.plotly_chart(fig_funnel, use_container_width=True)
-
-    # Performance Insights Section
-    st.markdown("""
-        <div style='margin-top: 2rem;'>
-            <h2 style='color: #006064; font-weight: 600;'>Performance Insights</h2>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Performance Trends
-    trend_metrics = df_current_filtered.groupby(pd.Grouper(key='Expected Close Date', freq='M')).agg({
-        'Amount': ['sum', 'count'],
-        'Sales Stage': lambda x: (x.str.contains('Won', case=False, na=False)).sum()
-    }).reset_index()
-    trend_metrics.columns = ['Date', 'Total Amount', 'Deal Count', 'Won Deals']
-    trend_metrics['Win Rate'] = trend_metrics['Won Deals'] / trend_metrics['Deal Count'] * 100
-    trend_metrics['Average Deal Size'] = trend_metrics['Total Amount'] / trend_metrics['Deal Count']
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=trend_metrics['Date'],
-        y=trend_metrics['Win Rate'],
-        name='Win Rate',
-        line=dict(color='#4CAF50', width=3),
-        yaxis='y'
-    ))
-    fig.add_trace(go.Bar(
-        x=trend_metrics['Date'],
-        y=trend_metrics['Average Deal Size']/100000,
-        name='Avg Deal Size (Lakhs)',
-        marker_color='#2196F3',
-        yaxis='y2'
-    ))
-    fig.update_layout(
-        title='Win Rate vs Average Deal Size Trend',
-        yaxis=dict(title='Win Rate (%)', side='left', showgrid=False),
-        yaxis2=dict(title='Avg Deal Size (Lakhs)', side='right', overlaying='y', showgrid=False),
-        height=500,
-        hovermode='x unified'
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Competitive Analysis Section
-    if 'Competitor' in df_current_filtered.columns:
-        st.markdown("""
-            <div style='margin-top: 2rem;'>
-                <h2 style='color: #4a148c; font-weight: 600;'>Competitive Analysis</h2>
-            </div>
-        """, unsafe_allow_html=True)
-
-        # Competitor Win/Loss Analysis
-        competitor_analysis = df_current_filtered.groupby('Competitor').agg({
-            'Amount': 'sum',
-            'Sales Stage': lambda x: (x.str.contains('Won', case=False, na=False)).sum(),
-            'Opportunity Name': 'count'
-        }).reset_index()
-        
-        competitor_analysis.columns = ['Competitor', 'Total Amount', 'Won Deals', 'Total Deals']
-        competitor_analysis['Win Rate'] = competitor_analysis['Won Deals'] / competitor_analysis['Total Deals'] * 100
-        competitor_analysis['Loss Rate'] = 100 - competitor_analysis['Win Rate']
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            fig_win = px.bar(
-                competitor_analysis,
-                x='Competitor',
-                y=['Win Rate', 'Loss Rate'],
-                title='Win/Loss Rate by Competitor',
-                barmode='stack'
-            )
-            st.plotly_chart(fig_win, use_container_width=True)
-        
-        with col2:
-            fig_amount = px.pie(
-                competitor_analysis,
-                values='Total Amount',
-                names='Competitor',
-                title='Pipeline Share by Competitor'
-            )
-            st.plotly_chart(fig_amount, use_container_width=True)
+            
+            st.markdown(f"""
+                <div class='metric-card' style='
+                    background: {data['gradient']};
+                    border-radius: 20px;
+                    padding: 2rem;
+                    height: 100%;
+                    position: relative;
+                    overflow: hidden;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+                    backdrop-filter: blur(10px);
+                    -webkit-backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255, 255, 255, 0.18);
+                '>
+                    <div class='trend-icon' style='
+                        position: absolute;
+                        top: 15px;
+                        right: 15px;
+                        font-size: 1.8rem;
+                        opacity: 0.9;
+                        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    '>{data['trend_icon']}</div>
+                    <div style='
+                        font-size: 2.2rem;
+                        margin-bottom: 1rem;
+                        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    '>{data['icon']}</div>
+                    <h3 style='
+                        color: white;
+                        font-size: 1.3rem;
+                        margin-bottom: 0.8rem;
+                        font-weight: 700;
+                        letter-spacing: 0.5px;
+                    '>{metric_name}</h3>
+                    <div class='pulse-animation' style='
+                        color: white;
+                        font-size: 2.2rem;
+                        font-weight: 800;
+                        margin: 1rem 0;
+                        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                        letter-spacing: 0.5px;
+                    '>{format_metric(data['current'], metric_name)}</div>
+                    <div style='
+                        color: {'#4ADE80' if delta >= 0 else '#F87171'};
+                        font-size: 1.1rem;
+                        font-weight: 600;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        margin: 0.8rem 0;
+                    '>
+                        <span style='
+                            background: rgba(255,255,255,0.1);
+                            padding: 0.4rem 0.8rem;
+                            border-radius: 12px;
+                            backdrop-filter: blur(5px);
+                            -webkit-backdrop-filter: blur(5px);
+                        '>
+                            {format_metric(abs(delta), metric_name)}
+                            <span style='margin-left: 4px;'>{' ⬆️' if delta >= 0 else ' ⬇️'}</span>
+                        </span>
+                    </div>
+                    <div style='
+                        color: rgba(255, 255, 255, 0.9);
+                        font-size: 1rem;
+                        font-weight: 500;
+                        margin-top: 0.8rem;
+                        letter-spacing: 0.3px;
+                        line-height: 1.4;
+                    '>{data['description']}</div>
+                    <div class='sparkline-container' style='
+                        margin-top: 1.5rem;
+                        padding: 0.8rem;
+                        background: rgba(255,255,255,0.1);
+                        border-radius: 12px;
+                        backdrop-filter: blur(5px);
+                        -webkit-backdrop-filter: blur(5px);
+                    '>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Add enhanced sparkline charts
+            if metric_name in ['Total Pipeline', 'Closed Won']:
+                values = [data['previous'], data['current']]
+                trend_chart = go.Figure(go.Scatter(
+                    y=values,
+                    mode='lines+markers',
+                    line=dict(
+                        color='white',
+                        width=3,
+                        shape='spline',
+                        smoothing=1.3
+                    ),
+                    marker=dict(
+                        color='white',
+                        size=8,
+                        symbol='diamond',
+                        line=dict(
+                            color='rgba(255,255,255,0.5)',
+                            width=2
+                        )
+                    ),
+                    fill='tonexty',
+                    fillcolor='rgba(255,255,255,0.1)'
+                ))
+                trend_chart.update_layout(
+                    height=80,
+                    margin=dict(l=0, r=0, t=0, b=0),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    showlegend=False,
+                    xaxis=dict(
+                        showgrid=False,
+                        showticklabels=False,
+                        showline=False,
+                        zeroline=False
+                    ),
+                    yaxis=dict(
+                        showgrid=False,
+                        showticklabels=False,
+                        showline=False,
+                        zeroline=False
+                    ),
+                    hovermode=False
+                )
+                st.plotly_chart(trend_chart, use_container_width=True, config={'displayModeBar': False})
 
 def format_metric(value, metric_type):
     """Helper function to format metric values"""
@@ -1996,10 +2083,7 @@ def show_pipeline_analysis():
         st.warning("Please upload data first.")
         return
 
-    df = st.session_state.df_current.copy()
-    
-    # Convert Expected Close Date to datetime
-    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
+    df = st.session_state.df_current
 
     st.markdown("""
         <div style='
@@ -2073,10 +2157,7 @@ def show_pipeline_analysis():
         st.plotly_chart(fig_prob, use_container_width=True)
 
     with col2:
-        # Group by month using datetime index
-        monthly_data = filtered_df.set_index('Expected Close Date')
-        timeline_dist = monthly_data.resample('ME')['Amount'].sum()/100000
-        
+        timeline_dist = filtered_df.groupby(pd.Grouper(key='Expected Close Date', freq='M'))['Amount'].sum()/100000
         fig_timeline = px.line(
             x=timeline_dist.index,
             y=timeline_dist.values,
@@ -2085,188 +2166,6 @@ def show_pipeline_analysis():
         )
         fig_timeline.update_traces(line_color='#4CAF50')
         st.plotly_chart(fig_timeline, use_container_width=True)
-
-def show_performance_insights():
-    """Advanced Performance Insights View"""
-    if 'df_current' not in st.session_state:
-        st.warning("Please upload data first.")
-        return
-
-    df = st.session_state.df_current.copy()
-    
-    # Convert Expected Close Date to datetime
-    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
-
-    st.markdown("""
-        <div style='
-            background: linear-gradient(135deg, #006064 0%, #00838f 100%);
-            padding: 2rem;
-            border-radius: 20px;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-        '>
-            <h2 style='
-                color: white;
-                text-align: center;
-                font-size: 2.2rem;
-                font-weight: 700;
-                margin: 0;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-            '>Performance Insights</h2>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Performance Metrics
-    col1, col2, col3, col4 = st.columns(4)
-    metrics = {
-        'Average Deal Size': df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].mean()/100000,
-        'Win Rate': len(df[df['Sales Stage'].str.contains('Won', case=False, na=False)])/len(df)*100 if len(df) > 0 else 0,
-        'Pipeline Coverage': df['Amount'].sum()/(st.session_state.sales_target*100000) if st.session_state.sales_target > 0 else 0,
-        'Avg Sales Cycle': (pd.to_datetime(df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Expected Close Date']) - 
-                           pd.to_datetime(df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Created Date'])).mean().days
-                           if 'Created Date' in df.columns and len(df[df['Sales Stage'].str.contains('Won', case=False, na=False)]) > 0 else 0
-    }
-
-    for (metric, value), col in zip(metrics.items(), [col1, col2, col3, col4]):
-        with col:
-            st.markdown(f"""
-                <div style='
-                    background: white;
-                    padding: 1.5rem;
-                    border-radius: 15px;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                    text-align: center;
-                '>
-                    <h3 style='
-                        color: #333;
-                        font-size: 1.1rem;
-                        margin-bottom: 0.5rem;
-                    '>{metric}</h3>
-                    <p style='
-                        color: #2196F3;
-                        font-size: 1.8rem;
-                        font-weight: 700;
-                        margin: 0;
-                    '>{value:.1f}{'L' if metric == 'Average Deal Size' else '%' if metric in ['Win Rate', 'Pipeline Coverage'] else ' days'}</p>
-                </div>
-            """, unsafe_allow_html=True)
-
-    # Performance Trends
-    st.markdown("### Performance Trends")
-    
-    # Set Expected Close Date as index and sort
-    df_trend = df.set_index('Expected Close Date').sort_index()
-    
-    # Group by month using resample
-    trend_metrics = df_trend.resample('ME').agg({
-        'Amount': ['sum', 'count'],
-        'Sales Stage': lambda x: (x.str.contains('Won', case=False, na=False)).sum()
-    }).reset_index()
-    
-    # Flatten column names
-    trend_metrics.columns = ['Date', 'Total Amount', 'Deal Count', 'Won Deals']
-    
-    # Calculate metrics
-    trend_metrics['Win Rate'] = (trend_metrics['Won Deals'] / trend_metrics['Deal Count'] * 100).fillna(0)
-    trend_metrics['Average Deal Size'] = (trend_metrics['Total Amount'] / trend_metrics['Deal Count']).fillna(0)
-
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(
-        x=trend_metrics['Date'],
-        y=trend_metrics['Win Rate'],
-        name='Win Rate',
-        line=dict(color='#4CAF50', width=3),
-        yaxis='y'
-    ))
-    fig.add_trace(go.Bar(
-        x=trend_metrics['Date'],
-        y=trend_metrics['Average Deal Size']/100000,
-        name='Avg Deal Size (Lakhs)',
-        marker_color='#2196F3',
-        yaxis='y2'
-    ))
-    fig.update_layout(
-        title='Win Rate vs Average Deal Size Trend',
-        yaxis=dict(title='Win Rate (%)', side='left', showgrid=False),
-        yaxis2=dict(title='Avg Deal Size (Lakhs)', side='right', overlaying='y', showgrid=False),
-        height=500,
-        hovermode='x unified'
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-def show_competitive_analysis():
-    """Competitive Analysis View"""
-    if 'df_current' not in st.session_state:
-        st.warning("Please upload data first.")
-        return
-
-    df = st.session_state.df_current
-
-    st.markdown("""
-        <div style='
-            background: linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%);
-            padding: 2rem;
-            border-radius: 20px;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-        '>
-            <h2 style='
-                color: white;
-                text-align: center;
-                font-size: 2.2rem;
-                font-weight: 700;
-                margin: 0;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-            '>Competitive Analysis</h2>
-        </div>
-    """, unsafe_allow_html=True)
-
-    if 'Competitor' in df.columns:
-        # Competitor Win/Loss Analysis
-        competitor_analysis = df.groupby('Competitor').agg({
-            'Amount': 'sum',
-            'Sales Stage': lambda x: (x.str.contains('Won', case=False, na=False)).sum(),
-            'Opportunity Name': 'count'
-        }).reset_index()
-        
-        competitor_analysis.columns = ['Competitor', 'Total Amount', 'Won Deals', 'Total Deals']
-        competitor_analysis['Win Rate'] = competitor_analysis['Won Deals'] / competitor_analysis['Total Deals'] * 100
-        competitor_analysis['Loss Rate'] = 100 - competitor_analysis['Win Rate']
-        
-        # Competitive Landscape
-        fig = px.scatter(
-            competitor_analysis,
-            x='Win Rate',
-            y='Total Amount'/100000,
-            size='Total Deals',
-            color='Competitor',
-            title='Competitive Landscape Analysis',
-            labels={'Total Amount': 'Total Pipeline (Lakhs)'}
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Win/Loss Analysis
-        col1, col2 = st.columns(2)
-        with col1:
-            fig_win = px.bar(
-                competitor_analysis,
-                x='Competitor',
-                y=['Win Rate', 'Loss Rate'],
-                title='Win/Loss Rate by Competitor',
-                barmode='stack'
-            )
-            st.plotly_chart(fig_win, use_container_width=True)
-        
-        with col2:
-            fig_amount = px.pie(
-                competitor_analysis,
-                values='Total Amount',
-                names='Competitor',
-                title='Pipeline Share by Competitor'
-            )
-            st.plotly_chart(fig_amount, use_container_width=True)
-    else:
-        st.info("Competitor information not available in the dataset")
 
 def main():
     # Initialize session state for navigation if not exists
@@ -2283,7 +2182,7 @@ def main():
         st.session_state.current_page = st.sidebar.radio(
             "Select a page",
             ["Data Input", "Dashboard", "Overview", "Sales Team", "Pipeline Analysis", 
-             "Performance Insights", "Competitive Analysis", "YTD Dashboard", "Detailed Data"]
+             "YTD Dashboard", "Detailed Data"]
         )
 
     # Display the selected page
@@ -2297,10 +2196,6 @@ def main():
         show_sales_team()
     elif st.session_state.current_page == "Pipeline Analysis":
         show_pipeline_analysis()
-    elif st.session_state.current_page == "Performance Insights":
-        show_performance_insights()
-    elif st.session_state.current_page == "Competitive Analysis":
-        show_competitive_analysis()
     elif st.session_state.current_page == "YTD Dashboard":
         show_ytd_dashboard()
     elif st.session_state.current_page == "Detailed Data":
