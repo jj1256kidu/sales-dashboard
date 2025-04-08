@@ -429,8 +429,45 @@ def show_data_input():
             try:
                 if uploaded_file.name.endswith('.xlsx'):
                     excel_file = pd.ExcelFile(uploaded_file)
-                    sheet_name = st.selectbox("Select Worksheet", excel_file.sheet_names)
-                    df = pd.read_excel(uploaded_file, sheet_name=sheet_name)
+                    sheet_names = excel_file.sheet_names
+                    selected_current_sheet = st.selectbox("Select Current Week Sheet", sheet_names)
+                    selected_previous_sheet = st.selectbox("Select Previous Week Sheet", sheet_names)
+                    
+                    # Loads data from both sheets
+                    df_current = pd.read_excel(uploaded_file, sheet_name=selected_current_sheet)
+                    df_previous = pd.read_excel(uploaded_file, sheet_name=selected_previous_sheet)
+                    
+                    # Standardize column names
+                    column_mapping = {
+                        'Sales Team Member': 'Sales Owner',
+                        'Deal Value': 'Amount',
+                        'Status': 'Sales Stage',
+                        'Technical Lead': 'Pre-sales Technical Lead',
+                        'Expected Close Date': 'Expected Close Date'
+                    }
+                    
+                    # Rename columns if they exist
+                    for old_col, new_col in column_mapping.items():
+                        if old_col in df_current.columns:
+                            df_current = df_current.rename(columns={old_col: new_col})
+                    
+                    # Process dates
+                    if 'Expected Close Date' in df_current.columns:
+                        df_current['Expected Close Date'] = pd.to_datetime(df_current['Expected Close Date'])
+                        df_current['Month'] = df_current['Expected Close Date'].dt.strftime('%B')
+                        df_current['Year'] = df_current['Expected Close Date'].dt.year
+                        df_current['Quarter'] = df_current['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
+                    
+                    st.session_state.df = df_current
+                    st.success(f"Successfully loaded {len(df_current):,} records")
+                    
+                    # Preview the data
+                    st.subheader("Data Preview")
+                    st.dataframe(df_current.head(), use_container_width=True)
+                    
+                    # Display column mapping info
+                    st.info("Column names have been standardized for consistency across the dashboard")
+                    
                 else:
                     df = pd.read_csv(uploaded_file)
                 
@@ -1421,6 +1458,10 @@ def show_quarter_summary():
     
     df = st.session_state.df
     
+    # Get the current and previous week's data
+    current_week = df[df['Week'] == df['Week'].max()]
+    previous_week = df[df['Week'] == df['Week'].max() - 1]
+    
     # Filters
     col1, col2, col3 = st.columns([1.2, 1.2, 1.2])
     
@@ -1436,32 +1477,28 @@ def show_quarter_summary():
         practices = sorted(df['Practice'].dropna().unique().tolist())
         selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + practices)
     
-    # Apply filters
-    filtered_df = df.copy().reset_index(drop=True)
+    # Apply filters to both current and previous week data
     if selected_sales_owner != "All Sales Owners":
-        filtered_df = filtered_df[filtered_df['Sales Owner'] == selected_sales_owner]
+        current_week = current_week[current_week['Sales Owner'] == selected_sales_owner]
+        previous_week = previous_week[previous_week['Sales Owner'] == selected_sales_owner]
+    
     if selected_quarter != "All Quarters":
-        filtered_df = filtered_df[filtered_df['Quarter'] == selected_quarter]
+        current_week = current_week[current_week['Quarter'] == selected_quarter]
+        previous_week = previous_week[previous_week['Quarter'] == selected_quarter]
+    
     if selected_practice != "All Practices":
-        filtered_df = filtered_df[filtered_df['Practice'] == selected_practice]
+        current_week = current_week[current_week['Practice'] == selected_practice]
+        previous_week = previous_week[previous_week['Practice'] == selected_practice]
     
-    # Calculate metrics
-    committed_current = filtered_df[filtered_df['Sales Stage'] == "Committed for the Month"]['Amount'].sum()
-    upside_current = filtered_df[filtered_df['Sales Stage'] == "Upsides for the Month"]['Amount'].sum()
-    closed_won_current = filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
+    # Calculate metrics for current week
+    committed_current = current_week[current_week['Sales Stage'] == "Committed for the Month"]['Amount'].sum()
+    upside_current = current_week[current_week['Sales Stage'] == "Upsides for the Month"]['Amount'].sum()
+    closed_won_current = current_week[current_week['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
     
-    # Calculate previous period metrics (assuming previous quarter)
-    previous_quarter = str(int(selected_quarter[1:]) - 1) if selected_quarter != "All Quarters" else "Q4"
-    previous_df = df[df['Quarter'] == previous_quarter].reset_index(drop=True)
-    
-    if selected_sales_owner != "All Sales Owners":
-        previous_df = previous_df[previous_df['Sales Owner'] == selected_sales_owner]
-    if selected_practice != "All Practices":
-        previous_df = previous_df[previous_df['Practice'] == selected_practice]
-    
-    committed_previous = previous_df[previous_df['Sales Stage'] == "Committed for the Month"]['Amount'].sum()
-    upside_previous = previous_df[previous_df['Sales Stage'] == "Upsides for the Month"]['Amount'].sum()
-    closed_won_previous = previous_df[previous_df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
+    # Calculate metrics for previous week
+    committed_previous = previous_week[previous_week['Sales Stage'] == "Committed for the Month"]['Amount'].sum()
+    upside_previous = previous_week[previous_week['Sales Stage'] == "Upsides for the Month"]['Amount'].sum()
+    closed_won_previous = previous_week[previous_week['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
     
     # Calculate deltas
     committed_delta = committed_current - committed_previous
@@ -1473,61 +1510,18 @@ def show_quarter_summary():
     overall_committed_previous = committed_previous + closed_won_previous
     overall_committed_delta = overall_committed_current - overall_committed_previous
     
-    # Display metrics
-    st.markdown("""
-        <style>
-            .metric-container {
-                display: flex;
-                justify-content: space-evenly;
-                margin-top: 10px;
-                flex-wrap: wrap;
-            }
-            .card {
-                background: #2C3E50;
-                padding: 10px;
-                border-radius: 0.06px;
-                box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
-                text-align: center;
-                margin: 10px;
-                flex: 1;
-                min-width: 0.005px;
-                min-height: 0.5px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-            }
-            .metric-label {
-                font-size: 1.2em;
-                color: #BDC3C7;
-                margin-bottom: 5px;
-            }
-            .metric-value {
-                font-size: 3.5em;
-                color: #FFFFFF;
-                font-weight: 800;
-                line-height: 1.1;
-            }
-            .delta-positive {
-                color: #2ECC71;
-            }
-            .delta-negative {
-                color: #E74C3C;
-            }
-        </style>
-    """, unsafe_allow_html=True)
-    
-    # Committed Data
+    # Display metrics using the same card-based layout
     st.markdown(f"""
         <div class="metric-container">
             <div class="card">
-                <div class="metric-label">Committed Data (Current Quarter)</div>
+                <div class="metric-label">Committed Data (Current Week)</div>
                 <div class="metric-value">₹{committed_current / 100000:.0f}L</div>
-                <div class="metric-label">Current Quarter Total</div>
+                <div class="metric-label">Current Week Total</div>
             </div>
             <div class="card">
-                <div class="metric-label">Committed Data (Previous Quarter)</div>
+                <div class="metric-label">Committed Data (Previous Week)</div>
                 <div class="metric-value">₹{committed_previous / 100000:.0f}L</div>
-                <div class="metric-label">Previous Quarter Total</div>
+                <div class="metric-label">Previous Week Total</div>
             </div>
             <div class="card">
                 <div class="metric-label">Delta</div>
@@ -1535,20 +1529,17 @@ def show_quarter_summary():
                 <div class="metric-label">Change</div>
             </div>
         </div>
-    """, unsafe_allow_html=True)
-    
-    # Upside Data
-    st.markdown(f"""
+        
         <div class="metric-container">
             <div class="card">
-                <div class="metric-label">Upside Data (Current Quarter)</div>
+                <div class="metric-label">Upside Data (Current Week)</div>
                 <div class="metric-value">₹{upside_current / 100000:.0f}L</div>
-                <div class="metric-label">Current Quarter Total</div>
+                <div class="metric-label">Current Week Total</div>
             </div>
             <div class="card">
-                <div class="metric-label">Upside Data (Previous Quarter)</div>
+                <div class="metric-label">Upside Data (Previous Week)</div>
                 <div class="metric-value">₹{upside_previous / 100000:.0f}L</div>
-                <div class="metric-label">Previous Quarter Total</div>
+                <div class="metric-label">Previous Week Total</div>
             </div>
             <div class="card">
                 <div class="metric-label">Delta</div>
@@ -1556,20 +1547,17 @@ def show_quarter_summary():
                 <div class="metric-label">Change</div>
             </div>
         </div>
-    """, unsafe_allow_html=True)
-    
-    # Closed Won
-    st.markdown(f"""
+        
         <div class="metric-container">
             <div class="card">
-                <div class="metric-label">Closed Won (Current Quarter)</div>
+                <div class="metric-label">Closed Won (Current Week)</div>
                 <div class="metric-value">₹{closed_won_current / 100000:.0f}L</div>
-                <div class="metric-label">Current Quarter Total</div>
+                <div class="metric-label">Current Week Total</div>
             </div>
             <div class="card">
-                <div class="metric-label">Closed Won (Previous Quarter)</div>
+                <div class="metric-label">Closed Won (Previous Week)</div>
                 <div class="metric-value">₹{closed_won_previous / 100000:.0f}L</div>
-                <div class="metric-label">Previous Quarter Total</div>
+                <div class="metric-label">Previous Week Total</div>
             </div>
             <div class="card">
                 <div class="metric-label">Delta</div>
@@ -1577,20 +1565,17 @@ def show_quarter_summary():
                 <div class="metric-label">Change</div>
             </div>
         </div>
-    """, unsafe_allow_html=True)
-    
-    # Overall Committed
-    st.markdown(f"""
+        
         <div class="metric-container">
             <div class="card">
-                <div class="metric-label">Overall Committed Data (Current Quarter)</div>
+                <div class="metric-label">Overall Committed Data (Current Week)</div>
                 <div class="metric-value">₹{overall_committed_current / 100000:.0f}L</div>
-                <div class="metric-label">Current Quarter Total</div>
+                <div class="metric-label">Current Week Total</div>
             </div>
             <div class="card">
-                <div class="metric-label">Overall Committed Data (Previous Quarter)</div>
+                <div class="metric-label">Overall Committed Data (Previous Week)</div>
                 <div class="metric-value">₹{overall_committed_previous / 100000:.0f}L</div>
-                <div class="metric-label">Previous Quarter Total</div>
+                <div class="metric-label">Previous Week Total</div>
             </div>
             <div class="card">
                 <div class="metric-label">Delta</div>
