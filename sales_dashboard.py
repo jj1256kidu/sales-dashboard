@@ -332,7 +332,7 @@ def process_data(df):
     # Convert probability and calculate numeric values at once with safe null handling
     def convert_probability(x):
         try:
-            if pd.isna(x):
+            if isinstance(x, float) and np.isnan(x):
                 return 0
             if isinstance(x, str):
                 x = x.rstrip('%')
@@ -343,7 +343,14 @@ def process_data(df):
     df['Probability_Num'] = df['Probability'].apply(convert_probability)
     
     # Pre-calculate common flags and metrics with safe null handling
-    df['Is_Won'] = df['Sales Stage'].apply(lambda x: 'Won' in str(x) if pd.notna(x) else False)
+    def check_won_status(x):
+        if isinstance(x, float) and np.isnan(x):
+            return False
+        if x is None:
+            return False
+        return 'Won' in str(x)
+
+    df['Is_Won'] = df['Sales Stage'].apply(check_won_status)
     df['Amount_Lacs'] = df['Amount'].fillna(0).div(100000).round(0).astype(int)
     df['Weighted_Amount'] = (df['Amount_Lacs'] * df['Probability_Num'] / 100).round(0).astype(int)
     
