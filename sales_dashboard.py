@@ -1421,6 +1421,10 @@ def show_quarterly_summary():
     
     df = st.session_state.df_current if dataset_choice == "Current Week" else st.session_state.df_previous
     
+    # Convert dates properly with explicit format and dayfirst=True
+    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
+    df['Month'] = df['Expected Close Date'].dt.strftime('%B')
+    
     st.title("Quarterly Summary")
     
     # Quarter selector
