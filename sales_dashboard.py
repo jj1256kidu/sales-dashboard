@@ -1643,177 +1643,217 @@ def show_ytd_dashboard():
     df_current_filtered = filter_data(df_current)
     df_previous_filtered = filter_data(df_previous)
     
-    # Key Metrics Section
-    st.markdown("### 📊 Key Performance Metrics")
+    # Key Metrics Section with ultra-modern design
+    st.markdown("""
+        <div style='
+            background: linear-gradient(135deg, rgba(17, 25, 40, 0.95) 0%, rgba(28, 41, 66, 0.95) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 1.5rem 0 2.5rem 0;
+            position: relative;
+            overflow: hidden;
+        '>
+            <div class='glow-effect' style='
+                position: absolute;
+                top: -50%;
+                left: -50%;
+                width: 200%;
+                height: 200%;
+                background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+                animation: glow 8s linear infinite;
+            '></div>
+            <h2 style='
+                color: white;
+                margin-bottom: 1.5rem;
+                text-align: center;
+                font-size: 2rem;
+                font-weight: 700;
+                letter-spacing: 1.2px;
+                background: linear-gradient(135deg, #fff 0%, #e0e7ff 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                position: relative;
+            '>📊 Key Performance Metrics</h2>
+            <p style='
+                color: #E0E7FF;
+                text-align: center;
+                font-size: 1.1rem;
+                margin-bottom: 2.5rem;
+                opacity: 0.9;
+                font-weight: 500;
+                letter-spacing: 0.5px;
+            '>Real-time analytics and performance tracking</p>
+        </div>
+        <style>
+            @keyframes glow {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .metric-card {
+                animation: fadeIn 0.6s ease-out forwards;
+                transition: all 0.3s ease;
+            }
+            .metric-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+            }
+            .trend-icon {
+                transition: all 0.3s ease;
+            }
+            .metric-card:hover .trend-icon {
+                transform: scale(1.2);
+            }
+            .pulse-animation {
+                animation: pulse 2s infinite;
+            }
+        </style>
+    """, unsafe_allow_html=True)
     
-    # Calculate metrics
-    metrics = {
-        'Total Pipeline': {
-            'icon': '📈',
-            'current': df_current_filtered['Amount'].sum() / 100000,
-            'previous': df_previous_filtered['Amount'].sum() / 100000,
-            'gradient': 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)'
-        },
-        'Closed Won': {
-            'icon': '🎯',
-            'current': df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000 if status_column else 0,
-            'previous': df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000 if status_column else 0,
-            'gradient': 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
-        },
-        'Win Rate': {
-            'icon': '🏆',
-            'current': (len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_current_filtered) * 100) if status_column and len(df_current_filtered) > 0 else 0,
-            'previous': (len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_previous_filtered) * 100) if status_column and len(df_previous_filtered) > 0 else 0,
-            'gradient': 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)'
-        }
-    }
-    
-    # Display metrics in modern cards
+    # Display enhanced metric cards with modern design
     metric_cols = st.columns(len(metrics))
     for col, (metric_name, data) in zip(metric_cols, metrics.items()):
         with col:
             delta = data['current'] - data['previous']
-            # Use 'normal' for positive delta and 'inverse' for negative delta
             delta_color = "normal" if delta >= 0 else "inverse"
-            st.metric(
-                label=f"{data['icon']} {metric_name}",
-                value=format_metric(data['current'], metric_name),
-                delta=format_metric(delta, metric_name),
-                delta_color=delta_color
-            )
-    
-    # Sales Owner Performance
-    if 'Sales Owner' in df_current.columns:
-        st.markdown("### 👥 Sales Owner Performance")
-        sales_data = df_current_filtered.groupby('Sales Owner').agg({
-            'Amount': 'sum',
-            status_column: lambda x: (x.str.contains('Won', case=False, na=False)).sum() if status_column else 0
-        }).reset_index()
-        sales_data.columns = ['Sales Owner', 'Total Amount', 'Deals Won']
-        sales_data['Total Amount'] = sales_data['Total Amount'] / 100000
-        
-        fig_sales = px.bar(
-            sales_data,
-            x='Sales Owner',
-            y='Total Amount',
-            color='Deals Won',
-            title='Sales Performance by Owner',
-            labels={'Total Amount': 'Amount (₹L)', 'Sales Owner': 'Owner'},
-            height=400
-        )
-        st.plotly_chart(fig_sales, use_container_width=True)
-    
-    # Practice/P&L Centre Analysis
-    if practice_column:
-        st.markdown(f"### 💰 {practice_column} Analysis")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            pl_data = df_current_filtered.groupby(practice_column)['Amount'].sum().reset_index()
-            pl_data['Amount'] = pl_data['Amount'] / 100000
-            fig_pl = px.pie(
-                pl_data,
-                values='Amount',
-                names=practice_column,
-                title=f'Revenue Distribution by {practice_column}',
-                hole=0.4
-            )
-            st.plotly_chart(fig_pl, use_container_width=True)
-        
-        with col2:
-            if status_column:
-                pl_trend = df_current_filtered.groupby([practice_column, status_column])['Amount'].sum().reset_index()
-                pl_trend['Amount'] = pl_trend['Amount'] / 100000
-                fig_pl_trend = px.bar(
-                    pl_trend,
-                    x=practice_column,
-                    y='Amount',
-                    color=status_column,
-                    title=f'{practice_column} Performance by {status_column}',
-                    barmode='group'
+            
+            st.markdown(f"""
+                <div class='metric-card' style='
+                    background: {data['gradient']};
+                    border-radius: 20px;
+                    padding: 2rem;
+                    height: 100%;
+                    position: relative;
+                    overflow: hidden;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+                    backdrop-filter: blur(10px);
+                    -webkit-backdrop-filter: blur(10px);
+                    border: 1px solid rgba(255, 255, 255, 0.18);
+                '>
+                    <div class='trend-icon' style='
+                        position: absolute;
+                        top: 15px;
+                        right: 15px;
+                        font-size: 1.8rem;
+                        opacity: 0.9;
+                        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    '>{data['trend_icon']}</div>
+                    <div style='
+                        font-size: 2.2rem;
+                        margin-bottom: 1rem;
+                        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    '>{data['icon']}</div>
+                    <h3 style='
+                        color: white;
+                        font-size: 1.3rem;
+                        margin-bottom: 0.8rem;
+                        font-weight: 700;
+                        letter-spacing: 0.5px;
+                    '>{metric_name}</h3>
+                    <div class='pulse-animation' style='
+                        color: white;
+                        font-size: 2.2rem;
+                        font-weight: 800;
+                        margin: 1rem 0;
+                        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                        letter-spacing: 0.5px;
+                    '>{format_metric(data['current'], metric_name)}</div>
+                    <div style='
+                        color: {'#4ADE80' if delta >= 0 else '#F87171'};
+                        font-size: 1.1rem;
+                        font-weight: 600;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        margin: 0.8rem 0;
+                    '>
+                        <span style='
+                            background: rgba(255,255,255,0.1);
+                            padding: 0.4rem 0.8rem;
+                            border-radius: 12px;
+                            backdrop-filter: blur(5px);
+                            -webkit-backdrop-filter: blur(5px);
+                        '>
+                            {format_metric(abs(delta), metric_name)}
+                            <span style='margin-left: 4px;'>{' ⬆️' if delta >= 0 else ' ⬇️'}</span>
+                        </span>
+                    </div>
+                    <div style='
+                        color: rgba(255, 255, 255, 0.9);
+                        font-size: 1rem;
+                        font-weight: 500;
+                        margin-top: 0.8rem;
+                        letter-spacing: 0.3px;
+                        line-height: 1.4;
+                    '>{data['description']}</div>
+                    <div class='sparkline-container' style='
+                        margin-top: 1.5rem;
+                        padding: 0.8rem;
+                        background: rgba(255,255,255,0.1);
+                        border-radius: 12px;
+                        backdrop-filter: blur(5px);
+                        -webkit-backdrop-filter: blur(5px);
+                    '>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            # Add enhanced sparkline charts
+            if metric_name in ['Total Pipeline', 'Closed Won']:
+                values = [data['previous'], data['current']]
+                trend_chart = go.Figure(go.Scatter(
+                    y=values,
+                    mode='lines+markers',
+                    line=dict(
+                        color='white',
+                        width=3,
+                        shape='spline',
+                        smoothing=1.3
+                    ),
+                    marker=dict(
+                        color='white',
+                        size=8,
+                        symbol='diamond',
+                        line=dict(
+                            color='rgba(255,255,255,0.5)',
+                            width=2
+                        )
+                    ),
+                    fill='tonexty',
+                    fillcolor='rgba(255,255,255,0.1)'
+                ))
+                trend_chart.update_layout(
+                    height=80,
+                    margin=dict(l=0, r=0, t=0, b=0),
+                    paper_bgcolor='rgba(0,0,0,0)',
+                    plot_bgcolor='rgba(0,0,0,0)',
+                    showlegend=False,
+                    xaxis=dict(
+                        showgrid=False,
+                        showticklabels=False,
+                        showline=False,
+                        zeroline=False
+                    ),
+                    yaxis=dict(
+                        showgrid=False,
+                        showticklabels=False,
+                        showline=False,
+                        zeroline=False
+                    ),
+                    hovermode=False
                 )
-                st.plotly_chart(fig_pl_trend, use_container_width=True)
-    
-    # Geography and Type Analysis
-    if 'Geography' in df_current.columns or 'Type' in df_current.columns:
-        st.markdown("### 🌍 Geography and Type Analysis")
-        col1, col2 = st.columns(2)
-        
-        if 'Geography' in df_current.columns:
-            with col1:
-                geo_data = df_current_filtered.groupby('Geography')['Amount'].sum().reset_index()
-                geo_data['Amount'] = geo_data['Amount'] / 100000
-                fig_geo = px.bar(
-                    geo_data,
-                    x='Geography',
-                    y='Amount',
-                    title='Revenue by Geography',
-                    color='Amount',
-                    labels={'Amount': 'Amount (₹L)'}
-                )
-                st.plotly_chart(fig_geo, use_container_width=True)
-        
-        if 'Type' in df_current.columns and status_column:
-            with col2:
-                type_data = df_current_filtered.groupby(['Type', status_column])['Amount'].sum().reset_index()
-                type_data['Amount'] = type_data['Amount'] / 100000
-                fig_type = px.bar(
-                    type_data,
-                    x='Type',
-                    y='Amount',
-                    color=status_column,
-                    title='Revenue by Type and Status',
-                    barmode='group',
-                    labels={'Amount': 'Amount (₹L)'}
-                )
-                st.plotly_chart(fig_type, use_container_width=True)
-    
-    # YTD Trend Analysis
-    if 'Quarter' in df_current.columns and 'Year' in df_current.columns:
-        st.markdown("### 📈 YTD Trend Analysis")
-        ytd_trend = df_current_filtered.groupby(['Year', 'Quarter'])['Amount'].sum().reset_index()
-        ytd_trend['Amount'] = ytd_trend['Amount'] / 100000
-        fig_ytd = px.line(
-            ytd_trend,
-            x='Quarter',
-            y='Amount',
-            color='Year',
-            title='YTD Revenue Trend',
-            markers=True,
-            labels={'Amount': 'Amount (₹L)'}
-        )
-        st.plotly_chart(fig_ytd, use_container_width=True)
-    
-    # Detailed Metrics Table
-    st.markdown("### 📋 Detailed Metrics")
-    group_columns = ['Sales Owner'] if 'Sales Owner' in df_current.columns else []
-    if practice_column:
-        group_columns.append(practice_column)
-    if 'Type' in df_current.columns:
-        group_columns.append('Type')
-    if 'Geography' in df_current.columns:
-        group_columns.append('Geography')
-    
-    if group_columns:
-        detailed_metrics = df_current_filtered.groupby(group_columns).agg({
-            'Amount': 'sum',
-            status_column: lambda x: (x.str.contains('Won', case=False, na=False)).sum() if status_column else 0
-        }).reset_index()
-        
-        detailed_metrics['Amount'] = detailed_metrics['Amount'] / 100000
-        detailed_metrics.columns = group_columns + ['Total Amount (₹L)', 'Deals Won']
-        detailed_metrics = detailed_metrics.sort_values('Total Amount (₹L)', ascending=False)
-        
-        st.dataframe(
-            detailed_metrics,
-            column_config={
-                'Total Amount (₹L)': st.column_config.NumberColumn(
-                    'Total Amount (₹L)',
-                    format="₹%.1fL"
-                )
-            },
-            use_container_width=True
-        )
+                st.plotly_chart(trend_chart, use_container_width=True, config={'displayModeBar': False})
 
 def format_metric(value, metric_type):
     """Helper function to format metric values"""
