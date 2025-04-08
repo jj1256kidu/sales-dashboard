@@ -294,14 +294,8 @@ st.markdown("""
 @st.cache_data
 def process_data(df):
     """Process and prepare data for the dashboard"""
-    df = df.copy()
-    
-    # Check for duplicate indices
-    if df.index.duplicated().any():
-        st.warning(f"Found {df.index.duplicated().sum()} duplicate indices in the data")
-        st.write("Duplicate indices:", df.index[df.index.duplicated()].tolist())
-        # Reset index to remove duplicates
-        df = df.reset_index(drop=True)
+    # Create a copy and reset index to handle any duplicate indices
+    df = df.copy().reset_index(drop=True)
     
     # Handle duplicate columns by keeping only the first occurrence
     df = df.loc[:, ~df.columns.duplicated()]
@@ -1187,6 +1181,143 @@ def show_sales_team():
         </div>
     """, unsafe_allow_html=True)
 
+    # Add new section for Team Performance Trends
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin: 0;
+                font-size: 1.4em;
+                font-weight: 600;
+                font-family: "Segoe UI", sans-serif;
+            '>Team Performance Trends</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Add time-based trend analysis
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Monthly trend of closed deals
+        monthly_closed = df[df['Is_Won']].groupby('Month').size().reset_index()
+        monthly_closed.columns = ['Month', 'Closed Deals']
+        fig_monthly = px.line(monthly_closed, x='Month', y='Closed Deals', 
+                             title='Monthly Closed Deals Trend',
+                             markers=True)
+        fig_monthly.update_layout(height=300)
+        st.plotly_chart(fig_monthly, use_container_width=True)
+    
+    with col2:
+        # Quarterly pipeline value trend
+        quarterly_pipeline = df[~df['Is_Won']].groupby('Quarter')['Amount'].sum() / 100000
+        quarterly_pipeline = quarterly_pipeline.reset_index()
+        quarterly_pipeline.columns = ['Quarter', 'Pipeline Value (Lacs)']
+        fig_quarterly = px.bar(quarterly_pipeline, x='Quarter', y='Pipeline Value (Lacs)',
+                              title='Quarterly Pipeline Value Trend',
+                              text='Pipeline Value (Lacs)')
+        fig_quarterly.update_traces(texttemplate='₹%{text:.0f}L', textposition='outside')
+        fig_quarterly.update_layout(height=300)
+        st.plotly_chart(fig_quarterly, use_container_width=True)
+
+    # Add new section for Team Member Comparison
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 25px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin: 0;
+                font-size: 1.4em;
+                font-weight: 600;
+                font-family: "Segoe UI", sans-serif;
+            '>Team Member Comparison</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Add team member comparison charts
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Win rate comparison
+        team_win_rates = df.groupby('Sales Owner').apply(
+            lambda x: (x['Is_Won'].sum() / len(x) * 100) if len(x) > 0 else 0
+        ).reset_index()
+        team_win_rates.columns = ['Sales Owner', 'Win Rate']
+        fig_win_rates = px.bar(team_win_rates, x='Sales Owner', y='Win Rate',
+                              title='Team Member Win Rates',
+                              text='Win Rate')
+        fig_win_rates.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+        fig_win_rates.update_layout(height=300)
+        st.plotly_chart(fig_win_rates, use_container_width=True)
+    
+    with col2:
+        # Average deal size comparison
+        team_deal_sizes = df.groupby('Sales Owner').apply(
+            lambda x: x['Amount'].mean() / 100000 if len(x) > 0 else 0
+        ).reset_index()
+        team_deal_sizes.columns = ['Sales Owner', 'Avg Deal Size (Lacs)']
+        fig_deal_sizes = px.bar(team_deal_sizes, x='Sales Owner', y='Avg Deal Size (Lacs)',
+                               title='Team Member Average Deal Sizes',
+                               text='Avg Deal Size (Lacs)')
+        fig_deal_sizes.update_traces(texttemplate='₹%{text:.1f}L', textposition='outside')
+        fig_deal_sizes.update_layout(height=300)
+        st.plotly_chart(fig_deal_sizes, use_container_width=True)
+
+    # Add new section for Practice Analysis
+    if 'Practice' in df.columns:
+        st.markdown("""
+            <div style='
+                background: linear-gradient(to right, #f8f9fa, #e9ecef);
+                padding: 20px;
+                border-radius: 15px;
+                margin: 25px 0;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            '>
+                <h3 style='
+                    color: #2a5298;
+                    margin: 0;
+                    font-size: 1.4em;
+                    font-weight: 600;
+                    font-family: "Segoe UI", sans-serif;
+                '>Practice Analysis</h3>
+            </div>
+        """, unsafe_allow_html=True)
+
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Practice distribution by team member
+            practice_dist = df.groupby(['Sales Owner', 'Practice']).size().reset_index()
+            practice_dist.columns = ['Sales Owner', 'Practice', 'Deal Count']
+            fig_practice = px.bar(practice_dist, x='Sales Owner', y='Deal Count', color='Practice',
+                                title='Practice Distribution by Team Member')
+            fig_practice.update_layout(height=300)
+            st.plotly_chart(fig_practice, use_container_width=True)
+        
+        with col2:
+            # Practice win rates
+            practice_win_rates = df.groupby('Practice').apply(
+                lambda x: (x['Is_Won'].sum() / len(x) * 100) if len(x) > 0 else 0
+            ).reset_index()
+            practice_win_rates.columns = ['Practice', 'Win Rate']
+            fig_practice_win = px.bar(practice_win_rates, x='Practice', y='Win Rate',
+                                    title='Practice Win Rates',
+                                    text='Win Rate')
+            fig_practice_win.update_traces(texttemplate='%{text:.1f}%', textposition='outside')
+            fig_practice_win.update_layout(height=300)
+            st.plotly_chart(fig_practice_win, use_container_width=True)
+
+    # Keep existing metrics and filters section
     metrics = calculate_team_metrics(df)
     
     col1, col2, col3, col4 = st.columns(4)
@@ -1217,7 +1348,6 @@ def show_sales_team():
         text-transform: uppercase;
         letter-spacing: 1px;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        -webkit-font-smoothing: antialiased;
     """
     sublabel_style = """
         color: #FFFFFF;
@@ -1273,6 +1403,7 @@ def show_sales_team():
             </div>
         """, unsafe_allow_html=True)
 
+    # Keep existing filters and detailed view
     st.markdown("""
         <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
             <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>🔍 Filters</h4>
@@ -1358,75 +1489,8 @@ def show_sales_team():
 
     filtered_df = filter_dataframe(df, filters)
     
+    # Keep existing detailed view
     st.markdown("""
-        <div style='margin-bottom: 20px;'>
-            <h3 style='color: #2a5298; margin: 0; font-size: 1.4em; font-weight: 600;'>Performance Metrics</h3>
-        </div>
-    """, unsafe_allow_html=True)
-
-    m1, m2, m3 = st.columns(3)
-    current_pipeline = filtered_df[~filtered_df['Is_Won']]['Amount_Lacs'].sum()
-    weighted_projections = filtered_df[~filtered_df['Is_Won']]['Weighted_Amount'].sum()
-    closed_won = filtered_df[filtered_df['Is_Won']]['Amount_Lacs'].sum()
-
-    with m1:
-        st.markdown(f"""
-            <div style='
-                background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%);
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                text-align: center;
-                height: 100%;
-            '>
-                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
-                    🌊 Current Pipeline
-                </div>
-                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
-                    ₹{int(current_pipeline)}L
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    with m2:
-        st.markdown(f"""
-            <div style='
-                background: linear-gradient(135deg, #6B5B95 0%, #846EA9 100%);
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                text-align: center;
-            '>
-                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
-                    ⚖️ Weighted Projections
-                </div>
-                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
-                    ₹{int(weighted_projections)}L
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    with m3:
-        st.markdown(f"""
-            <div style='
-                background: linear-gradient(135deg, #2ECC71 0%, #27AE60 100%);
-                padding: 20px;
-                border-radius: 10px;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                text-align: center;
-            '>
-                <div style='color: white; font-size: 1.1em; font-weight: 600; margin-bottom: 8px;'>
-                    💰 Closed Won
-                </div>
-                <div style='color: white; font-size: 1.8em; font-weight: 800;'>
-                    ₹{int(closed_won)}L
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<div style='margin: 25px 0;'></div>", unsafe_allow_html=True)
-
-    st.markdown(f"""
         <div style='
             background: linear-gradient(to right, #f8f9fa, #e9ecef);
             padding: 20px;
@@ -1440,7 +1504,7 @@ def show_sales_team():
                 font-size: 1.4em;
                 font-weight: 600;
                 font-family: "Segoe UI", sans-serif;
-            '>Team Member Performance</h3>
+            '>Detailed Opportunities</h3>
         </div>
     """, unsafe_allow_html=True)
     
@@ -1454,8 +1518,7 @@ def show_sales_team():
     
     display_df = display_df.rename(columns={
         'Amount': 'Amount (In Lacs)',
-        'Pre-sales Technical Lead': 'Tech Owner',
-        'Type': 'Hunting /farming'
+        'Pre-sales Technical Lead': 'Tech Owner'
     })
     
     display_df['Amount (In Lacs)'] = display_df['Amount (In Lacs)'].apply(lambda x: int(x/100000) if pd.notnull(x) else 0)
@@ -1493,68 +1556,6 @@ def show_sales_team():
                 help="Expected closing date"
             )
         }
-    )
-    
-    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
-
-    st.markdown("""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 25px 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        '>
-            <h3 style='
-                color: #2a5298;
-                margin: 0;
-                font-size: 1.4em;
-                font-weight: 600;
-                font-family: "Segoe UI", sans-serif;
-            '>Team Member Performance</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    team_metrics = df.groupby('Sales Owner').agg({
-        'Amount': lambda x: round(x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000, 1),
-        'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
-    }).reset_index()
-    team_metrics.columns = ['Sales Owner', 'Closed Won', 'Closed Deals']
-    
-    pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
-    total_pipeline = round(pipeline_df.groupby('Sales Owner')['Amount'].sum() / 100000, 1)
-    team_metrics['Current Pipeline'] = team_metrics['Sales Owner'].map(total_pipeline)
-    
-    def calculate_weighted_projection(owner):
-        owner_pipeline = pipeline_df[pipeline_df['Sales Owner'] == owner]
-        weighted_sum = sum((amt * pr / 100) 
-                           for amt, pr in zip(owner_pipeline['Amount'], owner_pipeline['Probability_Num']))
-        return round(weighted_sum / 100000, 1)
-    
-    team_metrics['Weighted Projections'] = team_metrics['Sales Owner'].apply(calculate_weighted_projection)
-    
-    total_deals_owner = pipeline_df.groupby('Sales Owner').size()
-    team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(total_deals_owner)
-    team_metrics['Win Rate'] = round((team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100), 1)
-    team_metrics = team_metrics.sort_values('Current Pipeline', ascending=False)
-    
-    summary_data = team_metrics.copy()
-    summary_data['Current Pipeline'] = summary_data['Current Pipeline'].apply(lambda x: f"₹{x:,}L")
-    summary_data['Weighted Projections'] = summary_data['Weighted Projections'].apply(lambda x: f"₹{x:,}L")
-    summary_data['Closed Won'] = summary_data['Closed Won'].apply(lambda x: f"₹{x:,}L")
-    summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x}%")
-    
-    st.dataframe(
-        summary_data[[
-            'Sales Owner',
-            'Current Pipeline',
-            'Weighted Projections',
-            'Closed Won',
-            'Pipeline Deals',
-            'Closed Deals',
-            'Win Rate'
-        ]],
-        use_container_width=True
     )
 
 def show_detailed():
