@@ -1150,12 +1150,12 @@ def show_overview():
         st.info("Required columns (Expected Close Date, Amount, Sales Stage) not found in the dataset")
 
 def show_sales_team():
-    if st.session_state.df is None:
+    if st.session_state.df_current is None:
         st.warning("Please upload your sales data to view team information")
         return
     
     # Process data once with caching
-    df = process_data(st.session_state.df)
+    df = process_data(st.session_state.df_current)
     
     # Team members
     team_members = sorted(df['Sales Owner'].dropna().unique().tolist())
