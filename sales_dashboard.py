@@ -447,83 +447,98 @@ def show_data_input():
         st.markdown('<div class="upload-container">', unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
             "Upload Sales Data",
-            type=['xlsx', 'csv'],
-            help="Upload your sales data file in Excel or CSV format"
+            type=['xlsx'],
+            help="Upload your sales data file in Excel format (.xlsx)"
         )
         st.markdown("</div>", unsafe_allow_html=True)
         
         if uploaded_file:
             try:
-                if uploaded_file.name.endswith('.xlsx'):
-                    excel_file = pd.ExcelFile(uploaded_file)
-                    sheet_names = excel_file.sheet_names
-                    selected_current_sheet = st.selectbox("Select Current Week Sheet", sheet_names)
-                    selected_previous_sheet = st.selectbox("Select Previous Week Sheet", sheet_names)
-                    
-                    # Read the data
+                # Read Excel file and get sheet names
+                excel_file = pd.ExcelFile(uploaded_file)
+                sheet_names = excel_file.sheet_names
+                
+                # Display sheet selection with better UI
+                st.markdown("""
+                    <div style='background: #f0f2f6; padding: 20px; border-radius: 10px; margin: 20px 0;'>
+                        <h3 style='color: #2a5298; margin: 0 0 15px 0;'>Sheet Selection</h3>
+                    </div>
+                """, unsafe_allow_html=True)
+                
+                col_a, col_b = st.columns(2)
+                
+                with col_a:
+                    st.markdown("""
+                        <div style='padding: 10px; background: #e8f0fe; border-radius: 5px;'>
+                            <p style='color: #2a5298; margin: 0;'>📅 Current Week Data</p>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    selected_current_sheet = st.selectbox(
+                        "Select sheet containing current week's data",
+                        sheet_names,
+                        key="current_week",
+                        help="Choose the sheet with your most recent data"
+                    )
+                
+                with col_b:
+                    st.markdown("""
+                        <div style='padding: 10px; background: #e8f0fe; border-radius: 5px;'>
+                            <p style='color: #2a5298; margin: 0;'>📅 Previous Week Data</p>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    # Filter out the current sheet from previous week options
+                    prev_sheet_options = [sheet for sheet in sheet_names if sheet != selected_current_sheet]
+                    selected_previous_sheet = st.selectbox(
+                        "Select sheet containing previous week's data",
+                        prev_sheet_options,
+                        key="previous_week",
+                        help="Choose the sheet with your previous week's data"
+                    )
+                
+                # Read the data with better error handling
+                try:
                     df_current = pd.read_excel(uploaded_file, sheet_name=selected_current_sheet)
                     df_previous = pd.read_excel(uploaded_file, sheet_name=selected_previous_sheet)
                     
-                    # Clean column names and remove duplicates
-                    def clean_dataframe(df):
-                        # Clean column names
+                    # Function to clean and standardize column names
+                    def clean_column_names(df):
+                        # Strip whitespace and convert to lowercase for comparison
                         df.columns = df.columns.str.strip()
                         
-                        # Get duplicate columns
-                        duplicated_cols = df.columns[df.columns.duplicated()].tolist()
-                        if duplicated_cols:
-                            st.warning(f"Found duplicate columns: {', '.join(duplicated_cols)}. Keeping only the first occurrence.")
-                        
-                        # Keep only first occurrence of duplicate columns
-                        df = df.loc[:, ~df.columns.duplicated()]
+                        # Find duplicate columns
+                        duplicates = df.columns[df.columns.duplicated()].tolist()
+                        if duplicates:
+                            st.warning(f"Found duplicate columns: {', '.join(duplicates)}")
+                            
+                            # Create a mapping of duplicate columns with suffixes
+                            col_mapping = {}
+                            seen_cols = set()
+                            for col in df.columns:
+                                if col in seen_cols:
+                                    count = sum(1 for c in col_mapping if c.startswith(col))
+                                    new_col = f"{col}_{count + 1}"
+                                    col_mapping[col] = new_col
+                                else:
+                                    seen_cols.add(col)
+                                    col_mapping[col] = col
+                            
+                            # Rename columns using the mapping
+                            df.columns = [col_mapping[col] for col in df.columns]
                         
                         return df
                     
-                    # Clean both dataframes
-                    df_current = clean_dataframe(df_current)
-                    df_previous = clean_dataframe(df_previous)
+                    # Clean and standardize column names
+                    df_current = clean_column_names(df_current)
+                    df_previous = clean_column_names(df_previous)
                     
-                    # Standardize column names
-                    column_mapping = {
-                        'Sales Team Member': 'Sales Owner',
-                        'Deal Value': 'Amount',
-                        'Status': 'Sales Stage',
-                        'Technical Lead': 'Pre-sales Technical Lead',
-                        'Expected Close Date': 'Expected Close Date',
-                        'Hunting/Farming': 'Type',
-                        'Hunting /farming': 'Type',
-                        'Sales_Stage': 'Sales Stage',
-                        'Month_1': 'Month',
-                        'Short Month': 'Month',
-                        'Short Year(25)': 'Year',
-                        'Year in FY': 'Year',
-                        'FY': 'Year',
-                        'Merge COlumn': 'Practice',
-                        'P & L Centre': 'Practice'
-                    }
-                    
-                    # Function to safely rename columns
-                    def safe_rename_columns(df, mapping):
-                        # Only rename columns that exist in the DataFrame
-                        existing_cols = {k: v for k, v in mapping.items() if k in df.columns}
-                        return df.rename(columns=existing_cols)
-                    
-                    # Rename columns in both dataframes
-                    df_current = safe_rename_columns(df_current, column_mapping)
-                    df_previous = safe_rename_columns(df_previous, column_mapping)
-                    
-                    # Store in session state
-                    st.session_state.df_current = df_current
-                    st.session_state.df_previous = df_previous
-                    st.session_state.df = df_current  # Keep main df as current week for compatibility
-                    
-                    # Preview Section with better formatting and error handling
+                    # Display data preview with error handling
                     st.markdown("### Data Preview")
                     
-                    # Display current week preview
+                    # Current week preview
                     st.markdown(f"""
                         <div style='background: #f0f2f6; padding: 15px; border-radius: 10px; margin: 10px 0;'>
-                            <h4 style='color: #2a5298; margin: 0;'>Current Week Data from {selected_current_sheet}</h4>
+                            <h4 style='color: #2a5298; margin: 0;'>Current Week Data ({selected_current_sheet})</h4>
+                            <p style='color: #666; margin: 5px 0 0 0;'>{len(df_current)} rows × {len(df_current.columns)} columns</p>
                         </div>
                     """, unsafe_allow_html=True)
                     
@@ -532,13 +547,25 @@ def show_data_input():
                             df_current.head(),
                             use_container_width=True
                         )
+                        
+                        # Show column names and types
+                        with st.expander("Show Current Week Column Details"):
+                            col_info = pd.DataFrame({
+                                'Column Name': df_current.columns,
+                                'Data Type': df_current.dtypes.astype(str),
+                                'Non-Null Count': df_current.count(),
+                                'Null Count': df_current.isna().sum()
+                            })
+                            st.dataframe(col_info, use_container_width=True)
+                    
                     except Exception as e:
                         st.error(f"Error displaying current week data: {str(e)}")
                     
-                    # Display previous week preview
+                    # Previous week preview
                     st.markdown(f"""
                         <div style='background: #f0f2f6; padding: 15px; border-radius: 10px; margin: 10px 0;'>
-                            <h4 style='color: #2a5298; margin: 0;'>Previous Week Data from {selected_previous_sheet}</h4>
+                            <h4 style='color: #2a5298; margin: 0;'>Previous Week Data ({selected_previous_sheet})</h4>
+                            <p style='color: #666; margin: 5px 0 0 0;'>{len(df_previous)} rows × {len(df_previous.columns)} columns</p>
                         </div>
                     """, unsafe_allow_html=True)
                     
@@ -547,34 +574,39 @@ def show_data_input():
                             df_previous.head(),
                             use_container_width=True
                         )
+                        
+                        # Show column names and types
+                        with st.expander("Show Previous Week Column Details"):
+                            col_info = pd.DataFrame({
+                                'Column Name': df_previous.columns,
+                                'Data Type': df_previous.dtypes.astype(str),
+                                'Non-Null Count': df_previous.count(),
+                                'Null Count': df_previous.isna().sum()
+                            })
+                            st.dataframe(col_info, use_container_width=True)
+                    
                     except Exception as e:
                         st.error(f"Error displaying previous week data: {str(e)}")
                     
-                    # Display column information
-                    st.markdown("### Column Information")
-                    col_info = pd.DataFrame({
-                        'Current Week Columns': df_current.columns.tolist(),
-                        'Previous Week Columns': df_previous.columns.tolist()
-                    })
-                    st.dataframe(col_info, use_container_width=True)
+                    # Store processed data in session state
+                    st.session_state.df_current = df_current
+                    st.session_state.df_previous = df_previous
+                    st.session_state.df = df_current  # Keep main df as current week for compatibility
                     
-                    # Success message with record counts and data types
+                    # Success message
                     st.success(f"""
                         Successfully loaded:
-                        - Current week: {len(df_current):,} records
-                        - Previous week: {len(df_previous):,} records
+                        - Current week ({selected_current_sheet}): {len(df_current):,} records
+                        - Previous week ({selected_previous_sheet}): {len(df_previous):,} records
                     """)
-                    
-                    # Display data types
-                    st.markdown("### Data Types")
-                    dtypes_current = pd.DataFrame(df_current.dtypes, columns=['Data Type'])
-                    st.dataframe(dtypes_current, use_container_width=True)
-                    
-                else:
-                    st.error("Please upload an Excel file (.xlsx)")
                 
+                except Exception as e:
+                    st.error(f"Error reading Excel sheets: {str(e)}")
+                    st.error("Please make sure the selected sheets contain valid data.")
+            
             except Exception as e:
-                st.error(f"Error: {str(e)}")
+                st.error(f"Error processing file: {str(e)}")
+                st.error("Please make sure your Excel file is properly formatted and not corrupted.")
     
     with col2:
         st.markdown("""
@@ -587,10 +619,19 @@ def show_data_input():
                 <li>Sales Owner (or Sales Team Member)</li>
                 <li>Practice/Region</li>
             </ul>
-            <h4>File Formats</h4>
+            <h4>File Format</h4>
             <ul>
-                <li>Excel (.xlsx)</li>
-                <li>CSV (.csv)</li>
+                <li>Excel (.xlsx) with two sheets:</li>
+                <ul>
+                    <li>Current week's data</li>
+                    <li>Previous week's data</li>
+                </ul>
+            </ul>
+            <h4>Tips</h4>
+            <ul>
+                <li>Ensure column names are consistent across sheets</li>
+                <li>Remove any empty columns</li>
+                <li>Check for duplicate column names</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
