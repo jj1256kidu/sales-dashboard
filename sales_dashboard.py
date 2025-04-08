@@ -1437,7 +1437,7 @@ def show_quarter_summary():
         selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + practices)
     
     # Apply filters
-    filtered_df = df.copy()
+    filtered_df = df.copy().reset_index(drop=True)
     if selected_sales_owner != "All Sales Owners":
         filtered_df = filtered_df[filtered_df['Sales Owner'] == selected_sales_owner]
     if selected_quarter != "All Quarters":
@@ -1452,7 +1452,7 @@ def show_quarter_summary():
     
     # Calculate previous period metrics (assuming previous quarter)
     previous_quarter = str(int(selected_quarter[1:]) - 1) if selected_quarter != "All Quarters" else "Q4"
-    previous_df = df[df['Quarter'] == previous_quarter]
+    previous_df = df[df['Quarter'] == previous_quarter].reset_index(drop=True)
     
     if selected_sales_owner != "All Sales Owners":
         previous_df = previous_df[previous_df['Sales Owner'] == selected_sales_owner]
