@@ -2092,7 +2092,10 @@ def show_performance_insights():
         st.warning("Please upload data first.")
         return
 
-    df = st.session_state.df_current
+    df = st.session_state.df_current.copy()
+    
+    # Convert Expected Close Date to datetime
+    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
 
     st.markdown("""
         <div style='
@@ -2117,11 +2120,11 @@ def show_performance_insights():
     col1, col2, col3, col4 = st.columns(4)
     metrics = {
         'Average Deal Size': df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].mean()/100000,
-        'Win Rate': len(df[df['Sales Stage'].str.contains('Won', case=False, na=False)])/len(df)*100,
+        'Win Rate': len(df[df['Sales Stage'].str.contains('Won', case=False, na=False)])/len(df)*100 if len(df) > 0 else 0,
         'Pipeline Coverage': df['Amount'].sum()/(st.session_state.sales_target*100000) if st.session_state.sales_target > 0 else 0,
         'Avg Sales Cycle': (pd.to_datetime(df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Expected Close Date']) - 
                            pd.to_datetime(df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Created Date'])).mean().days
-                           if 'Created Date' in df.columns else 0
+                           if 'Created Date' in df.columns and len(df[df['Sales Stage'].str.contains('Won', case=False, na=False)]) > 0 else 0
     }
 
     for (metric, value), col in zip(metrics.items(), [col1, col2, col3, col4]):
@@ -2150,13 +2153,22 @@ def show_performance_insights():
 
     # Performance Trends
     st.markdown("### Performance Trends")
-    trend_metrics = df.groupby(pd.Grouper(key='Expected Close Date', freq='M')).agg({
+    
+    # Set Expected Close Date as index and sort
+    df_trend = df.set_index('Expected Close Date').sort_index()
+    
+    # Group by month using resample
+    trend_metrics = df_trend.resample('ME').agg({
         'Amount': ['sum', 'count'],
         'Sales Stage': lambda x: (x.str.contains('Won', case=False, na=False)).sum()
     }).reset_index()
+    
+    # Flatten column names
     trend_metrics.columns = ['Date', 'Total Amount', 'Deal Count', 'Won Deals']
-    trend_metrics['Win Rate'] = trend_metrics['Won Deals'] / trend_metrics['Deal Count'] * 100
-    trend_metrics['Average Deal Size'] = trend_metrics['Total Amount'] / trend_metrics['Deal Count']
+    
+    # Calculate metrics
+    trend_metrics['Win Rate'] = (trend_metrics['Won Deals'] / trend_metrics['Deal Count'] * 100).fillna(0)
+    trend_metrics['Average Deal Size'] = (trend_metrics['Total Amount'] / trend_metrics['Deal Count']).fillna(0)
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(
