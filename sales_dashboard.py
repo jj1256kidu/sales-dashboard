@@ -1609,7 +1609,7 @@ def show_ytd_dashboard():
         if 'Year' in df_current.columns:
             years.extend(sorted(df_current['Year'].dropna().unique().tolist()))
         elif 'Expected Close Date' in df_current.columns:
-            df_current['Year'] = pd.to_datetime(df_current['Expected Close Date']).dt.year
+            df_current['Year'] = pd.to_datetime(df_current['Expected Close Date'], dayfirst=True).dt.year
             years.extend(sorted(df_current['Year'].dropna().unique().tolist()))
         selected_year = st.selectbox("Fiscal Year", years)
     
@@ -1636,7 +1636,7 @@ def show_ytd_dashboard():
             if 'Year' in df.columns:
                 filtered_df = filtered_df[filtered_df['Year'] == selected_year]
             elif 'Expected Close Date' in df.columns:
-                filtered_df = filtered_df[pd.to_datetime(filtered_df['Expected Close Date']).dt.year == selected_year]
+                filtered_df = filtered_df[pd.to_datetime(filtered_df['Expected Close Date'], dayfirst=True).dt.year == selected_year]
             
         return filtered_df
     
@@ -1673,7 +1673,8 @@ def show_ytd_dashboard():
     for col, (metric_name, data) in zip(metric_cols, metrics.items()):
         with col:
             delta = data['current'] - data['previous']
-            delta_color = "success" if delta >= 0 else "danger"
+            # Use 'normal' for positive delta and 'inverse' for negative delta
+            delta_color = "normal" if delta >= 0 else "inverse"
             st.metric(
                 label=f"{data['icon']} {metric_name}",
                 value=format_metric(data['current'], metric_name),
