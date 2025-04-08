@@ -1255,7 +1255,99 @@ def show_sales_team():
 
     st.markdown("<div style='margin: 25px 0;'></div>", unsafe_allow_html=True)
 
-    # First show Detailed Opportunities
+    # First show Weekly Comparison
+    st.markdown("""### Weekly Performance Comparison""", unsafe_allow_html=True)
+    
+    # Get sorted unique weeks
+    weeks = sorted(filtered_df['Week'].unique())
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        current_week = st.selectbox("Select Current Week", weeks, index=len(weeks)-1, key="current_week_team")
+    
+    with col2:
+        previous_week = st.selectbox("Select Previous Week", weeks, index=max(0, len(weeks)-2), key="previous_week_team")
+    
+    # Filter data for both weeks
+    current_week_data = filtered_df[filtered_df['Week'] == current_week]
+    previous_week_data = filtered_df[filtered_df['Week'] == previous_week]
+    
+    # Calculate metrics for both weeks
+    def calculate_metrics(week_data):
+        committed = week_data[week_data['Probability_Num'] > 75]['Amount'].sum() / 100000
+        upside = week_data[week_data['Probability_Num'].between(25, 75)]['Amount'].sum() / 100000
+        closed_won = week_data[week_data['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000
+        overall_committed = committed + closed_won
+        return {
+            'Committed for the Month': committed,
+            'Upside for the Month': upside,
+            'Closed Won': closed_won,
+            'Overall Committed': overall_committed
+        }
+    
+    current_metrics = calculate_metrics(current_week_data)
+    previous_metrics = calculate_metrics(previous_week_data)
+    
+    # Display metrics in cards with comparison
+    metrics = ['Committed for the Month', 'Upside for the Month', 'Closed Won', 'Overall Committed']
+    
+    for i in range(0, len(metrics), 2):
+        col1, col2 = st.columns(2)
+        
+        for j, metric in enumerate(metrics[i:i+2]):
+            if j == 0:
+                container = col1
+            else:
+                container = col2
+            
+            current_value = current_metrics[metric]
+            previous_value = previous_metrics[metric]
+            delta = current_value - previous_value
+            delta_percent = (delta / previous_value * 100) if previous_value != 0 else 0
+            
+            with container:
+                st.markdown(f"""
+                    <div style='
+                        background: white;
+                        padding: 20px;
+                        border-radius: 10px;
+                        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                        margin: 10px 0;
+                    '>
+                        <h3 style='
+                            color: #2a5298;
+                            margin: 0 0 15px 0;
+                            font-size: 1.2em;
+                            font-weight: 600;
+                        '>{metric}</h3>
+                        <div style='display: flex; justify-content: space-between; align-items: center;'>
+                            <div>
+                                <div style='color: #666; font-size: 0.9em;'>Current Week</div>
+                                <div style='font-size: 1.6em; font-weight: 600; color: #2a5298;'>₹{int(current_value)}L</div>
+                            </div>
+                            <div>
+                                <div style='color: #666; font-size: 0.9em;'>Previous Week</div>
+                                <div style='font-size: 1.6em; font-weight: 600; color: #666;'>₹{int(previous_value)}L</div>
+                            </div>
+                        </div>
+                        <div style='
+                            margin-top: 15px;
+                            padding: 8px;
+                            border-radius: 5px;
+                            text-align: center;
+                            background: {("#e3f7ed" if delta >= 0 else "#fde7e9")};
+                            color: {("#28a745" if delta >= 0 else "#dc3545")};
+                            font-weight: 600;
+                        '>
+                            {'+' if delta >= 0 else ''}{int(delta_percent)}% ({'+' if delta >= 0 else ''}₹{int(delta)}L)
+                        </div>
+                    </div>
+                """, unsafe_allow_html=True)
+    
+    st.markdown("<div style='margin: 25px 0;'></div>", unsafe_allow_html=True)
+
+    # Then show Detailed Opportunities
     st.markdown("""### Detailed Opportunities""", unsafe_allow_html=True)
     
     display_df = filtered_df[['Organization Name', 'Opportunity Name', 'Geography', 
@@ -1304,70 +1396,6 @@ def show_sales_team():
                 help="Expected closing date"
             )
         }
-    )
-
-    st.markdown("<div style='margin: 25px 0;'></div>", unsafe_allow_html=True)
-
-    # Then show Team Member Performance
-    st.markdown(f"""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 20px;
-            border-radius: 15px;
-            margin: 25px 0;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
-        '>
-            <h3 style='
-                color: #2a5298;
-                margin: 0;
-                font-size: 1.4em;
-                font-weight: 600;
-                font-family: "Segoe UI", sans-serif;
-            '>Team Member Performance</h3>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    # Calculate team metrics
-    team_metrics = df.groupby('Sales Owner').agg({
-        'Amount': lambda x: round(x[df['Sales Stage'].str.contains('Won', case=False, na=False)].sum() / 100000, 1),
-        'Sales Stage': lambda x: x[df['Sales Stage'].str.contains('Won', case=False, na=False)].count()
-    }).reset_index()
-    team_metrics.columns = ['Sales Owner', 'Closed Won', 'Closed Deals']
-    
-    pipeline_df = df[~df['Sales Stage'].str.contains('Won', case=False, na=False)]
-    total_pipeline = round(pipeline_df.groupby('Sales Owner')['Amount'].sum() / 100000, 1)
-    team_metrics['Current Pipeline'] = team_metrics['Sales Owner'].map(total_pipeline)
-    
-    def calculate_weighted_projection(owner):
-        owner_pipeline = pipeline_df[pipeline_df['Sales Owner'] == owner]
-        weighted_sum = sum((amt * pr / 100) 
-                           for amt, pr in zip(owner_pipeline['Amount'], owner_pipeline['Probability_Num']))
-        return round(weighted_sum / 100000, 1)
-    
-    team_metrics['Weighted Projections'] = team_metrics['Sales Owner'].apply(calculate_weighted_projection)
-    
-    total_deals_owner = pipeline_df.groupby('Sales Owner').size()
-    team_metrics['Pipeline Deals'] = team_metrics['Sales Owner'].map(total_deals_owner)
-    team_metrics['Win Rate'] = round((team_metrics['Closed Deals'] / (team_metrics['Closed Deals'] + team_metrics['Pipeline Deals']) * 100), 1)
-    team_metrics = team_metrics.sort_values('Current Pipeline', ascending=False)
-    
-    summary_data = team_metrics.copy()
-    summary_data['Current Pipeline'] = summary_data['Current Pipeline'].apply(lambda x: f"₹{x:,}L")
-    summary_data['Weighted Projections'] = summary_data['Weighted Projections'].apply(lambda x: f"₹{x:,}L")
-    summary_data['Closed Won'] = summary_data['Closed Won'].apply(lambda x: f"₹{x:,}L")
-    summary_data['Win Rate'] = summary_data['Win Rate'].apply(lambda x: f"{x}%")
-    
-    st.dataframe(
-        summary_data[[
-            'Sales Owner',
-            'Current Pipeline',
-            'Weighted Projections',
-            'Closed Won',
-            'Pipeline Deals',
-            'Closed Deals',
-            'Win Rate'
-        ]],
-        use_container_width=True
     )
 
 def show_detailed():
