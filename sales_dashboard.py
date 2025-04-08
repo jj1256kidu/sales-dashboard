@@ -1996,7 +1996,10 @@ def show_pipeline_analysis():
         st.warning("Please upload data first.")
         return
 
-    df = st.session_state.df_current
+    df = st.session_state.df_current.copy()
+    
+    # Convert Expected Close Date to datetime
+    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
 
     st.markdown("""
         <div style='
@@ -2070,7 +2073,10 @@ def show_pipeline_analysis():
         st.plotly_chart(fig_prob, use_container_width=True)
 
     with col2:
-        timeline_dist = filtered_df.groupby(pd.Grouper(key='Expected Close Date', freq='M'))['Amount'].sum()/100000
+        # Group by month using datetime index
+        monthly_data = filtered_df.set_index('Expected Close Date')
+        timeline_dist = monthly_data.resample('ME')['Amount'].sum()/100000
+        
         fig_timeline = px.line(
             x=timeline_dist.index,
             y=timeline_dist.values,
