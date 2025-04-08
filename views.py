@@ -382,11 +382,17 @@ def show_data_input_view(st):
 
 def show_overview_view(st):
     """Display the overview view with key metrics and visualizations"""
-    if 'df' not in st.session_state:
-        st.warning("Please upload data first")
+    if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
+        st.warning("Please upload data first.")
         return
-    
-    df = st.session_state.df
+
+    dataset_choice = st.radio(
+        "Select Dataset",
+        ["Current Week", "Previous Week"],
+        horizontal=True
+    )
+
+    df = st.session_state.df_current if dataset_choice == "Current Week" else st.session_state.df_previous
     
     # Calculate metrics
     total_closed_won = df[df['Status'] == 'Closed Won']['Deal Value'].sum()
@@ -428,11 +434,17 @@ def show_overview_view(st):
 
 def show_sales_team_view(st):
     """Display the sales team view with team performance metrics"""
-    if 'df' not in st.session_state:
-        st.warning("Please upload data first")
+    if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
+        st.warning("Please upload data first.")
         return
-    
-    df = st.session_state.df
+
+    dataset_choice = st.radio(
+        "Select Dataset",
+        ["Current Week", "Previous Week"],
+        horizontal=True
+    )
+
+    df = st.session_state.df_current if dataset_choice == "Current Week" else st.session_state.df_previous
     
     # First row of filters with adjusted column sizes
     col1, col2, col3, col4, col5, col6, col7, col8, col9 = st.columns([1.2, 1.2, 1.2, 1, 1, 1, 1, 1.2, 1.2])
@@ -661,11 +673,17 @@ def show_sales_team_view(st):
 
 def show_detailed_data_view(st):
     """Display the detailed data view with search and filtering options"""
-    if 'df' not in st.session_state:
-        st.warning("Please upload data first")
+    if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
+        st.warning("Please upload data first.")
         return
-    
-    df = st.session_state.df.copy()
+
+    dataset_choice = st.radio(
+        "Select Dataset",
+        ["Current Week", "Previous Week"],
+        horizontal=True
+    )
+
+    df = st.session_state.df_current if dataset_choice == "Current Week" else st.session_state.df_previous
     
     # Ensure Date column is datetime
     df['Date'] = pd.to_datetime(df['Date'])
