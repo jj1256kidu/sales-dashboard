@@ -222,10 +222,40 @@ st.markdown("""
 
     /* Metric container */
     .metric-container {
-        margin: 30px 0;
-        padding: 15px;
-        background: #f8f9fa;
+        display: flex;
+        justify-content: space-between;
+        margin: 20px 0;
+        gap: 20px;
+    }
+    
+    .card {
+        background: white;
+        padding: 20px;
         border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        flex: 1;
+        text-align: center;
+    }
+    
+    .metric-label {
+        color: #666;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .metric-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #2a5298;
+    }
+    
+    .delta-positive {
+        color: #2ecc71;
+    }
+    
+    .delta-negative {
+        color: #e74c3c;
     }
 
     /* Section divider */
@@ -1509,6 +1539,139 @@ def show_quarterly_summary():
                  barmode='group')
     st.plotly_chart(fig, use_container_width=True)
 
+def display_dashboard():
+    if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
+        st.warning("Please upload the data first!")
+        return
+
+    df_current = st.session_state.df_current
+    df_previous = st.session_state.df_previous
+
+    st.title("Sales Dashboard")
+
+    col1, col2, col3 = st.columns([1, 1, 1])
+
+    with col1:
+        sales_owners = sorted(df_current['Sales Owner'].dropna().unique().tolist())
+        selected_sales_owner = st.selectbox("Select Sales Owner", ["All Sales Owners"] + sales_owners)
+
+    with col2:
+        quarters = ['Q1', 'Q2', 'Q3', 'Q4']
+        selected_quarter = st.selectbox("Select Quarter", ["All Quarters"] + quarters)
+
+    with col3:
+        practices = sorted(df_current['Practice'].dropna().unique().tolist())
+        selected_practice = st.selectbox("Select Practice", ["All Practices"] + practices)
+
+    if selected_sales_owner != "All Sales Owners":
+        df_current = df_current[df_current['Sales Owner'] == selected_sales_owner]
+        df_previous = df_previous[df_previous['Sales Owner'] == selected_sales_owner]
+
+    if selected_quarter != "All Quarters":
+        df_current = df_current[df_current['Quarter'] == selected_quarter]
+        df_previous = df_previous[df_previous['Quarter'] == selected_quarter]
+
+    if selected_practice != "All Practices":
+        df_current = df_current[df_current['Practice'] == selected_practice]
+        df_previous = df_previous[df_previous['Practice'] == selected_practice]
+
+    committed_current_week = df_current[df_current['Status'] == "Committed for the Month"]['Amount'].sum()
+    upside_current_week = df_current[df_current['Status'] == "Upside for the Month"]['Amount'].sum()
+    closed_won_current_week = df_current[df_current['Status'] == "Closed Won"]['Amount'].sum()
+
+    committed_previous_week = df_previous[df_previous['Status'] == "Committed for the Month"]['Amount'].sum()
+    upside_previous_week = df_previous[df_previous['Status'] == "Upside for the Month"]['Amount'].sum()
+    closed_won_previous_week = df_previous[df_previous['Status'] == "Closed Won"]['Amount'].sum()
+
+    committed_delta = committed_current_week - committed_previous_week
+    upside_delta = upside_current_week - upside_previous_week
+    closed_won_delta = closed_won_current_week - closed_won_previous_week
+
+    overall_committed_current_week = committed_current_week + closed_won_current_week
+    overall_committed_previous_week = committed_previous_week + closed_won_previous_week
+    overall_committed_delta = overall_committed_current_week - overall_committed_previous_week
+
+    with st.container():
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Committed Data (Current Week)</div>
+                    <div class="metric-value">₹{committed_current_week / 100000:.0f}L</div>
+                    <div class="metric-label">Current Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Committed Data (Previous Week)</div>
+                    <div class="metric-value">₹{committed_previous_week / 100000:.0f}L</div>
+                    <div class="metric-label">Previous Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if committed_delta > 0 else 'delta-negative'}">₹{committed_delta / 100000:.0f}L</div>
+                    <div class="metric-label">Change</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Upside Data (Current Week)</div>
+                    <div class="metric-value">₹{upside_current_week / 100000:.0f}L</div>
+                    <div class="metric-label">Current Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Upside Data (Previous Week)</div>
+                    <div class="metric-value">₹{upside_previous_week / 100000:.0f}L</div>
+                    <div class="metric-label">Previous Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if upside_delta > 0 else 'delta-negative'}">₹{upside_delta / 100000:.0f}L</div>
+                    <div class="metric-label">Change</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Closed Won (Current Week)</div>
+                    <div class="metric-value">₹{closed_won_current_week / 100000:.0f}L</div>
+                    <div class="metric-label">Current Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Closed Won (Previous Week)</div>
+                    <div class="metric-value">₹{closed_won_previous_week / 100000:.0f}L</div>
+                    <div class="metric-label">Previous Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if closed_won_delta > 0 else 'delta-negative'}">₹{closed_won_delta / 100000:.0f}L</div>
+                    <div class="metric-label">Change</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Overall Committed Data (Current Week)</div>
+                    <div class="metric-value">₹{overall_committed_current_week / 100000:.0f}L</div>
+                    <div class="metric-label">Current Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Overall Committed Data (Previous Week)</div>
+                    <div class="metric-value">₹{overall_committed_previous_week / 100000:.0f}L</div>
+                    <div class="metric-label">Previous Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if overall_committed_delta > 0 else 'delta-negative'}">₹{overall_committed_delta / 100000:.0f}L</div>
+                    <div class="metric-label">Change</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
 def main():
     # Initialize session state for navigation if not exists
     if 'current_page' not in st.session_state:
@@ -1523,12 +1686,14 @@ def main():
     else:
         st.session_state.current_page = st.sidebar.radio(
             "Select a page",
-            ["Data Input", "Overview", "Sales Team", "Quarterly Summary", "Detailed Data"]
+            ["Data Input", "Dashboard", "Overview", "Sales Team", "Quarterly Summary", "Detailed Data"]
         )
 
     # Display the selected page
     if st.session_state.current_page == "Data Input":
         display_data_input()
+    elif st.session_state.current_page == "Dashboard":
+        display_dashboard()
     elif st.session_state.current_page == "Overview":
         show_overview()
     elif st.session_state.current_page == "Sales Team":
