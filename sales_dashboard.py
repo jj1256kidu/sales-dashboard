@@ -1898,22 +1898,60 @@ def display_dashboard():
     df_current = st.session_state.df_current
     df_previous = st.session_state.df_previous
 
-    st.title("Sales Dashboard")
+    # Modern Header with Gradient
+    st.markdown("""
+        <div style='
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        '>
+            <h1 style='
+                color: white;
+                text-align: center;
+                font-size: 2.5rem;
+                font-weight: 700;
+                margin: 0;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            '>Sales Performance Dashboard</h1>
+        </div>
+    """, unsafe_allow_html=True)
 
+    # Enhanced Filter Section
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #1e3c72;
+                margin: 0 0 1rem 0;
+                font-size: 1.3rem;
+                font-weight: 600;
+            '>📊 Filter Dashboard</h3>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Organized Filters in Two Rows
     col1, col2, col3 = st.columns([1, 1, 1])
 
     with col1:
         sales_owners = sorted(df_current['Sales Owner'].dropna().unique().tolist())
-        selected_sales_owner = st.selectbox("Select Sales Owner", ["All Sales Owners"] + sales_owners)
+        selected_sales_owner = st.selectbox("👤 Sales Owner", ["All Sales Owners"] + sales_owners)
 
     with col2:
         quarters = ['Q1', 'Q2', 'Q3', 'Q4']
-        selected_quarter = st.selectbox("Select Quarter", ["All Quarters"] + quarters)
+        selected_quarter = st.selectbox("📅 Quarter", ["All Quarters"] + quarters)
 
     with col3:
         practices = sorted(df_current['Practice'].dropna().unique().tolist())
-        selected_practice = st.selectbox("Select Practice", ["All Practices"] + practices)
+        selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + practices)
 
+    # Apply Filters
     if selected_sales_owner != "All Sales Owners":
         df_current = df_current[df_current['Sales Owner'] == selected_sales_owner]
         df_previous = df_previous[df_previous['Sales Owner'] == selected_sales_owner]
@@ -1926,102 +1964,158 @@ def display_dashboard():
         df_current = df_current[df_current['Practice'] == selected_practice]
         df_previous = df_previous[df_previous['Practice'] == selected_practice]
 
-    committed_current_week = df_current[df_current['Status'] == "Committed for the Month"]['Amount'].sum()
-    upside_current_week = df_current[df_current['Status'] == "Upside for the Month"]['Amount'].sum()
-    closed_won_current_week = df_current[df_current['Status'] == "Closed Won"]['Amount'].sum()
+    # Calculate Metrics
+    metrics = {
+        'Committed': {
+            'current': df_current[df_current['Status'] == "Committed for the Month"]['Amount'].sum() / 100000,
+            'previous': df_previous[df_previous['Status'] == "Committed for the Month"]['Amount'].sum() / 100000,
+            'icon': '🎯',
+            'color': '#4CAF50'
+        },
+        'Upside': {
+            'current': df_current[df_current['Status'] == "Upside for the Month"]['Amount'].sum() / 100000,
+            'previous': df_previous[df_previous['Status'] == "Upside for the Month"]['Amount'].sum() / 100000,
+            'icon': '📈',
+            'color': '#2196F3'
+        },
+        'Closed Won': {
+            'current': df_current[df_current['Status'] == "Closed Won"]['Amount'].sum() / 100000,
+            'previous': df_previous[df_previous['Status'] == "Closed Won"]['Amount'].sum() / 100000,
+            'icon': '💰',
+            'color': '#9C27B0'
+        }
+    }
 
-    committed_previous_week = df_previous[df_previous['Status'] == "Committed for the Month"]['Amount'].sum()
-    upside_previous_week = df_previous[df_previous['Status'] == "Upside for the Month"]['Amount'].sum()
-    closed_won_previous_week = df_previous[df_previous['Status'] == "Closed Won"]['Amount'].sum()
+    # Calculate Overall Metrics
+    overall_current = metrics['Committed']['current'] + metrics['Closed Won']['current']
+    overall_previous = metrics['Committed']['previous'] + metrics['Closed Won']['previous']
+    overall_delta = overall_current - overall_previous
 
-    committed_delta = committed_current_week - committed_previous_week
-    upside_delta = upside_current_week - upside_previous_week
-    closed_won_delta = closed_won_current_week - closed_won_previous_week
+    # Display Metrics in Modern Cards
+    st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
 
-    overall_committed_current_week = committed_current_week + closed_won_current_week
-    overall_committed_previous_week = committed_previous_week + closed_won_previous_week
-    overall_committed_delta = overall_committed_current_week - overall_committed_previous_week
+    for metric_name, data in metrics.items():
+        delta = data['current'] - data['previous']
+        delta_percent = (delta / data['previous'] * 100) if data['previous'] != 0 else 0
 
-    with st.container():
         st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Committed Data (Current Week)</div>
-                    <div class="metric-value">₹{committed_current_week / 100000:.0f}L</div>
-                    <div class="metric-label">Current Week Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Committed Data (Previous Week)</div>
-                    <div class="metric-value">₹{committed_previous_week / 100000:.0f}L</div>
-                    <div class="metric-label">Previous Week Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if committed_delta > 0 else 'delta-negative'}">₹{committed_delta / 100000:.0f}L</div>
-                    <div class="metric-label">Change</div>
+            <div style='
+                background: white;
+                padding: 1.5rem;
+                border-radius: 15px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                margin-bottom: 1.5rem;
+                border: 1px solid rgba(0,0,0,0.05);
+            '>
+                <div style='display: flex; justify-content: space-between; align-items: center;'>
+                    <div>
+                        <div style='
+                            font-size: 1.8rem;
+                            margin-bottom: 0.5rem;
+                        '>{data['icon']} {metric_name}</div>
+                        <div style='
+                            font-size: 2.2rem;
+                            font-weight: 700;
+                            color: {data['color']};
+                        '>₹{data['current']:,.0f}L</div>
+                        <div style='
+                            color: #666;
+                            font-size: 1.1rem;
+                            margin-top: 0.5rem;
+                        '>Previous: ₹{data['previous']:,.0f}L</div>
+                    </div>
+                    <div style='
+                        background: {'rgba(76, 175, 80, 0.1)' if delta >= 0 else 'rgba(244, 67, 54, 0.1)'};
+                        padding: 1rem;
+                        border-radius: 12px;
+                        text-align: center;
+                        min-width: 120px;
+                    '>
+                        <div style='
+                            font-size: 1.4rem;
+                            font-weight: 600;
+                            color: {'#4CAF50' if delta >= 0 else '#F44336'};
+                        '>{'+' if delta >= 0 else ''}{delta:,.0f}L</div>
+                        <div style='
+                            font-size: 1rem;
+                            color: {'#4CAF50' if delta >= 0 else '#F44336'};
+                        '>{'+' if delta_percent >= 0 else ''}{delta_percent:.1f}%</div>
+                    </div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
-        st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Upside Data (Current Week)</div>
-                    <div class="metric-value">₹{upside_current_week / 100000:.0f}L</div>
-                    <div class="metric-label">Current Week Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Upside Data (Previous Week)</div>
-                    <div class="metric-value">₹{upside_previous_week / 100000:.0f}L</div>
-                    <div class="metric-label">Previous Week Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if upside_delta > 0 else 'delta-negative'}">₹{upside_delta / 100000:.0f}L</div>
-                    <div class="metric-label">Change</div>
+    # Overall Metrics Card
+    st.markdown(f"""
+        <div style='
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-top: 2rem;
+            color: white;
+        '>
+            <div style='text-align: center;'>
+                <div style='font-size: 1.8rem; margin-bottom: 1rem;'>📊 Overall Performance</div>
+                <div style='font-size: 2.5rem; font-weight: 700;'>₹{overall_current:,.0f}L</div>
+                <div style='
+                    display: inline-block;
+                    margin-top: 1rem;
+                    padding: 0.5rem 1rem;
+                    background: {'rgba(76, 175, 80, 0.2)' if overall_delta >= 0 else 'rgba(244, 67, 54, 0.2)'};
+                    border-radius: 8px;
+                    font-weight: 600;
+                '>
+                    {'+' if overall_delta >= 0 else ''}{overall_delta:,.0f}L from previous
                 </div>
             </div>
-        """, unsafe_allow_html=True)
+        </div>
+    """, unsafe_allow_html=True)
 
-        st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Closed Won (Current Week)</div>
-                    <div class="metric-value">₹{closed_won_current_week / 100000:.0f}L</div>
-                    <div class="metric-label">Current Week Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Closed Won (Previous Week)</div>
-                    <div class="metric-value">₹{closed_won_previous_week / 100000:.0f}L</div>
-                    <div class="metric-label">Previous Week Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if closed_won_delta > 0 else 'delta-negative'}">₹{closed_won_delta / 100000:.0f}L</div>
-                    <div class="metric-label">Change</div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+    # Add Pipeline Trend Chart
+    st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
+    st.markdown("### Pipeline Trend Analysis")
 
-        st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Overall Committed Data (Current Week)</div>
-                    <div class="metric-value">₹{overall_committed_current_week / 100000:.0f}L</div>
-                    <div class="metric-label">Current Week Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Overall Committed Data (Previous Week)</div>
-                    <div class="metric-value">₹{overall_committed_previous_week / 100000:.0f}L</div>
-                    <div class="metric-label">Previous Week Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if overall_committed_delta > 0 else 'delta-negative'}">₹{overall_committed_delta / 100000:.0f}L</div>
-                    <div class="metric-label">Change</div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+    # Prepare data for trend chart
+    trend_data = pd.DataFrame({
+        'Category': ['Committed', 'Upside', 'Closed Won'] * 2,
+        'Period': ['Previous'] * 3 + ['Current'] * 3,
+        'Amount': [
+            metrics['Committed']['previous'],
+            metrics['Upside']['previous'],
+            metrics['Closed Won']['previous'],
+            metrics['Committed']['current'],
+            metrics['Upside']['current'],
+            metrics['Closed Won']['current']
+        ]
+    })
+
+    fig = px.bar(
+        trend_data,
+        x='Category',
+        y='Amount',
+        color='Period',
+        barmode='group',
+        title='Pipeline Comparison',
+        color_discrete_map={'Current': '#1e3c72', 'Previous': '#2a5298'},
+        labels={'Amount': 'Amount (Lakhs)', 'Category': ''}
+    )
+
+    fig.update_layout(
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=1.02,
+            xanchor="right",
+            x=1
+        ),
+        height=400
+    )
+
+    st.plotly_chart(fig, use_container_width=True)
 
 def display_data_input():
     st.title("Data Input")
