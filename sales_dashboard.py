@@ -460,19 +460,30 @@ def show_data_input():
                     selected_current_sheet = st.selectbox("Select Current Week Sheet", sheet_names)
                     selected_previous_sheet = st.selectbox("Select Previous Week Sheet", sheet_names)
                     
-                    # Read and display the current and previous sheet data
+                    # Read the data
                     df_current = pd.read_excel(uploaded_file, sheet_name=selected_current_sheet)
                     df_previous = pd.read_excel(uploaded_file, sheet_name=selected_previous_sheet)
                     
-                    # Clean column names
-                    df_current.columns = df_current.columns.str.strip()
-                    df_previous.columns = df_previous.columns.str.strip()
+                    # Clean column names and remove duplicates
+                    def clean_dataframe(df):
+                        # Clean column names
+                        df.columns = df.columns.str.strip()
+                        
+                        # Get duplicate columns
+                        duplicated_cols = df.columns[df.columns.duplicated()].tolist()
+                        if duplicated_cols:
+                            st.warning(f"Found duplicate columns: {', '.join(duplicated_cols)}. Keeping only the first occurrence.")
+                        
+                        # Keep only first occurrence of duplicate columns
+                        df = df.loc[:, ~df.columns.duplicated()]
+                        
+                        return df
                     
-                    # Handle duplicate columns in both dataframes
-                    df_current = df_current.loc[:, ~df_current.columns.duplicated()]
-                    df_previous = df_previous.loc[:, ~df_previous.columns.duplicated()]
+                    # Clean both dataframes
+                    df_current = clean_dataframe(df_current)
+                    df_previous = clean_dataframe(df_previous)
                     
-                    # Standardize column names for both dataframes
+                    # Standardize column names
                     column_mapping = {
                         'Sales Team Member': 'Sales Owner',
                         'Deal Value': 'Amount',
@@ -491,47 +502,73 @@ def show_data_input():
                         'P & L Centre': 'Practice'
                     }
                     
-                    # Rename columns if they exist in current week data
-                    for old_col, new_col in column_mapping.items():
-                        if old_col in df_current.columns:
-                            df_current = df_current.rename(columns={old_col: new_col})
+                    # Function to safely rename columns
+                    def safe_rename_columns(df, mapping):
+                        # Only rename columns that exist in the DataFrame
+                        existing_cols = {k: v for k, v in mapping.items() if k in df.columns}
+                        return df.rename(columns=existing_cols)
                     
-                    # Rename columns if they exist in previous week data
-                    for old_col, new_col in column_mapping.items():
-                        if old_col in df_previous.columns:
-                            df_previous = df_previous.rename(columns={old_col: new_col})
+                    # Rename columns in both dataframes
+                    df_current = safe_rename_columns(df_current, column_mapping)
+                    df_previous = safe_rename_columns(df_previous, column_mapping)
                     
-                    # Store in session state for use in Dashboard
+                    # Store in session state
                     st.session_state.df_current = df_current
                     st.session_state.df_previous = df_previous
                     st.session_state.df = df_current  # Keep main df as current week for compatibility
                     
-                    # Preview Section with better formatting
+                    # Preview Section with better formatting and error handling
                     st.markdown("### Data Preview")
                     
+                    # Display current week preview
                     st.markdown(f"""
                         <div style='background: #f0f2f6; padding: 15px; border-radius: 10px; margin: 10px 0;'>
                             <h4 style='color: #2a5298; margin: 0;'>Current Week Data from {selected_current_sheet}</h4>
                         </div>
                     """, unsafe_allow_html=True)
-                    st.dataframe(df_current.head(), use_container_width=True)
                     
+                    try:
+                        st.dataframe(
+                            df_current.head(),
+                            use_container_width=True
+                        )
+                    except Exception as e:
+                        st.error(f"Error displaying current week data: {str(e)}")
+                    
+                    # Display previous week preview
                     st.markdown(f"""
                         <div style='background: #f0f2f6; padding: 15px; border-radius: 10px; margin: 10px 0;'>
                             <h4 style='color: #2a5298; margin: 0;'>Previous Week Data from {selected_previous_sheet}</h4>
                         </div>
                     """, unsafe_allow_html=True)
-                    st.dataframe(df_previous.head(), use_container_width=True)
                     
-                    # Success message with record counts
+                    try:
+                        st.dataframe(
+                            df_previous.head(),
+                            use_container_width=True
+                        )
+                    except Exception as e:
+                        st.error(f"Error displaying previous week data: {str(e)}")
+                    
+                    # Display column information
+                    st.markdown("### Column Information")
+                    col_info = pd.DataFrame({
+                        'Current Week Columns': df_current.columns.tolist(),
+                        'Previous Week Columns': df_previous.columns.tolist()
+                    })
+                    st.dataframe(col_info, use_container_width=True)
+                    
+                    # Success message with record counts and data types
                     st.success(f"""
                         Successfully loaded:
                         - Current week: {len(df_current):,} records
                         - Previous week: {len(df_previous):,} records
                     """)
                     
-                    # Display column mapping info
-                    st.info("Column names have been standardized for consistency across the dashboard")
+                    # Display data types
+                    st.markdown("### Data Types")
+                    dtypes_current = pd.DataFrame(df_current.dtypes, columns=['Data Type'])
+                    st.dataframe(dtypes_current, use_container_width=True)
                     
                 else:
                     st.error("Please upload an Excel file (.xlsx)")
@@ -566,42 +603,27 @@ def show_overview():
     st.title("Sales Performance Overview")
     df = st.session_state.df.copy()
 
-    # --------------------------------------------------------
-    # (1) Let user edit the target as an integer
-    # --------------------------------------------------------
-    #st.markdown("### Enter Your Sales Target (Optional)")
-    #user_target = st.number_input(
-     #   "Sales Target (in Lakhs)",
-      #   value=float(st.session_state.sales_target),  # existing value or 0
-       #  step=0.1,  # or 1.0 if you want full numbers
-        # format="%.1f"
-    #)
-    #try:
-     #   user_target = float(user_target_input)
-    #except ValueError:
-    #    user_target = 0 
+    # Sales Target Section
     st.markdown("### Enter Your Sales Target (Optional)")
-
-# Get existing value from session state or default to "0"
     default_target = str(int(st.session_state.get("sales_target", 0)))
-
-# Input as string (no steppers)
     user_target_input = st.text_input("Sales Target (in Lakhs)", value=default_target)
 
-# Try to convert it to int
     try:
         user_target = int(user_target_input)
     except ValueError:
-        user_target = 0  # fallback value if user input is invalid
+        user_target = 0
 
-    st.write("You entered:", user_target)
-
-    # Store as float if you like, or keep it integer
     st.session_state.sales_target = float(user_target)
 
-    # Calculate total "Closed Won"
-    won_deals = df[df['Sales Stage'].str.contains('Won', case=False, na=False)]
-    won_amount_lacs = won_deals['Amount'].sum() / 100000  # convert to Lakhs
+    # Safely handle the Sales Stage column for won deals
+    def is_won_deal(stage):
+        if pd.isna(stage):
+            return False
+        return 'won' in str(stage).lower()
+
+    # Calculate total "Closed Won" with safe handling
+    won_deals = df[df['Sales Stage'].apply(is_won_deal)]
+    won_amount_lacs = won_deals['Amount'].fillna(0).sum() / 100000  # convert to Lakhs
 
     # Show "Target vs Closed Won" progress
     if st.session_state.sales_target > 0:
