@@ -71,234 +71,379 @@ if 'sales_target' not in st.session_state:
 
 # Custom CSS for modern styling
 st.markdown("""
-<script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
-
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
-
-    @keyframes bgGradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-
+    /* Modern theme colors */
     :root {
-        --card-bg: rgba(255, 255, 255, 0.65);
-        --text-main: #1e1e2f;
-        --text-muted: #6b7280;
-        --green-glow: #00c896;
-        --red-glow: #ff5b5b;
-        --blue-accent: #3b82f6;
-        --border-glow: rgba(59, 130, 246, 0.3);
+        --primary-color: #4A90E2;
+        --background-color: #1E1E1E;
+        --secondary-background-color: #252526;
+        --text-color: #FFFFFF;
+        --font-family: 'Segoe UI', sans-serif;
     }
 
     /* Main container styling */
     .main {
-        font-family: 'Poppins', sans-serif !important;
-        background: linear-gradient(-45deg, #ff6ec4, #7873f5, #2afadf, #4c83ff, #0f2027, #203a43) !important;
-        background-size: 1000% 1000% !important;
-        animation: bgGradient 30s ease infinite !important;
-        position: relative;
-        min-height: 100vh;
-        padding: 2rem;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        font-family: var(--font-family);
     }
 
-    /* Card styling with glassmorphism */
-    .stCard, div.element-container, div.block-container {
-        background: var(--card-bg) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.18) !important;
-        border-radius: 20px !important;
-        padding: 1.5rem !important;
-        margin: 1rem 0 !important;
-        transition: all 0.3s ease !important;
+    /* Card styling */
+    .stCard {
+        background-color: var(--secondary-background-color);
+        border-radius: 10px;
+        padding: 15px;
+        margin: 30px 0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
-    /* Metric cards with enhanced styling */
-    .metric-card {
-        background: rgba(255, 255, 255, 0.8) !important;
-        backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
-        border-radius: 20px !important;
-        padding: 1.5rem !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15) !important;
-        transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+    /* Number formatting */
+    .big-number {
+        font-size: 2.8em;
+        font-weight: 700;
+        color: #2ecc71;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        letter-spacing: -1px;
     }
 
-    .metric-card:hover {
-        transform: translateY(-5px) !important;
-        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25) !important;
+    .metric-value {
+        font-size: 2em;
+        font-weight: 600;
+        color: #4A90E2;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
     }
 
-    /* Typography */
-    h1, h2, h3, .metric-title {
-        font-family: 'Poppins', sans-serif !important;
-        color: white !important;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.2) !important;
+    .metric-label {
+        font-size: 1.2em;
+        color: #333;
+        margin-bottom: 5px;
+        font-weight: 500;
     }
 
-    /* Buttons and interactive elements */
+    /* Section headers */
+    .section-header {
+        font-size: 1.8em;
+        font-weight: 700;
+        color: #2c3e50;
+        margin: 30px 0;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* Chart text styling */
+    .js-plotly-plot .plotly .main-svg {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    /* Table styling */
+    .dataframe {
+        font-size: 1.2em;
+        background-color: white;
+        border-radius: 8px;
+        padding: 15px;
+    }
+
+    .dataframe th {
+        background-color: #4A90E2;
+        color: white;
+        font-weight: 700;
+        padding: 15px;
+        font-size: 1.1em;
+    }
+
+    .dataframe td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+        font-weight: 500;
+    }
+
+    /* Upload container styling */
+    .upload-container {
+        background-color: rgba(74, 144, 226, 0.1);
+        border-radius: 10px;
+        padding: 30px;
+        margin: 20px 0;
+        border: 2px dashed rgba(74, 144, 226, 0.3);
+        text-align: center;
+    }
+
+    /* Button styling */
     .stButton>button {
-        background: rgba(59, 130, 246, 0.8) !important;
-        backdrop-filter: blur(5px) !important;
-        -webkit-backdrop-filter: blur(5px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.18) !important;
-        color: white !important;
-        font-family: 'Poppins', sans-serif !important;
-        transition: all 0.3s ease !important;
+        background-color: var(--primary-color);
+        color: white;
+        border-radius: 5px;
+        padding: 10px 20px;
+        border: none;
+        transition: all 0.3s ease;
     }
 
     .stButton>button:hover {
-        background: rgba(59, 130, 246, 0.9) !important;
-        transform: translateY(-2px) !important;
+        background-color: #357ABD;
+        transform: translateY(-2px);
     }
 
-    /* Sidebar styling */
-    .css-1d391kg {
-        background: rgba(255, 255, 255, 0.05) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+
+    /* Custom header */
+    .custom-header {
+        background: linear-gradient(90deg, #4A90E2 0%, #357ABD 100%);
+        padding: 20px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        color: white;
+        text-align: center;
     }
 
-    /* Charts and graphs */
-    .js-plotly-plot {
-        background: rgba(255, 255, 255, 0.8) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        border-radius: 20px !important;
-        padding: 1rem !important;
-        border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    /* Info box */
+    .info-box {
+        background-color: rgba(74, 144, 226, 0.1);
+        border-left: 4px solid #4A90E2;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 10px 0;
     }
 
-    /* Particle background */
-    #tsparticles {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: -1;
+    /* Container styling */
+    .container {
+        margin: 30px 0;
+        padding: 15px;
     }
 
-    @keyframes glow {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-    .metric-card {
-        animation: fadeIn 0.6s ease-out forwards;
-        transition: all 0.3s ease;
-    }
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.2);
-    }
-    .trend-icon {
-        transition: all 0.3s ease;
-    }
-    .metric-card:hover .trend-icon {
-        transform: scale(1.2);
-    }
-    .pulse-animation {
-        animation: pulse 2s infinite;
+    /* Graph container */
+    .graph-container {
+        margin: 30px 0;
+        padding: 15px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    @keyframes bgGradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
+    /* Metric container */
+    .metric-container {
+        display: flex;
+        justify-content: space-between;
+        margin: 20px 0;
+        gap: 20px;
     }
     
-    /* Dashboard container with gradient background */
-    .dashboard-container {
-        background: linear-gradient(-45deg, #ff6ec4, #7873f5, #2afadf, #4c83ff, #0f2027, #203a43);
-        background-size: 1000% 1000%;
-        animation: bgGradient 30s ease infinite;
-        min-height: 100vh;
+    .card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        flex: 1;
+        text-align: center;
+    }
+    
+    .metric-label {
+        color: #666;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .metric-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #2a5298;
+    }
+    
+    .delta-positive {
+        color: #2ecc71;
+    }
+    
+    .delta-negative {
+        color: #e74c3c;
+    }
+
+    /* Section divider */
+    .section-divider {
+        margin: 30px 0;
+        border-top: 1px solid #eee;
+    }
+
+    /* Custom styling for number input */
+    [data-testid="stNumberInput"] {
         position: relative;
+        background: transparent !important;
+    }
+    [data-testid="stNumberInput"] > div > div > input {
+        color: white !important;
+        font-size: 1.8em !important;
+        font-weight: 800 !important;
+        text-align: center !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+    /* Hide the increment/decrement buttons */
+    [data-testid="stNumberInput"] > div > div > div {
+        display: none !important;
+    }
+    /* Container styling */
+    div[data-testid="column"] > div > div > div > div > div {
+        background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    /* Hide increment buttons */
+    [data-testid="stNumberInput"] input[type="number"] {
+        -moz-appearance: textfield;
+    }
+    [data-testid="stNumberInput"] input[type="number"]::-webkit-outer-spin-button,
+    [data-testid="stNumberInput"] input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    
+    /* Style the input field */
+    [data-testid="stNumberInput"] {
+        background: transparent;
+    }
+    
+    /* Style the display value */
+    .target-value {
+        font-family: 'Segoe UI', sans-serif;
+        font-size: 2.5em;
+        font-weight: 800;
+        color: #FF6B6B;
+        text-align: center;
+        padding: 20px;
+        margin: 10px 0;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
+    /* Modern Quarterly Dashboard Styles */
+    .quarterly-dashboard {
+        background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
         padding: 2rem;
+        border-radius: 20px;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        margin: 2rem 0;
     }
 
-    /* Particle container */
-    #tsparticles {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 0;
+    .metric-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    /* Content styling */
-    .dashboard-content {
-        position: relative;
-        z-index: 1;
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 36px 0 rgba(31, 38, 135, 0.15);
+    }
+
+    .metric-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid rgba(74, 144, 226, 0.1);
+    }
+
+    .metric-icon {
+        font-size: 1.5rem;
+        margin-right: 0.75rem;
+        color: #4a90e2;
+    }
+
+    .metric-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #1e1e2f;
+        margin: 0;
+    }
+
+    .metric-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .metric-values {
+        flex: 1;
+    }
+
+    .metric-current {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1e1e2f;
+        margin: 0.5rem 0;
+    }
+
+    .metric-previous {
+        font-size: 1.1rem;
+        color: #6b7280;
+        margin: 0.25rem 0;
+    }
+
+    .metric-delta {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        text-align: center;
+        min-width: 120px;
+    }
+
+    .delta-positive {
+        color: #00c896;
+    }
+
+    .delta-negative {
+        color: #ff5b5b;
+    }
+
+    .delta-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .delta-label {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin: 0;
+    }
+
+    /* Filter section styling */
+    .filter-section {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 1.5rem;
+        border-radius: 16px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+
+    .filter-title {
+        color: #1e1e2f;
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+
+    /* Selectbox styling */
+    .stSelectbox {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .stSelectbox > div {
+        background: white !important;
     }
 </style>
-
-<div id="tsparticles"></div>
-
-<script>
-    const themes = {
-        default: {
-            particles: {
-                number: { value: 100, density: { enable: true, value_area: 800 } },
-                color: { value: ["#00ffc3", "#00bfff", "#ffffff", "#39ff14"] },
-                shape: { type: ["circle", "triangle", "star", "edge"] },
-                opacity: {
-                    value: 0.7,
-                    anim: { enable: true, speed: 1, opacity_min: 0.3, sync: false }
-                },
-                size: {
-                    value: 4,
-                    random: true,
-                    anim: { enable: true, speed: 2, size_min: 1, sync: false }
-                },
-                move: {
-                    enable: true,
-                    speed: 0.6,
-                    direction: "none",
-                    straight: false,
-                    out_mode: "out",
-                    attract: { enable: true, rotateX: 300, rotateY: 600 },
-                    angle: { value: 90, offset: 0 },
-                    gravity: { enable: false },
-                    trail: { enable: true, length: 5, fillColor: "transparent" },
-                    spin: { enable: true, acceleration: 0.05 }
-                }
-            },
-            interactivity: {
-                detect_on: "canvas",
-                events: {
-                    onhover: { enable: true, mode: ["grab", "bubble"] },
-                    onclick: { enable: true, mode: "repulse" },
-                    resize: true
-                },
-                modes: {
-                    grab: { distance: 150, line_linked: { opacity: 0.5 } },
-                    bubble: { distance: 200, size: 6, duration: 2, opacity: 0.8 },
-                    repulse: { distance: 120, duration: 0.4 }
-                }
-            },
-            retina_detect: true
-        }
-    };
-
-    // Initialize particles when the document is ready
-    document.addEventListener("DOMContentLoaded", function() {
-        tsParticles.load("tsparticles", themes.default);
-    });
-</script>
 """, unsafe_allow_html=True)
 
 # Cache data processing functions
@@ -1753,158 +1898,22 @@ def display_dashboard():
     df_current = st.session_state.df_current
     df_previous = st.session_state.df_previous
 
-    # Add particle background and styling for dashboard only
-    st.markdown("""
-        <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
-        <style>
-            @keyframes bgGradient {
-                0% { background-position: 0% 50%; }
-                50% { background-position: 100% 50%; }
-                100% { background-position: 0% 50%; }
-            }
-            
-            /* Dashboard container with gradient background */
-            .dashboard-container {
-                background: linear-gradient(-45deg, #ff6ec4, #7873f5, #2afadf, #4c83ff, #0f2027, #203a43);
-                background-size: 1000% 1000%;
-                animation: bgGradient 30s ease infinite;
-                min-height: 100vh;
-                position: relative;
-                padding: 2rem;
-            }
+    st.title("Sales Dashboard")
 
-            /* Particle container */
-            #tsparticles {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                z-index: 0;
-            }
-
-            /* Content styling */
-            .dashboard-content {
-                position: relative;
-                z-index: 1;
-            }
-        </style>
-
-        <div id="tsparticles"></div>
-
-        <script>
-            const themes = {
-                default: {
-                    particles: {
-                        number: { value: 100, density: { enable: true, value_area: 800 } },
-                        color: { value: ["#00ffc3", "#00bfff", "#ffffff", "#39ff14"] },
-                        shape: { type: ["circle", "triangle", "star", "edge"] },
-                        opacity: {
-                            value: 0.7,
-                            anim: { enable: true, speed: 1, opacity_min: 0.3, sync: false }
-                        },
-                        size: {
-                            value: 4,
-                            random: true,
-                            anim: { enable: true, speed: 2, size_min: 1, sync: false }
-                        },
-                        move: {
-                            enable: true,
-                            speed: 0.6,
-                            direction: "none",
-                            straight: false,
-                            out_mode: "out",
-                            attract: { enable: true, rotateX: 300, rotateY: 600 },
-                            angle: { value: 90, offset: 0 },
-                            gravity: { enable: false },
-                            trail: { enable: true, length: 5, fillColor: "transparent" },
-                            spin: { enable: true, acceleration: 0.05 }
-                        }
-                    },
-                    interactivity: {
-                        detect_on: "canvas",
-                        events: {
-                            onhover: { enable: true, mode: ["grab", "bubble"] },
-                            onclick: { enable: true, mode: "repulse" },
-                            resize: true
-                        },
-                        modes: {
-                            grab: { distance: 150, line_linked: { opacity: 0.5 } },
-                            bubble: { distance: 200, size: 6, duration: 2, opacity: 0.8 },
-                            repulse: { distance: 120, duration: 0.4 }
-                        }
-                    },
-                    retina_detect: true
-                }
-            };
-
-            // Initialize particles when the document is ready
-            document.addEventListener("DOMContentLoaded", function() {
-                tsParticles.load("tsparticles", themes.default);
-            });
-        </script>
-
-        <div class="dashboard-container">
-            <div class="dashboard-content">
-    """, unsafe_allow_html=True)
-
-    # Modern Header with Gradient
-    st.markdown("""
-        <div style='
-            background: linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.95) 100%);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            padding: 2rem;
-            border-radius: 20px;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-        '>
-            <h1 style='
-                color: white;
-                text-align: center;
-                font-size: 2.5rem;
-                font-weight: 700;
-                margin: 0;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-            '>Sales Performance Dashboard</h1>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Enhanced Filter Section
-    st.markdown("""
-        <div style='
-            background: linear-gradient(to right, #f8f9fa, #e9ecef);
-            padding: 1.5rem;
-            border-radius: 15px;
-            margin-bottom: 2rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        '>
-            <h3 style='
-                color: #1e3c72;
-                margin: 0 0 1rem 0;
-                font-size: 1.3rem;
-                font-weight: 600;
-            '>📊 Filter Dashboard</h3>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Organized Filters in Two Rows
     col1, col2, col3 = st.columns([1, 1, 1])
 
     with col1:
         sales_owners = sorted(df_current['Sales Owner'].dropna().unique().tolist())
-        selected_sales_owner = st.selectbox("👤 Sales Owner", ["All Sales Owners"] + sales_owners)
+        selected_sales_owner = st.selectbox("Select Sales Owner", ["All Sales Owners"] + sales_owners)
 
     with col2:
         quarters = ['Q1', 'Q2', 'Q3', 'Q4']
-        selected_quarter = st.selectbox("📅 Quarter", ["All Quarters"] + quarters)
+        selected_quarter = st.selectbox("Select Quarter", ["All Quarters"] + quarters)
 
     with col3:
         practices = sorted(df_current['Practice'].dropna().unique().tolist())
-        selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + practices)
+        selected_practice = st.selectbox("Select Practice", ["All Practices"] + practices)
 
-    # Apply Filters
     if selected_sales_owner != "All Sales Owners":
         df_current = df_current[df_current['Sales Owner'] == selected_sales_owner]
         df_previous = df_previous[df_previous['Sales Owner'] == selected_sales_owner]
@@ -1917,164 +1926,102 @@ def display_dashboard():
         df_current = df_current[df_current['Practice'] == selected_practice]
         df_previous = df_previous[df_previous['Practice'] == selected_practice]
 
-    # Calculate Metrics
-    metrics = {
-        'Committed': {
-            'current': df_current[df_current['Status'] == "Committed for the Month"]['Amount'].sum() / 100000,
-            'previous': df_previous[df_previous['Status'] == "Committed for the Month"]['Amount'].sum() / 100000,
-            'icon': '🎯',
-            'color': '#4CAF50'
-        },
-        'Upside': {
-            'current': df_current[df_current['Status'] == "Upside for the Month"]['Amount'].sum() / 100000,
-            'previous': df_previous[df_previous['Status'] == "Upside for the Month"]['Amount'].sum() / 100000,
-            'icon': '📈',
-            'color': '#2196F3'
-        },
-        'Closed Won': {
-            'current': df_current[df_current['Status'] == "Closed Won"]['Amount'].sum() / 100000,
-            'previous': df_previous[df_previous['Status'] == "Closed Won"]['Amount'].sum() / 100000,
-            'icon': '💰',
-            'color': '#9C27B0'
-        }
-    }
+    committed_current_week = df_current[df_current['Status'] == "Committed for the Month"]['Amount'].sum()
+    upside_current_week = df_current[df_current['Status'] == "Upside for the Month"]['Amount'].sum()
+    closed_won_current_week = df_current[df_current['Status'] == "Closed Won"]['Amount'].sum()
 
-    # Calculate Overall Metrics
-    overall_current = metrics['Committed']['current'] + metrics['Closed Won']['current']
-    overall_previous = metrics['Committed']['previous'] + metrics['Closed Won']['previous']
-    overall_delta = overall_current - overall_previous
+    committed_previous_week = df_previous[df_previous['Status'] == "Committed for the Month"]['Amount'].sum()
+    upside_previous_week = df_previous[df_previous['Status'] == "Upside for the Month"]['Amount'].sum()
+    closed_won_previous_week = df_previous[df_previous['Status'] == "Closed Won"]['Amount'].sum()
 
-    # Display Metrics in Modern Cards
-    st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
+    committed_delta = committed_current_week - committed_previous_week
+    upside_delta = upside_current_week - upside_previous_week
+    closed_won_delta = closed_won_current_week - closed_won_previous_week
 
-    for metric_name, data in metrics.items():
-        delta = data['current'] - data['previous']
-        delta_percent = (delta / data['previous'] * 100) if data['previous'] != 0 else 0
+    overall_committed_current_week = committed_current_week + closed_won_current_week
+    overall_committed_previous_week = committed_previous_week + closed_won_previous_week
+    overall_committed_delta = overall_committed_current_week - overall_committed_previous_week
 
+    with st.container():
         st.markdown(f"""
-            <div style='
-                background: white;
-                padding: 1.5rem;
-                border-radius: 15px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                margin-bottom: 1.5rem;
-                border: 1px solid rgba(0,0,0,0.05);
-            '>
-                <div style='display: flex; justify-content: space-between; align-items: center;'>
-                    <div>
-                        <div style='
-                            font-size: 1.8rem;
-                            margin-bottom: 0.5rem;
-                        '>{data['icon']} {metric_name}</div>
-                        <div style='
-                            font-size: 2.2rem;
-                            font-weight: 700;
-                            color: {data['color']};
-                        '>₹{data['current']:,.0f}L</div>
-                        <div style='
-                            color: #666;
-                            font-size: 1.1rem;
-                            margin-top: 0.5rem;
-                        '>Previous: ₹{data['previous']:,.0f}L</div>
-                    </div>
-                    <div style='
-                        background: {'rgba(76, 175, 80, 0.1)' if delta >= 0 else 'rgba(244, 67, 54, 0.1)'};
-                        padding: 1rem;
-                        border-radius: 12px;
-                        text-align: center;
-                        min-width: 120px;
-                    '>
-                        <div style='
-                            font-size: 1.4rem;
-                            font-weight: 600;
-                            color: {'#4CAF50' if delta >= 0 else '#F44336'};
-                        '>{'+' if delta >= 0 else ''}{delta:,.0f}L</div>
-                        <div style='
-                            font-size: 1rem;
-                            color: {'#4CAF50' if delta >= 0 else '#F44336'};
-                        '>{'+' if delta_percent >= 0 else ''}{delta_percent:.1f}%</div>
-                    </div>
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Committed Data (Current Week)</div>
+                    <div class="metric-value">₹{committed_current_week / 100000:.0f}L</div>
+                    <div class="metric-label">Current Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Committed Data (Previous Week)</div>
+                    <div class="metric-value">₹{committed_previous_week / 100000:.0f}L</div>
+                    <div class="metric-label">Previous Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if committed_delta > 0 else 'delta-negative'}">₹{committed_delta / 100000:.0f}L</div>
+                    <div class="metric-label">Change</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
-    # Overall Metrics Card
-    st.markdown(f"""
-        <div style='
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            margin-top: 2rem;
-            color: white;
-        '>
-            <div style='text-align: center;'>
-                <div style='font-size: 1.8rem; margin-bottom: 1rem;'>📊 Overall Performance</div>
-                <div style='font-size: 2.5rem; font-weight: 700;'>₹{overall_current:,.0f}L</div>
-                <div style='
-                    display: inline-block;
-                    margin-top: 1rem;
-                    padding: 0.5rem 1rem;
-                    background: {'rgba(76, 175, 80, 0.2)' if overall_delta >= 0 else 'rgba(244, 67, 54, 0.2)'};
-                    border-radius: 8px;
-                    font-weight: 600;
-                '>
-                    {'+' if overall_delta >= 0 else ''}{overall_delta:,.0f}L from previous
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Upside Data (Current Week)</div>
+                    <div class="metric-value">₹{upside_current_week / 100000:.0f}L</div>
+                    <div class="metric-label">Current Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Upside Data (Previous Week)</div>
+                    <div class="metric-value">₹{upside_previous_week / 100000:.0f}L</div>
+                    <div class="metric-label">Previous Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if upside_delta > 0 else 'delta-negative'}">₹{upside_delta / 100000:.0f}L</div>
+                    <div class="metric-label">Change</div>
                 </div>
             </div>
-        </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
-    # Add Pipeline Trend Chart
-    st.markdown("<div style='height: 2rem;'></div>", unsafe_allow_html=True)
-    st.markdown("### Pipeline Trend Analysis")
-
-    # Prepare data for trend chart
-    trend_data = pd.DataFrame({
-        'Category': ['Committed', 'Upside', 'Closed Won'] * 2,
-        'Period': ['Previous'] * 3 + ['Current'] * 3,
-        'Amount': [
-            metrics['Committed']['previous'],
-            metrics['Upside']['previous'],
-            metrics['Closed Won']['previous'],
-            metrics['Committed']['current'],
-            metrics['Upside']['current'],
-            metrics['Closed Won']['current']
-        ]
-    })
-
-    fig = px.bar(
-        trend_data,
-        x='Category',
-        y='Amount',
-        color='Period',
-        barmode='group',
-        title='Pipeline Comparison',
-        color_discrete_map={'Current': '#1e3c72', 'Previous': '#2a5298'},
-        labels={'Amount': 'Amount (Lakhs)', 'Category': ''}
-    )
-
-    fig.update_layout(
-        plot_bgcolor='white',
-        paper_bgcolor='white',
-        showlegend=True,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        ),
-        height=400
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-    # Close the dashboard container divs at the end
-    st.markdown("""
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Closed Won (Current Week)</div>
+                    <div class="metric-value">₹{closed_won_current_week / 100000:.0f}L</div>
+                    <div class="metric-label">Current Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Closed Won (Previous Week)</div>
+                    <div class="metric-value">₹{closed_won_previous_week / 100000:.0f}L</div>
+                    <div class="metric-label">Previous Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if closed_won_delta > 0 else 'delta-negative'}">₹{closed_won_delta / 100000:.0f}L</div>
+                    <div class="metric-label">Change</div>
+                </div>
             </div>
-        </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+            <div class="metric-container">
+                <div class="card">
+                    <div class="metric-label">Overall Committed Data (Current Week)</div>
+                    <div class="metric-value">₹{overall_committed_current_week / 100000:.0f}L</div>
+                    <div class="metric-label">Current Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Overall Committed Data (Previous Week)</div>
+                    <div class="metric-value">₹{overall_committed_previous_week / 100000:.0f}L</div>
+                    <div class="metric-label">Previous Week Total</div>
+                </div>
+                <div class="card">
+                    <div class="metric-label">Delta</div>
+                    <div class="metric-value {'delta-positive' if overall_committed_delta > 0 else 'delta-negative'}">₹{overall_committed_delta / 100000:.0f}L</div>
+                    <div class="metric-label">Change</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
 def display_data_input():
     st.title("Data Input")
