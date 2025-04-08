@@ -1534,7 +1534,7 @@ def show_detailed():
     
     st.dataframe(df, use_container_width=True)
 
-def show_ytd_dashboard():  # Renamed from show_quarterly_summary
+def show_ytd_dashboard():
     if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
         st.warning("Please upload data first.")
         return
@@ -1566,186 +1566,210 @@ def show_ytd_dashboard():  # Renamed from show_quarterly_summary
         </div>
     """, unsafe_allow_html=True)
     
-    # Create filters
-    col1, col2, col3 = st.columns(3)
+    # Enhanced filters section with 6 columns
+    st.markdown("### 🎯 Filters")
+    col1, col2, col3, col4, col5, col6 = st.columns(6)
     
     with col1:
-        # Define standard quarters
-        standard_quarters = ['Q1', 'Q2', 'Q3', 'Q4']
-        
-        # Function to standardize quarter format
-        def standardize_quarter(q):
-            if pd.isna(q):
-                return None
-            if isinstance(q, (int, float)):
-                q_int = int(q)
-                if 1 <= q_int <= 4:
-                    return f'Q{q_int}'
-            elif isinstance(q, str) and q.startswith('Q'):
-                q_num = q[1:]
-                try:
-                    q_int = int(q_num)
-                    if 1 <= q_int <= 4:
-                        return f'Q{q_int}'
-                except ValueError:
-                    pass
-            return None
-
-        # Get unique quarters from both dataframes and standardize them
-        current_quarters = df_current['Quarter'].apply(standardize_quarter).dropna().unique()
-        previous_quarters = df_previous['Quarter'].apply(standardize_quarter).dropna().unique()
-        
-        # Combine and sort quarters
-        all_quarters = sorted(set(current_quarters) | set(previous_quarters))
-        valid_quarters = ['All'] + [q for q in standard_quarters if q in all_quarters]
-        
-        selected_quarter = st.selectbox(
-            "📅 Select Quarter",
-            valid_quarters,
-            help="Filter data by quarter"
-        )
+        sales_owners = ["All"] + sorted(df_current['Sales Owner'].dropna().unique().tolist())
+        selected_owner = st.selectbox("Sales Owner", sales_owners)
     
     with col2:
-        practices = ["All"] + sorted(df_current['Practice'].dropna().unique().tolist())
-        selected_practice = st.selectbox(
-            "🏢 Select Practice",
-            practices,
-            help="Filter data by practice area"
-        )
+        pl_centres = ["All"] + sorted(df_current['P&L Centre'].dropna().unique().tolist())
+        selected_pl = st.selectbox("P&L Centre", pl_centres)
     
     with col3:
-        statuses = ["All", "Pipeline", "Closed Won", "In Progress"]
-        selected_status = st.selectbox(
-            "🎯 Select Status",
-            statuses,
-            help="Filter data by deal status"
-        )
+        types = ["All"] + sorted(df_current['Type'].dropna().unique().tolist())
+        selected_type = st.selectbox("Type", types)
+    
+    with col4:
+        statuses = ["All"] + sorted(df_current['Status'].dropna().unique().tolist())
+        selected_status = st.selectbox("Status", statuses)
+    
+    with col5:
+        geographies = ["All"] + sorted(df_current['Geography'].dropna().unique().tolist())
+        selected_geography = st.selectbox("Geography", geographies)
+    
+    with col6:
+        fiscal_years = ["All"] + sorted(df_current['Year'].dropna().unique().tolist())
+        selected_year = st.selectbox("Fiscal Year", fiscal_years)
     
     # Filter data based on selections
     def filter_data(df):
         filtered_df = df.copy()
         
-        # Standardize quarters in the filtered dataframe
-        filtered_df['Quarter'] = filtered_df['Quarter'].apply(standardize_quarter)
-        filtered_df = filtered_df[filtered_df['Quarter'].notna()]  # Remove rows with invalid quarters
-        
-        if selected_quarter != "All":
-            filtered_df = filtered_df[filtered_df['Quarter'] == selected_quarter]
-        if selected_practice != "All":
-            filtered_df = filtered_df[filtered_df['Practice'] == selected_practice]
+        if selected_owner != "All":
+            filtered_df = filtered_df[filtered_df['Sales Owner'] == selected_owner]
+        if selected_pl != "All":
+            filtered_df = filtered_df[filtered_df['P&L Centre'] == selected_pl]
+        if selected_type != "All":
+            filtered_df = filtered_df[filtered_df['Type'] == selected_type]
         if selected_status != "All":
-            if selected_status == "Pipeline":
-                filtered_df = filtered_df[~filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
-            elif selected_status == "Closed Won":
-                filtered_df = filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
+            filtered_df = filtered_df[filtered_df['Status'] == selected_status]
+        if selected_geography != "All":
+            filtered_df = filtered_df[filtered_df['Geography'] == selected_geography]
+        if selected_year != "All":
+            filtered_df = filtered_df[filtered_df['Year'] == selected_year]
+            
         return filtered_df
     
-    quarter_data_current = filter_data(df_current)
-    quarter_data_previous = filter_data(df_previous)
+    df_current_filtered = filter_data(df_current)
+    df_previous_filtered = filter_data(df_previous)
+    
+    # Key Metrics Section
+    st.markdown("### 📊 Key Performance Metrics")
     
     # Calculate metrics
     metrics = {
         'Total Pipeline': {
-            'icon': '📊',
-            'current': quarter_data_current['Amount'].sum() / 100000,
-            'previous': quarter_data_previous['Amount'].sum() / 100000,
+            'icon': '📈',
+            'current': df_current_filtered['Amount'].sum() / 100000,
+            'previous': df_previous_filtered['Amount'].sum() / 100000,
             'gradient': 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)'
         },
         'Closed Won': {
             'icon': '🎯',
-            'current': quarter_data_current[quarter_data_current['Sales Stage'] == 'Closed Won']['Amount'].sum() / 100000,
-            'previous': quarter_data_previous[quarter_data_previous['Sales Stage'] == 'Closed Won']['Amount'].sum() / 100000,
+            'current': df_current_filtered[df_current_filtered['Status'] == 'Closed Won']['Amount'].sum() / 100000,
+            'previous': df_previous_filtered[df_previous_filtered['Status'] == 'Closed Won']['Amount'].sum() / 100000,
             'gradient': 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
         },
         'Win Rate': {
             'icon': '🏆',
-            'current': (len(quarter_data_current[quarter_data_current['Sales Stage'] == 'Closed Won']) / len(quarter_data_current) * 100) if len(quarter_data_current) > 0 else 0,
-            'previous': (len(quarter_data_previous[quarter_data_previous['Sales Stage'] == 'Closed Won']) / len(quarter_data_previous) * 100) if len(quarter_data_previous) > 0 else 0,
+            'current': (len(df_current_filtered[df_current_filtered['Status'] == 'Closed Won']) / len(df_current_filtered) * 100) if len(df_current_filtered) > 0 else 0,
+            'previous': (len(df_previous_filtered[df_previous_filtered['Status'] == 'Closed Won']) / len(df_previous_filtered) * 100) if len(df_previous_filtered) > 0 else 0,
             'gradient': 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)'
-        },
-        'Avg Deal Size': {
-            'icon': '💎',
-            'current': (quarter_data_current['Amount'].sum() / 100000 / len(quarter_data_current)) if len(quarter_data_current) > 0 else 0,
-            'previous': (quarter_data_previous['Amount'].sum() / 100000 / len(quarter_data_previous)) if len(quarter_data_previous) > 0 else 0,
-            'gradient': 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)'
         }
     }
     
     # Display metrics in modern cards
-    st.markdown('<div class="quarterly-dashboard">', unsafe_allow_html=True)
-    
-    for metric, data in metrics.items():
-        delta = data['current'] - data['previous']
-        delta_class = 'delta-positive' if delta >= 0 else 'delta-negative'
-        delta_symbol = '↗' if delta >= 0 else '↘'
-        
-        st.markdown(f"""
-            <div class="metric-card" style="background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.95));">
-                <div class="metric-header">
-                    <span class="metric-icon">{data['icon']}</span>
-                    <h3 class="metric-title">{metric}</h3>
-                </div>
-                <div class="metric-content">
-                    <div class="metric-values">
-                        <div class="metric-current">{format_metric(data['current'], metric)}</div>
-                        <div class="metric-previous">Previous: {format_metric(data['previous'], metric)}</div>
-                    </div>
-                    <div class="metric-delta">
-                        <div class="delta-value {delta_class}">{delta_symbol} {format_metric(abs(delta), metric)}</div>
-                        <div class="delta-label">Delta</div>
-                    </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Add practice distribution visualization
-    if len(quarter_data_current) > 0:
-        st.subheader("Practice Distribution")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            practice_current = quarter_data_current.groupby('Practice')['Amount'].sum().reset_index()
-            fig_current = px.pie(
-                practice_current, 
-                values='Amount', 
-                names='Practice',
-                title='Current Week Practice Distribution',
-                hole=0.4
+    metric_cols = st.columns(len(metrics))
+    for col, (metric_name, data) in zip(metric_cols, metrics.items()):
+        with col:
+            delta = data['current'] - data['previous']
+            delta_color = "success" if delta >= 0 else "danger"
+            st.metric(
+                label=f"{data['icon']} {metric_name}",
+                value=format_metric(data['current'], metric_name),
+                delta=format_metric(delta, metric_name),
+                delta_color=delta_color
             )
-            fig_current.update_traces(textposition='outside', textinfo='percent+label')
-            st.plotly_chart(fig_current, use_container_width=True)
-        
-        with col2:
-            practice_previous = quarter_data_previous.groupby('Practice')['Amount'].sum().reset_index()
-            fig_previous = px.pie(
-                practice_previous, 
-                values='Amount', 
-                names='Practice',
-                title='Previous Week Practice Distribution',
-                hole=0.4
-            )
-            fig_previous.update_traces(textposition='outside', textinfo='percent+label')
-            st.plotly_chart(fig_previous, use_container_width=True)
     
-    # Add trend visualization
-    st.subheader("Pipeline Trend")
-    trend_data = pd.concat([
-        quarter_data_current.assign(Week='Current Week'),
-        quarter_data_previous.assign(Week='Previous Week')
-    ])
+    # Sales Owner Performance
+    st.markdown("### 👥 Sales Owner Performance")
+    sales_data = df_current_filtered.groupby('Sales Owner').agg({
+        'Amount': 'sum',
+        'Status': lambda x: (x == 'Closed Won').sum()
+    }).reset_index()
+    sales_data.columns = ['Sales Owner', 'Total Amount', 'Deals Won']
+    sales_data['Total Amount'] = sales_data['Total Amount'] / 100000
     
-    fig_trend = px.bar(
-        trend_data,
-        x='Sales Stage',
-        y='Amount',
-        color='Week',
-        barmode='group',
-        title='Pipeline by Sales Stage',
-        labels={'Amount': 'Amount (₹L)', 'Sales Stage': 'Stage'}
+    fig_sales = px.bar(
+        sales_data,
+        x='Sales Owner',
+        y='Total Amount',
+        color='Deals Won',
+        title='Sales Performance by Owner',
+        labels={'Total Amount': 'Amount (₹L)', 'Sales Owner': 'Owner'},
+        height=400
     )
-    st.plotly_chart(fig_trend, use_container_width=True)
+    st.plotly_chart(fig_sales, use_container_width=True)
+    
+    # P&L Centre Analysis
+    st.markdown("### 💰 P&L Centre Analysis")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        pl_data = df_current_filtered.groupby('P&L Centre')['Amount'].sum().reset_index()
+        pl_data['Amount'] = pl_data['Amount'] / 100000
+        fig_pl = px.pie(
+            pl_data,
+            values='Amount',
+            names='P&L Centre',
+            title='Revenue Distribution by P&L Centre',
+            hole=0.4
+        )
+        st.plotly_chart(fig_pl, use_container_width=True)
+    
+    with col2:
+        pl_trend = df_current_filtered.groupby(['P&L Centre', 'Status'])['Amount'].sum().reset_index()
+        pl_trend['Amount'] = pl_trend['Amount'] / 100000
+        fig_pl_trend = px.bar(
+            pl_trend,
+            x='P&L Centre',
+            y='Amount',
+            color='Status',
+            title='P&L Centre Performance by Status',
+            barmode='group'
+        )
+        st.plotly_chart(fig_pl_trend, use_container_width=True)
+    
+    # Geography and Type Analysis
+    st.markdown("### 🌍 Geography and Type Analysis")
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        geo_data = df_current_filtered.groupby('Geography')['Amount'].sum().reset_index()
+        geo_data['Amount'] = geo_data['Amount'] / 100000
+        fig_geo = px.bar(
+            geo_data,
+            x='Geography',
+            y='Amount',
+            title='Revenue by Geography',
+            color='Amount',
+            labels={'Amount': 'Amount (₹L)'}
+        )
+        st.plotly_chart(fig_geo, use_container_width=True)
+    
+    with col2:
+        type_data = df_current_filtered.groupby(['Type', 'Status'])['Amount'].sum().reset_index()
+        type_data['Amount'] = type_data['Amount'] / 100000
+        fig_type = px.bar(
+            type_data,
+            x='Type',
+            y='Amount',
+            color='Status',
+            title='Revenue by Type and Status',
+            barmode='group',
+            labels={'Amount': 'Amount (₹L)'}
+        )
+        st.plotly_chart(fig_type, use_container_width=True)
+    
+    # YTD Trend Analysis
+    st.markdown("### 📈 YTD Trend Analysis")
+    ytd_trend = df_current_filtered.groupby(['Year', 'Quarter'])['Amount'].sum().reset_index()
+    ytd_trend['Amount'] = ytd_trend['Amount'] / 100000
+    fig_ytd = px.line(
+        ytd_trend,
+        x='Quarter',
+        y='Amount',
+        color='Year',
+        title='YTD Revenue Trend',
+        markers=True,
+        labels={'Amount': 'Amount (₹L)'}
+    )
+    st.plotly_chart(fig_ytd, use_container_width=True)
+    
+    # Detailed Metrics Table
+    st.markdown("### 📋 Detailed Metrics")
+    detailed_metrics = df_current_filtered.groupby(['Sales Owner', 'P&L Centre', 'Type', 'Geography']).agg({
+        'Amount': 'sum',
+        'Status': lambda x: (x == 'Closed Won').sum()
+    }).reset_index()
+    
+    detailed_metrics['Amount'] = detailed_metrics['Amount'] / 100000
+    detailed_metrics.columns = ['Sales Owner', 'P&L Centre', 'Type', 'Geography', 'Total Amount (₹L)', 'Deals Won']
+    detailed_metrics = detailed_metrics.sort_values('Total Amount (₹L)', ascending=False)
+    
+    st.dataframe(
+        detailed_metrics,
+        column_config={
+            'Total Amount (₹L)': st.column_config.NumberColumn(
+                'Total Amount (₹L)',
+                format="₹%.1fL"
+            )
+        },
+        use_container_width=True
+    )
 
 def format_metric(value, metric_type):
     """Helper function to format metric values"""
@@ -1956,7 +1980,7 @@ def main():
     else:
         st.session_state.current_page = st.sidebar.radio(
             "Select a page",
-            ["Data Input", "Dashboard", "Overview", "Sales Team", "YTD Dashboard", "Detailed Data"]  # Changed from "Quarterly Summary"
+            ["Data Input", "Dashboard", "Overview", "Sales Team", "YTD Dashboard", "Detailed Data"]
         )
 
     # Display the selected page
@@ -1968,8 +1992,8 @@ def main():
         show_overview()
     elif st.session_state.current_page == "Sales Team":
         show_sales_team()
-    elif st.session_state.current_page == "YTD Dashboard":  # Changed from "Quarterly Summary"
-        show_ytd_dashboard()  # Changed from show_quarterly_summary
+    elif st.session_state.current_page == "YTD Dashboard":
+        show_ytd_dashboard()
     elif st.session_state.current_page == "Detailed Data":
         show_detailed()
 
