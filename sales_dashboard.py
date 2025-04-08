@@ -181,6 +181,69 @@ st.markdown("""
         height: 100%;
         z-index: -1;
     }
+
+    @keyframes glow {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .metric-card {
+        animation: fadeIn 0.6s ease-out forwards;
+        transition: all 0.3s ease;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+    .trend-icon {
+        transition: all 0.3s ease;
+    }
+    .metric-card:hover .trend-icon {
+        transform: scale(1.2);
+    }
+    .pulse-animation {
+        animation: pulse 2s infinite;
+    }
+
+    @keyframes bgGradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    /* Dashboard container with gradient background */
+    .dashboard-container {
+        background: linear-gradient(-45deg, #ff6ec4, #7873f5, #2afadf, #4c83ff, #0f2027, #203a43);
+        background-size: 1000% 1000%;
+        animation: bgGradient 30s ease infinite;
+        min-height: 100vh;
+        position: relative;
+        padding: 2rem;
+    }
+
+    /* Particle container */
+    #tsparticles {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+    }
+
+    /* Content styling */
+    .dashboard-content {
+        position: relative;
+        z-index: 1;
+    }
 </style>
 
 <div id="tsparticles"></div>
@@ -1690,14 +1753,112 @@ def display_dashboard():
     df_current = st.session_state.df_current
     df_previous = st.session_state.df_previous
 
+    # Add particle background and styling for dashboard only
+    st.markdown("""
+        <script src="https://cdn.jsdelivr.net/npm/tsparticles@2.11.1/tsparticles.bundle.min.js"></script>
+        <style>
+            @keyframes bgGradient {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
+            
+            /* Dashboard container with gradient background */
+            .dashboard-container {
+                background: linear-gradient(-45deg, #ff6ec4, #7873f5, #2afadf, #4c83ff, #0f2027, #203a43);
+                background-size: 1000% 1000%;
+                animation: bgGradient 30s ease infinite;
+                min-height: 100vh;
+                position: relative;
+                padding: 2rem;
+            }
+
+            /* Particle container */
+            #tsparticles {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 0;
+            }
+
+            /* Content styling */
+            .dashboard-content {
+                position: relative;
+                z-index: 1;
+            }
+        </style>
+
+        <div id="tsparticles"></div>
+
+        <script>
+            const themes = {
+                default: {
+                    particles: {
+                        number: { value: 100, density: { enable: true, value_area: 800 } },
+                        color: { value: ["#00ffc3", "#00bfff", "#ffffff", "#39ff14"] },
+                        shape: { type: ["circle", "triangle", "star", "edge"] },
+                        opacity: {
+                            value: 0.7,
+                            anim: { enable: true, speed: 1, opacity_min: 0.3, sync: false }
+                        },
+                        size: {
+                            value: 4,
+                            random: true,
+                            anim: { enable: true, speed: 2, size_min: 1, sync: false }
+                        },
+                        move: {
+                            enable: true,
+                            speed: 0.6,
+                            direction: "none",
+                            straight: false,
+                            out_mode: "out",
+                            attract: { enable: true, rotateX: 300, rotateY: 600 },
+                            angle: { value: 90, offset: 0 },
+                            gravity: { enable: false },
+                            trail: { enable: true, length: 5, fillColor: "transparent" },
+                            spin: { enable: true, acceleration: 0.05 }
+                        }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: { enable: true, mode: ["grab", "bubble"] },
+                            onclick: { enable: true, mode: "repulse" },
+                            resize: true
+                        },
+                        modes: {
+                            grab: { distance: 150, line_linked: { opacity: 0.5 } },
+                            bubble: { distance: 200, size: 6, duration: 2, opacity: 0.8 },
+                            repulse: { distance: 120, duration: 0.4 }
+                        }
+                    },
+                    retina_detect: true
+                }
+            };
+
+            // Initialize particles when the document is ready
+            document.addEventListener("DOMContentLoaded", function() {
+                tsParticles.load("tsparticles", themes.default);
+            });
+        </script>
+
+        <div class="dashboard-container">
+            <div class="dashboard-content">
+    """, unsafe_allow_html=True)
+
     # Modern Header with Gradient
     st.markdown("""
         <div style='
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            background: linear-gradient(135deg, rgba(30, 60, 114, 0.95) 0%, rgba(42, 82, 152, 0.95) 100%);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             padding: 2rem;
             border-radius: 20px;
             margin-bottom: 2rem;
             box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+            border: 1px solid rgba(255, 255, 255, 0.18);
         '>
             <h1 style='
                 color: white;
@@ -1908,6 +2069,12 @@ def display_dashboard():
     )
 
     st.plotly_chart(fig, use_container_width=True)
+
+    # Close the dashboard container divs at the end
+    st.markdown("""
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
 def display_data_input():
     st.title("Data Input")
