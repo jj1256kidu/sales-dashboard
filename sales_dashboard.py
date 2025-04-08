@@ -1423,11 +1423,73 @@ def show_quarterly_summary():
     df_previous['Expected Close Date'] = pd.to_datetime(df_previous['Expected Close Date'], format='%d-%m-%Y', dayfirst=True)
     df_previous['Month'] = df_previous['Expected Close Date'].dt.strftime('%B')
     
-    st.title("Quarterly Summary")
+    # Modern header with gradient background
+    st.markdown("""
+        <div style='
+            background: linear-gradient(120deg, #1e3c72 0%, #2a5298 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        '>
+            <h1 style='
+                color: white;
+                margin: 0;
+                text-align: center;
+                font-size: 2.5em;
+                font-weight: 700;
+                letter-spacing: 1px;
+            '>Quarterly Performance Dashboard</h1>
+        </div>
+    """, unsafe_allow_html=True)
     
-    # Quarter selector
-    quarters = ["Q1", "Q2", "Q3", "Q4"]
-    selected_quarter = st.selectbox("Select Quarter", quarters)
+    # Modern filter section
+    st.markdown("""
+        <div style='
+            background: linear-gradient(to right, #f8f9fa, #e9ecef);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        '>
+            <h3 style='
+                color: #2a5298;
+                margin: 0 0 15px 0;
+                font-size: 1.4em;
+                font-weight: 600;
+            '>📊 Performance Filters</h3>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Create a row for filters
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        # Quarter selector with modern styling
+        quarters = ["All", "Q1", "Q2", "Q3", "Q4"]
+        selected_quarter = st.selectbox(
+            "📅 Select Quarter",
+            quarters,
+            help="Filter data by fiscal quarter"
+        )
+    
+    with col2:
+        # Practice selector
+        practices = ["All"] + sorted(df_current['Practice'].dropna().unique().tolist())
+        selected_practice = st.selectbox(
+            "🏢 Select Practice",
+            practices,
+            help="Filter data by practice area"
+        )
+    
+    with col3:
+        # Status selector
+        statuses = ["All", "Pipeline", "Closed Won", "In Progress"]
+        selected_status = st.selectbox(
+            "🎯 Select Status",
+            statuses,
+            help="Filter data by deal status"
+        )
     
     # Quarter mapping
     quarter_months = {
@@ -1437,12 +1499,22 @@ def show_quarterly_summary():
         "Q4": ["January", "February", "March"]
     }
     
-    # Filter data for selected quarter for both datasets
-    quarter_data_current = df_current[df_current['Month'].isin(quarter_months[selected_quarter])]
-    quarter_data_previous = df_previous[df_previous['Month'].isin(quarter_months[selected_quarter])]
+    # Filter data based on selections
+    def filter_data(df, quarter, practice, status):
+        filtered_df = df.copy()
+        if quarter != "All":
+            filtered_df = filtered_df[filtered_df['Month'].isin(quarter_months[quarter])]
+        if practice != "All":
+            filtered_df = filtered_df[filtered_df['Practice'] == practice]
+        if status != "All":
+            if status == "Pipeline":
+                filtered_df = filtered_df[~filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
+            elif status == "Closed Won":
+                filtered_df = filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]
+        return filtered_df
     
-    # Quarterly Metrics
-    st.subheader("Quarterly Performance Metrics")
+    quarter_data_current = filter_data(df_current, selected_quarter, selected_practice, selected_status)
+    quarter_data_previous = filter_data(df_previous, selected_quarter, selected_practice, selected_status)
     
     # Calculate metrics for both weeks
     metrics = {
@@ -1468,242 +1540,118 @@ def show_quarterly_summary():
         'Avg Deal Size': metrics['Current Week']['Avg Deal Size'] - metrics['Previous Week']['Avg Deal Size']
     }
     
-    # Display metrics in columns
-    col1, col2, col3, col4 = st.columns(4)
+    # Modern metrics section header
+    st.markdown("""
+        <div style='
+            background: linear-gradient(120deg, #2193b0 0%, #6dd5ed 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 30px 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        '>
+            <h2 style='
+                color: white;
+                margin: 0;
+                text-align: center;
+                font-size: 1.8em;
+                font-weight: 600;
+            '>Key Performance Metrics</h2>
+        </div>
+    """, unsafe_allow_html=True)
     
-    with col1:
+    # Display metrics in a modern grid layout
+    metric_styles = {
+        'Total Pipeline': ('linear-gradient(135deg, #2193b0 0%, #6dd5ed 100%)', '🌊'),
+        'Closed Won': ('linear-gradient(135deg, #11998e 0%, #38ef7d 100%)', '💰'),
+        'Win Rate': ('linear-gradient(135deg, #4e54c8 0%, #8f94fb 100%)', '🎯'),
+        'Avg Deal Size': ('linear-gradient(135deg, #f12711 0%, #f5af19 100%)', '💎')
+    }
+    
+    for metric, (gradient, emoji) in metric_styles.items():
         st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Total Pipeline</div>
-                    <div class="metric-value">₹{metrics['Current Week']['Total Pipeline']:.0f}L</div>
-                    <div class="metric-label">Current Week</div>
-                </div>
-                <div class="card">
-                    <div class="metric-value">₹{metrics['Previous Week']['Total Pipeline']:.0f}L</div>
-                    <div class="metric-label">Previous Week</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if deltas['Total Pipeline'] > 0 else 'delta-negative'}">
-                        ₹{deltas['Total Pipeline']:.0f}L
+            <div style='
+                background: {gradient};
+                padding: 25px;
+                border-radius: 15px;
+                margin: 15px 0;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            '>
+                <div style='
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                '>
+                    <div>
+                        <h3 style='
+                            color: white;
+                            margin: 0;
+                            font-size: 1.6em;
+                            font-weight: 600;
+                        '>{emoji} {metric}</h3>
+                        <div style='
+                            display: flex;
+                            gap: 20px;
+                            margin-top: 15px;
+                        '>
+                            <div>
+                                <p style='
+                                    color: rgba(255,255,255,0.9);
+                                    margin: 0;
+                                    font-size: 1.1em;
+                                '>Current Week</p>
+                                <h4 style='
+                                    color: white;
+                                    margin: 5px 0;
+                                    font-size: 1.8em;
+                                    font-weight: 700;
+                                '>{format_metric(metrics['Current Week'][metric], metric)}</h4>
+                            </div>
+                            <div>
+                                <p style='
+                                    color: rgba(255,255,255,0.9);
+                                    margin: 0;
+                                    font-size: 1.1em;
+                                '>Previous Week</p>
+                                <h4 style='
+                                    color: white;
+                                    margin: 5px 0;
+                                    font-size: 1.8em;
+                                    font-weight: 700;
+                                '>{format_metric(metrics['Previous Week'][metric], metric)}</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div style='
+                        background: rgba(255,255,255,0.1);
+                        padding: 15px;
+                        border-radius: 10px;
+                    '>
+                        <p style='
+                            color: rgba(255,255,255,0.9);
+                            margin: 0;
+                            font-size: 1.1em;
+                        '>Delta</p>
+                        <h4 style='
+                            color: {'#2ecc71' if deltas[metric] > 0 else '#e74c3c'};
+                            margin: 5px 0;
+                            font-size: 1.8em;
+                            font-weight: 700;
+                        '>{format_metric(deltas[metric], metric)}</h4>
                     </div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
     
-    with col2:
-        st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Closed Won</div>
-                    <div class="metric-value">₹{metrics['Current Week']['Closed Won']:.0f}L</div>
-                    <div class="metric-label">Current Week</div>
-                </div>
-                <div class="card">
-                    <div class="metric-value">₹{metrics['Previous Week']['Closed Won']:.0f}L</div>
-                    <div class="metric-label">Previous Week</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if deltas['Closed Won'] > 0 else 'delta-negative'}">
-                        ₹{deltas['Closed Won']:.0f}L
-                    </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col3:
-        st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Win Rate</div>
-                    <div class="metric-value">{metrics['Current Week']['Win Rate']:.1f}%</div>
-                    <div class="metric-label">Current Week</div>
-                </div>
-                <div class="card">
-                    <div class="metric-value">{metrics['Previous Week']['Win Rate']:.1f}%</div>
-                    <div class="metric-label">Previous Week</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if deltas['Win Rate'] > 0 else 'delta-negative'}">
-                        {deltas['Win Rate']:.1f}%
-                    </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    with col4:
-        st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Average Deal Size</div>
-                    <div class="metric-value">₹{metrics['Current Week']['Avg Deal Size']:.0f}L</div>
-                    <div class="metric-label">Current Week</div>
-                </div>
-                <div class="card">
-                    <div class="metric-value">₹{metrics['Previous Week']['Avg Deal Size']:.0f}L</div>
-                    <div class="metric-label">Previous Week</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if deltas['Avg Deal Size'] > 0 else 'delta-negative'}">
-                        ₹{deltas['Avg Deal Size']:.0f}L
-                    </div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    # Monthly Breakdown within Quarter
-    st.subheader("Monthly Breakdown")
-    
-    # Create monthly breakdown for both current and previous week
-    def get_monthly_data(df, suffix):
-        monthly = df.groupby('Month').agg({
-            'Amount': lambda x: x.sum() / 100000,
-            'Sales Stage': lambda x: (x == 'Closed Won').sum(),
-            'Organization Name': 'count'
-        }).reset_index()
-        monthly.columns = ['Month', f'Pipeline Value {suffix}', f'Closed Won Deals {suffix}', f'Total Deals {suffix}']
-        return monthly
-    
-    monthly_current = get_monthly_data(quarter_data_current, 'Current')
-    monthly_previous = get_monthly_data(quarter_data_previous, 'Previous')
-    
-    # Merge current and previous data
-    monthly_data = pd.merge(monthly_current, monthly_previous, on='Month', how='outer')
-    
-    # Sort months in correct order
-    monthly_data['Month'] = pd.Categorical(monthly_data['Month'], categories=quarter_months[selected_quarter], ordered=True)
-    monthly_data = monthly_data.sort_values('Month')
-    
-    # Calculate deltas
-    monthly_data['Pipeline Delta'] = monthly_data['Pipeline Value Current'] - monthly_data['Pipeline Value Previous']
-    monthly_data['Deals Delta'] = monthly_data['Closed Won Deals Current'] - monthly_data['Closed Won Deals Previous']
-    
-    st.dataframe(monthly_data.style.format({
-        'Pipeline Value Current': '₹{:.0f}L',
-        'Pipeline Value Previous': '₹{:.0f}L',
-        'Pipeline Delta': '₹{:.0f}L',
-        'Closed Won Deals Current': '{:.0f}',
-        'Closed Won Deals Previous': '{:.0f}',
-        'Deals Delta': '{:.0f}',
-        'Total Deals Current': '{:.0f}',
-        'Total Deals Previous': '{:.0f}'
-    }), use_container_width=True)
-    
-    # Practice Performance
-    st.subheader("Practice Performance")
-    if 'Practice' in quarter_data_current.columns and 'Practice' in quarter_data_previous.columns:
-        # Function to get practice metrics
-        def get_practice_data(df, suffix):
-            practice = df.groupby('Practice').agg({
-                'Amount': lambda x: x.sum() / 100000,
-                'Sales Stage': lambda x: (x == 'Closed Won').sum(),
-                'Organization Name': 'count'
-            }).reset_index()
-            practice.columns = ['Practice', f'Pipeline Value {suffix}', f'Closed Won Deals {suffix}', f'Total Deals {suffix}']
-            return practice
-        
-        practice_current = get_practice_data(quarter_data_current, 'Current')
-        practice_previous = get_practice_data(quarter_data_previous, 'Previous')
-        
-        # Merge practice data
-        practice_data = pd.merge(practice_current, practice_previous, on='Practice', how='outer')
-        
-        # Calculate win rates and deltas
-        practice_data['Win Rate Current'] = (practice_data['Closed Won Deals Current'] / practice_data['Total Deals Current'] * 100).round(1)
-        practice_data['Win Rate Previous'] = (practice_data['Closed Won Deals Previous'] / practice_data['Total Deals Previous'] * 100).round(1)
-        practice_data['Win Rate Delta'] = (practice_data['Win Rate Current'] - practice_data['Win Rate Previous']).round(1)
-        
-        st.dataframe(practice_data.style.format({
-            'Pipeline Value Current': '₹{:.0f}L',
-            'Pipeline Value Previous': '₹{:.0f}L',
-            'Closed Won Deals Current': '{:.0f}',
-            'Closed Won Deals Previous': '{:.0f}',
-            'Total Deals Current': '{:.0f}',
-            'Total Deals Previous': '{:.0f}',
-            'Win Rate Current': '{:.1f}%',
-            'Win Rate Previous': '{:.1f}%',
-            'Win Rate Delta': '{:.1f}%'
-        }), use_container_width=True)
-        
-        # Practice pipeline distribution comparison chart
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            fig_current = px.pie(practice_current, values='Pipeline Value Current', names='Practice',
-                               title=f'Current Week - Pipeline Distribution by Practice ({selected_quarter})')
-            st.plotly_chart(fig_current, use_container_width=True)
-        
-        with col2:
-            fig_previous = px.pie(practice_previous, values='Pipeline Value Previous', names='Practice',
-                                title=f'Previous Week - Pipeline Distribution by Practice ({selected_quarter})')
-            st.plotly_chart(fig_previous, use_container_width=True)
-    
-    # Team Performance
-    st.subheader("Team Performance")
-    
-    # Function to get team metrics
-    def get_team_data(df, suffix):
-        team = df.groupby('Sales Owner').agg({
-            'Amount': lambda x: x.sum() / 100000,
-            'Sales Stage': lambda x: (x == 'Closed Won').sum(),
-            'Organization Name': 'count'
-        }).reset_index()
-        team.columns = ['Sales Owner', f'Pipeline Value {suffix}', f'Closed Won Deals {suffix}', f'Total Deals {suffix}']
-        return team
-    
-    team_current = get_team_data(quarter_data_current, 'Current')
-    team_previous = get_team_data(quarter_data_previous, 'Previous')
-    
-    # Merge team data
-    team_data = pd.merge(team_current, team_previous, on='Sales Owner', how='outer')
-    
-    # Calculate win rates and deltas
-    team_data['Win Rate Current'] = (team_data['Closed Won Deals Current'] / team_data['Total Deals Current'] * 100).round(1)
-    team_data['Win Rate Previous'] = (team_data['Closed Won Deals Previous'] / team_data['Total Deals Previous'] * 100).round(1)
-    team_data['Win Rate Delta'] = (team_data['Win Rate Current'] - team_data['Win Rate Previous']).round(1)
-    
-    st.dataframe(team_data.style.format({
-        'Pipeline Value Current': '₹{:.0f}L',
-        'Pipeline Value Previous': '₹{:.0f}L',
-        'Closed Won Deals Current': '{:.0f}',
-        'Closed Won Deals Previous': '{:.0f}',
-        'Total Deals Current': '{:.0f}',
-        'Total Deals Previous': '{:.0f}',
-        'Win Rate Current': '{:.1f}%',
-        'Win Rate Previous': '{:.1f}%',
-        'Win Rate Delta': '{:.1f}%'
-    }), use_container_width=True)
-    
-    # Pipeline Trend Chart
-    st.subheader("Pipeline Trend")
-    
-    # Create trend data for both weeks
-    trend_current = quarter_data_current.groupby(['Month', 'Sales Stage'])['Amount'].sum().reset_index()
-    trend_current['Amount'] = trend_current['Amount'] / 100000
-    trend_current['Week'] = 'Current Week'
-    
-    trend_previous = quarter_data_previous.groupby(['Month', 'Sales Stage'])['Amount'].sum().reset_index()
-    trend_previous['Amount'] = trend_previous['Amount'] / 100000
-    trend_previous['Week'] = 'Previous Week'
-    
-    # Combine trend data
-    trend_data = pd.concat([trend_current, trend_previous])
-    
-    # Sort months in correct order
-    trend_data['Month'] = pd.Categorical(trend_data['Month'], categories=quarter_months[selected_quarter], ordered=True)
-    trend_data = trend_data.sort_values(['Month', 'Week'])
-    
-    # Create grouped bar chart
-    fig = px.bar(trend_data, x='Month', y='Amount', color='Sales Stage',
-                 barmode='group', facet_col='Week',
-                 title=f'Pipeline Trend by Status - {selected_quarter}',
-                 labels={'Amount': 'Amount (Lakhs)'})
-    
-    st.plotly_chart(fig, use_container_width=True)
+    # Rest of the function (Monthly Breakdown, Practice Performance, etc.) remains the same
+    # ... (previous code for other sections)
+
+def format_metric(value, metric_type):
+    """Helper function to format metric values"""
+    if metric_type in ['Total Pipeline', 'Closed Won', 'Avg Deal Size']:
+        return f"₹{abs(value):.0f}L"
+    elif metric_type == 'Win Rate':
+        return f"{abs(value):.1f}%"
+    return f"{abs(value):.0f}"
 
 def display_dashboard():
     if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
