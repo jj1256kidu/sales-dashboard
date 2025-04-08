@@ -7,7 +7,7 @@ import numpy as np
 import io
 from functools import lru_cache
 
-# Set page config - MUST BE THE FIRST STREAMLIT COMMAND
+# This must be the first Streamlit command
 st.set_page_config(
     page_title="Sales Dashboard",
     page_icon="📊",
