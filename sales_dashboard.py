@@ -2077,12 +2077,272 @@ def display_data_input():
     else:
         st.info("Please upload both current and previous week data files to proceed.")
 
+def show_pipeline_analysis():
+    """Advanced Pipeline Analysis View"""
+    if 'df_current' not in st.session_state:
+        st.warning("Please upload data first.")
+        return
+
+    df = st.session_state.df_current
+
+    st.markdown("""
+        <div style='
+            background: linear-gradient(135deg, #1a237e 0%, #0d47a1 100%);
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        '>
+            <h2 style='
+                color: white;
+                text-align: center;
+                font-size: 2.2rem;
+                font-weight: 700;
+                margin: 0;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            '>Pipeline Analysis</h2>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Advanced Filters
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        probability_range = st.slider("Probability Range", 0, 100, (0, 100), 5)
+    with col2:
+        amount_range = st.slider("Deal Size (Lakhs)", 
+                               int(df['Amount'].min()/100000), 
+                               int(df['Amount'].max()/100000), 
+                               (int(df['Amount'].min()/100000), int(df['Amount'].max()/100000)))
+    with col3:
+        timeline = st.selectbox("Timeline", ["Next Quarter", "Next 6 Months", "Next Year", "All"])
+
+    # Filter data
+    filtered_df = df.copy()
+    filtered_df = filtered_df[
+        (filtered_df['Probability'].between(probability_range[0], probability_range[1])) &
+        (filtered_df['Amount'].between(amount_range[0]*100000, amount_range[1]*100000))
+    ]
+
+    # Pipeline Funnel
+    stages = filtered_df['Sales Stage'].value_counts()
+    fig_funnel = go.Figure(go.Funnel(
+        y=stages.index,
+        x=stages.values,
+        textinfo="value+percent initial",
+        textposition="inside",
+        textfont=dict(size=16, color="white"),
+        marker=dict(
+            color=["#4CAF50", "#2196F3", "#9C27B0", "#FF9800", "#F44336"]
+        )
+    ))
+    fig_funnel.update_layout(
+        title="Pipeline Funnel Analysis",
+        height=500,
+        showlegend=False
+    )
+    st.plotly_chart(fig_funnel, use_container_width=True)
+
+    # Probability Distribution
+    col1, col2 = st.columns(2)
+    with col1:
+        prob_dist = filtered_df.groupby(pd.cut(filtered_df['Probability'], 
+                                             bins=[0, 25, 50, 75, 100]))['Amount'].sum()/100000
+        fig_prob = px.bar(
+            x=["0-25%", "26-50%", "51-75%", "76-100%"],
+            y=prob_dist.values,
+            title="Pipeline by Probability",
+            labels={"x": "Probability Range", "y": "Amount (Lakhs)"}
+        )
+        fig_prob.update_traces(marker_color='#2196F3')
+        st.plotly_chart(fig_prob, use_container_width=True)
+
+    with col2:
+        timeline_dist = filtered_df.groupby(pd.Grouper(key='Expected Close Date', freq='M'))['Amount'].sum()/100000
+        fig_timeline = px.line(
+            x=timeline_dist.index,
+            y=timeline_dist.values,
+            title="Pipeline Timeline",
+            labels={"x": "Month", "y": "Amount (Lakhs)"}
+        )
+        fig_timeline.update_traces(line_color='#4CAF50')
+        st.plotly_chart(fig_timeline, use_container_width=True)
+
+def show_performance_insights():
+    """Advanced Performance Insights View"""
+    if 'df_current' not in st.session_state:
+        st.warning("Please upload data first.")
+        return
+
+    df = st.session_state.df_current
+
+    st.markdown("""
+        <div style='
+            background: linear-gradient(135deg, #006064 0%, #00838f 100%);
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        '>
+            <h2 style='
+                color: white;
+                text-align: center;
+                font-size: 2.2rem;
+                font-weight: 700;
+                margin: 0;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            '>Performance Insights</h2>
+        </div>
+    """, unsafe_allow_html=True)
+
+    # Performance Metrics
+    col1, col2, col3, col4 = st.columns(4)
+    metrics = {
+        'Average Deal Size': df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].mean()/100000,
+        'Win Rate': len(df[df['Sales Stage'].str.contains('Won', case=False, na=False)])/len(df)*100,
+        'Pipeline Coverage': df['Amount'].sum()/(st.session_state.sales_target*100000) if st.session_state.sales_target > 0 else 0,
+        'Avg Sales Cycle': (pd.to_datetime(df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Expected Close Date']) - 
+                           pd.to_datetime(df[df['Sales Stage'].str.contains('Won', case=False, na=False)]['Created Date'])).mean().days
+                           if 'Created Date' in df.columns else 0
+    }
+
+    for (metric, value), col in zip(metrics.items(), [col1, col2, col3, col4]):
+        with col:
+            st.markdown(f"""
+                <div style='
+                    background: white;
+                    padding: 1.5rem;
+                    border-radius: 15px;
+                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    text-align: center;
+                '>
+                    <h3 style='
+                        color: #333;
+                        font-size: 1.1rem;
+                        margin-bottom: 0.5rem;
+                    '>{metric}</h3>
+                    <p style='
+                        color: #2196F3;
+                        font-size: 1.8rem;
+                        font-weight: 700;
+                        margin: 0;
+                    '>{value:.1f}{'L' if metric == 'Average Deal Size' else '%' if metric in ['Win Rate', 'Pipeline Coverage'] else ' days'}</p>
+                </div>
+            """, unsafe_allow_html=True)
+
+    # Performance Trends
+    st.markdown("### Performance Trends")
+    trend_metrics = df.groupby(pd.Grouper(key='Expected Close Date', freq='M')).agg({
+        'Amount': ['sum', 'count'],
+        'Sales Stage': lambda x: (x.str.contains('Won', case=False, na=False)).sum()
+    }).reset_index()
+    trend_metrics.columns = ['Date', 'Total Amount', 'Deal Count', 'Won Deals']
+    trend_metrics['Win Rate'] = trend_metrics['Won Deals'] / trend_metrics['Deal Count'] * 100
+    trend_metrics['Average Deal Size'] = trend_metrics['Total Amount'] / trend_metrics['Deal Count']
+
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=trend_metrics['Date'],
+        y=trend_metrics['Win Rate'],
+        name='Win Rate',
+        line=dict(color='#4CAF50', width=3),
+        yaxis='y'
+    ))
+    fig.add_trace(go.Bar(
+        x=trend_metrics['Date'],
+        y=trend_metrics['Average Deal Size']/100000,
+        name='Avg Deal Size (Lakhs)',
+        marker_color='#2196F3',
+        yaxis='y2'
+    ))
+    fig.update_layout(
+        title='Win Rate vs Average Deal Size Trend',
+        yaxis=dict(title='Win Rate (%)', side='left', showgrid=False),
+        yaxis2=dict(title='Avg Deal Size (Lakhs)', side='right', overlaying='y', showgrid=False),
+        height=500,
+        hovermode='x unified'
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+def show_competitive_analysis():
+    """Competitive Analysis View"""
+    if 'df_current' not in st.session_state:
+        st.warning("Please upload data first.")
+        return
+
+    df = st.session_state.df_current
+
+    st.markdown("""
+        <div style='
+            background: linear-gradient(135deg, #4a148c 0%, #7b1fa2 100%);
+            padding: 2rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        '>
+            <h2 style='
+                color: white;
+                text-align: center;
+                font-size: 2.2rem;
+                font-weight: 700;
+                margin: 0;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            '>Competitive Analysis</h2>
+        </div>
+    """, unsafe_allow_html=True)
+
+    if 'Competitor' in df.columns:
+        # Competitor Win/Loss Analysis
+        competitor_analysis = df.groupby('Competitor').agg({
+            'Amount': 'sum',
+            'Sales Stage': lambda x: (x.str.contains('Won', case=False, na=False)).sum(),
+            'Opportunity Name': 'count'
+        }).reset_index()
+        
+        competitor_analysis.columns = ['Competitor', 'Total Amount', 'Won Deals', 'Total Deals']
+        competitor_analysis['Win Rate'] = competitor_analysis['Won Deals'] / competitor_analysis['Total Deals'] * 100
+        competitor_analysis['Loss Rate'] = 100 - competitor_analysis['Win Rate']
+        
+        # Competitive Landscape
+        fig = px.scatter(
+            competitor_analysis,
+            x='Win Rate',
+            y='Total Amount'/100000,
+            size='Total Deals',
+            color='Competitor',
+            title='Competitive Landscape Analysis',
+            labels={'Total Amount': 'Total Pipeline (Lakhs)'}
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Win/Loss Analysis
+        col1, col2 = st.columns(2)
+        with col1:
+            fig_win = px.bar(
+                competitor_analysis,
+                x='Competitor',
+                y=['Win Rate', 'Loss Rate'],
+                title='Win/Loss Rate by Competitor',
+                barmode='stack'
+            )
+            st.plotly_chart(fig_win, use_container_width=True)
+        
+        with col2:
+            fig_amount = px.pie(
+                competitor_analysis,
+                values='Total Amount',
+                names='Competitor',
+                title='Pipeline Share by Competitor'
+            )
+            st.plotly_chart(fig_amount, use_container_width=True)
+    else:
+        st.info("Competitor information not available in the dataset")
+
 def main():
     # Initialize session state for navigation if not exists
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Data Input"
 
-    # Sidebar navigation
+    # Sidebar navigation with new views
     st.sidebar.title("Navigation")
     
     # First check if data is uploaded
@@ -2091,7 +2351,8 @@ def main():
     else:
         st.session_state.current_page = st.sidebar.radio(
             "Select a page",
-            ["Data Input", "Dashboard", "Overview", "Sales Team", "YTD Dashboard", "Detailed Data"]
+            ["Data Input", "Dashboard", "Overview", "Sales Team", "Pipeline Analysis", 
+             "Performance Insights", "Competitive Analysis", "YTD Dashboard", "Detailed Data"]
         )
 
     # Display the selected page
@@ -2103,6 +2364,12 @@ def main():
         show_overview()
     elif st.session_state.current_page == "Sales Team":
         show_sales_team()
+    elif st.session_state.current_page == "Pipeline Analysis":
+        show_pipeline_analysis()
+    elif st.session_state.current_page == "Performance Insights":
+        show_performance_insights()
+    elif st.session_state.current_page == "Competitive Analysis":
+        show_competitive_analysis()
     elif st.session_state.current_page == "YTD Dashboard":
         show_ytd_dashboard()
     elif st.session_state.current_page == "Detailed Data":
