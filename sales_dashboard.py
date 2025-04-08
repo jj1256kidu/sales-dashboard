@@ -1571,45 +1571,72 @@ def show_ytd_dashboard():
     col1, col2, col3, col4, col5, col6 = st.columns(6)
     
     with col1:
-        sales_owners = ["All"] + sorted(df_current['Sales Owner'].dropna().unique().tolist())
+        sales_owners = ["All"] + sorted(df_current['Sales Owner'].dropna().unique().tolist()) if 'Sales Owner' in df_current.columns else ["All"]
         selected_owner = st.selectbox("Sales Owner", sales_owners)
     
     with col2:
-        pl_centres = ["All"] + sorted(df_current['P&L Centre'].dropna().unique().tolist())
-        selected_pl = st.selectbox("P&L Centre", pl_centres)
+        # Try different possible column names for P&L Centre/Practice
+        practice_column = next((col for col in ['P&L Centre', 'Practice', 'Business Unit', 'Department'] 
+                              if col in df_current.columns), None)
+        if practice_column:
+            practices = ["All"] + sorted(df_current[practice_column].dropna().unique().tolist())
+            selected_practice = st.selectbox(practice_column, practices)
+        else:
+            selected_practice = "All"
+            st.warning("Practice/P&L Centre column not found")
     
     with col3:
-        types = ["All"] + sorted(df_current['Type'].dropna().unique().tolist())
+        types = ["All"] + sorted(df_current['Type'].dropna().unique().tolist()) if 'Type' in df_current.columns else ["All"]
         selected_type = st.selectbox("Type", types)
     
     with col4:
-        statuses = ["All"] + sorted(df_current['Status'].dropna().unique().tolist())
-        selected_status = st.selectbox("Status", statuses)
+        # Try different possible column names for Status
+        status_column = next((col for col in ['Status', 'Sales Stage', 'Stage'] 
+                            if col in df_current.columns), None)
+        if status_column:
+            statuses = ["All"] + sorted(df_current[status_column].dropna().unique().tolist())
+            selected_status = st.selectbox(status_column, statuses)
+        else:
+            selected_status = "All"
+            st.warning("Status column not found")
     
     with col5:
-        geographies = ["All"] + sorted(df_current['Geography'].dropna().unique().tolist())
+        geographies = ["All"] + sorted(df_current['Geography'].dropna().unique().tolist()) if 'Geography' in df_current.columns else ["All"]
         selected_geography = st.selectbox("Geography", geographies)
     
     with col6:
-        fiscal_years = ["All"] + sorted(df_current['Year'].dropna().unique().tolist())
-        selected_year = st.selectbox("Fiscal Year", fiscal_years)
+        years = ["All"]
+        if 'Year' in df_current.columns:
+            years.extend(sorted(df_current['Year'].dropna().unique().tolist()))
+        elif 'Expected Close Date' in df_current.columns:
+            df_current['Year'] = pd.to_datetime(df_current['Expected Close Date']).dt.year
+            years.extend(sorted(df_current['Year'].dropna().unique().tolist()))
+        selected_year = st.selectbox("Fiscal Year", years)
     
     # Filter data based on selections
     def filter_data(df):
         filtered_df = df.copy()
         
-        if selected_owner != "All":
+        if 'Sales Owner' in df.columns and selected_owner != "All":
             filtered_df = filtered_df[filtered_df['Sales Owner'] == selected_owner]
-        if selected_pl != "All":
-            filtered_df = filtered_df[filtered_df['P&L Centre'] == selected_pl]
-        if selected_type != "All":
+        
+        if practice_column and selected_practice != "All":
+            filtered_df = filtered_df[filtered_df[practice_column] == selected_practice]
+        
+        if 'Type' in df.columns and selected_type != "All":
             filtered_df = filtered_df[filtered_df['Type'] == selected_type]
-        if selected_status != "All":
-            filtered_df = filtered_df[filtered_df['Status'] == selected_status]
-        if selected_geography != "All":
+        
+        if status_column and selected_status != "All":
+            filtered_df = filtered_df[filtered_df[status_column] == selected_status]
+        
+        if 'Geography' in df.columns and selected_geography != "All":
             filtered_df = filtered_df[filtered_df['Geography'] == selected_geography]
+        
         if selected_year != "All":
-            filtered_df = filtered_df[filtered_df['Year'] == selected_year]
+            if 'Year' in df.columns:
+                filtered_df = filtered_df[filtered_df['Year'] == selected_year]
+            elif 'Expected Close Date' in df.columns:
+                filtered_df = filtered_df[pd.to_datetime(filtered_df['Expected Close Date']).dt.year == selected_year]
             
         return filtered_df
     
@@ -1629,14 +1656,14 @@ def show_ytd_dashboard():
         },
         'Closed Won': {
             'icon': '🎯',
-            'current': df_current_filtered[df_current_filtered['Status'] == 'Closed Won']['Amount'].sum() / 100000,
-            'previous': df_previous_filtered[df_previous_filtered['Status'] == 'Closed Won']['Amount'].sum() / 100000,
+            'current': df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000 if status_column else 0,
+            'previous': df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000 if status_column else 0,
             'gradient': 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
         },
         'Win Rate': {
             'icon': '🏆',
-            'current': (len(df_current_filtered[df_current_filtered['Status'] == 'Closed Won']) / len(df_current_filtered) * 100) if len(df_current_filtered) > 0 else 0,
-            'previous': (len(df_previous_filtered[df_previous_filtered['Status'] == 'Closed Won']) / len(df_previous_filtered) * 100) if len(df_previous_filtered) > 0 else 0,
+            'current': (len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_current_filtered) * 100) if status_column and len(df_current_filtered) > 0 else 0,
+            'previous': (len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_previous_filtered) * 100) if status_column and len(df_previous_filtered) > 0 else 0,
             'gradient': 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)'
         }
     }
@@ -1655,121 +1682,137 @@ def show_ytd_dashboard():
             )
     
     # Sales Owner Performance
-    st.markdown("### 👥 Sales Owner Performance")
-    sales_data = df_current_filtered.groupby('Sales Owner').agg({
-        'Amount': 'sum',
-        'Status': lambda x: (x == 'Closed Won').sum()
-    }).reset_index()
-    sales_data.columns = ['Sales Owner', 'Total Amount', 'Deals Won']
-    sales_data['Total Amount'] = sales_data['Total Amount'] / 100000
-    
-    fig_sales = px.bar(
-        sales_data,
-        x='Sales Owner',
-        y='Total Amount',
-        color='Deals Won',
-        title='Sales Performance by Owner',
-        labels={'Total Amount': 'Amount (₹L)', 'Sales Owner': 'Owner'},
-        height=400
-    )
-    st.plotly_chart(fig_sales, use_container_width=True)
-    
-    # P&L Centre Analysis
-    st.markdown("### 💰 P&L Centre Analysis")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        pl_data = df_current_filtered.groupby('P&L Centre')['Amount'].sum().reset_index()
-        pl_data['Amount'] = pl_data['Amount'] / 100000
-        fig_pl = px.pie(
-            pl_data,
-            values='Amount',
-            names='P&L Centre',
-            title='Revenue Distribution by P&L Centre',
-            hole=0.4
+    if 'Sales Owner' in df_current.columns:
+        st.markdown("### 👥 Sales Owner Performance")
+        sales_data = df_current_filtered.groupby('Sales Owner').agg({
+            'Amount': 'sum',
+            status_column: lambda x: (x.str.contains('Won', case=False, na=False)).sum() if status_column else 0
+        }).reset_index()
+        sales_data.columns = ['Sales Owner', 'Total Amount', 'Deals Won']
+        sales_data['Total Amount'] = sales_data['Total Amount'] / 100000
+        
+        fig_sales = px.bar(
+            sales_data,
+            x='Sales Owner',
+            y='Total Amount',
+            color='Deals Won',
+            title='Sales Performance by Owner',
+            labels={'Total Amount': 'Amount (₹L)', 'Sales Owner': 'Owner'},
+            height=400
         )
-        st.plotly_chart(fig_pl, use_container_width=True)
+        st.plotly_chart(fig_sales, use_container_width=True)
     
-    with col2:
-        pl_trend = df_current_filtered.groupby(['P&L Centre', 'Status'])['Amount'].sum().reset_index()
-        pl_trend['Amount'] = pl_trend['Amount'] / 100000
-        fig_pl_trend = px.bar(
-            pl_trend,
-            x='P&L Centre',
-            y='Amount',
-            color='Status',
-            title='P&L Centre Performance by Status',
-            barmode='group'
-        )
-        st.plotly_chart(fig_pl_trend, use_container_width=True)
+    # Practice/P&L Centre Analysis
+    if practice_column:
+        st.markdown(f"### 💰 {practice_column} Analysis")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            pl_data = df_current_filtered.groupby(practice_column)['Amount'].sum().reset_index()
+            pl_data['Amount'] = pl_data['Amount'] / 100000
+            fig_pl = px.pie(
+                pl_data,
+                values='Amount',
+                names=practice_column,
+                title=f'Revenue Distribution by {practice_column}',
+                hole=0.4
+            )
+            st.plotly_chart(fig_pl, use_container_width=True)
+        
+        with col2:
+            if status_column:
+                pl_trend = df_current_filtered.groupby([practice_column, status_column])['Amount'].sum().reset_index()
+                pl_trend['Amount'] = pl_trend['Amount'] / 100000
+                fig_pl_trend = px.bar(
+                    pl_trend,
+                    x=practice_column,
+                    y='Amount',
+                    color=status_column,
+                    title=f'{practice_column} Performance by {status_column}',
+                    barmode='group'
+                )
+                st.plotly_chart(fig_pl_trend, use_container_width=True)
     
     # Geography and Type Analysis
-    st.markdown("### 🌍 Geography and Type Analysis")
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        geo_data = df_current_filtered.groupby('Geography')['Amount'].sum().reset_index()
-        geo_data['Amount'] = geo_data['Amount'] / 100000
-        fig_geo = px.bar(
-            geo_data,
-            x='Geography',
-            y='Amount',
-            title='Revenue by Geography',
-            color='Amount',
-            labels={'Amount': 'Amount (₹L)'}
-        )
-        st.plotly_chart(fig_geo, use_container_width=True)
-    
-    with col2:
-        type_data = df_current_filtered.groupby(['Type', 'Status'])['Amount'].sum().reset_index()
-        type_data['Amount'] = type_data['Amount'] / 100000
-        fig_type = px.bar(
-            type_data,
-            x='Type',
-            y='Amount',
-            color='Status',
-            title='Revenue by Type and Status',
-            barmode='group',
-            labels={'Amount': 'Amount (₹L)'}
-        )
-        st.plotly_chart(fig_type, use_container_width=True)
+    if 'Geography' in df_current.columns or 'Type' in df_current.columns:
+        st.markdown("### 🌍 Geography and Type Analysis")
+        col1, col2 = st.columns(2)
+        
+        if 'Geography' in df_current.columns:
+            with col1:
+                geo_data = df_current_filtered.groupby('Geography')['Amount'].sum().reset_index()
+                geo_data['Amount'] = geo_data['Amount'] / 100000
+                fig_geo = px.bar(
+                    geo_data,
+                    x='Geography',
+                    y='Amount',
+                    title='Revenue by Geography',
+                    color='Amount',
+                    labels={'Amount': 'Amount (₹L)'}
+                )
+                st.plotly_chart(fig_geo, use_container_width=True)
+        
+        if 'Type' in df_current.columns and status_column:
+            with col2:
+                type_data = df_current_filtered.groupby(['Type', status_column])['Amount'].sum().reset_index()
+                type_data['Amount'] = type_data['Amount'] / 100000
+                fig_type = px.bar(
+                    type_data,
+                    x='Type',
+                    y='Amount',
+                    color=status_column,
+                    title='Revenue by Type and Status',
+                    barmode='group',
+                    labels={'Amount': 'Amount (₹L)'}
+                )
+                st.plotly_chart(fig_type, use_container_width=True)
     
     # YTD Trend Analysis
-    st.markdown("### 📈 YTD Trend Analysis")
-    ytd_trend = df_current_filtered.groupby(['Year', 'Quarter'])['Amount'].sum().reset_index()
-    ytd_trend['Amount'] = ytd_trend['Amount'] / 100000
-    fig_ytd = px.line(
-        ytd_trend,
-        x='Quarter',
-        y='Amount',
-        color='Year',
-        title='YTD Revenue Trend',
-        markers=True,
-        labels={'Amount': 'Amount (₹L)'}
-    )
-    st.plotly_chart(fig_ytd, use_container_width=True)
+    if 'Quarter' in df_current.columns and 'Year' in df_current.columns:
+        st.markdown("### 📈 YTD Trend Analysis")
+        ytd_trend = df_current_filtered.groupby(['Year', 'Quarter'])['Amount'].sum().reset_index()
+        ytd_trend['Amount'] = ytd_trend['Amount'] / 100000
+        fig_ytd = px.line(
+            ytd_trend,
+            x='Quarter',
+            y='Amount',
+            color='Year',
+            title='YTD Revenue Trend',
+            markers=True,
+            labels={'Amount': 'Amount (₹L)'}
+        )
+        st.plotly_chart(fig_ytd, use_container_width=True)
     
     # Detailed Metrics Table
     st.markdown("### 📋 Detailed Metrics")
-    detailed_metrics = df_current_filtered.groupby(['Sales Owner', 'P&L Centre', 'Type', 'Geography']).agg({
-        'Amount': 'sum',
-        'Status': lambda x: (x == 'Closed Won').sum()
-    }).reset_index()
+    group_columns = ['Sales Owner'] if 'Sales Owner' in df_current.columns else []
+    if practice_column:
+        group_columns.append(practice_column)
+    if 'Type' in df_current.columns:
+        group_columns.append('Type')
+    if 'Geography' in df_current.columns:
+        group_columns.append('Geography')
     
-    detailed_metrics['Amount'] = detailed_metrics['Amount'] / 100000
-    detailed_metrics.columns = ['Sales Owner', 'P&L Centre', 'Type', 'Geography', 'Total Amount (₹L)', 'Deals Won']
-    detailed_metrics = detailed_metrics.sort_values('Total Amount (₹L)', ascending=False)
-    
-    st.dataframe(
-        detailed_metrics,
-        column_config={
-            'Total Amount (₹L)': st.column_config.NumberColumn(
-                'Total Amount (₹L)',
-                format="₹%.1fL"
-            )
-        },
-        use_container_width=True
-    )
+    if group_columns:
+        detailed_metrics = df_current_filtered.groupby(group_columns).agg({
+            'Amount': 'sum',
+            status_column: lambda x: (x.str.contains('Won', case=False, na=False)).sum() if status_column else 0
+        }).reset_index()
+        
+        detailed_metrics['Amount'] = detailed_metrics['Amount'] / 100000
+        detailed_metrics.columns = group_columns + ['Total Amount (₹L)', 'Deals Won']
+        detailed_metrics = detailed_metrics.sort_values('Total Amount (₹L)', ascending=False)
+        
+        st.dataframe(
+            detailed_metrics,
+            column_config={
+                'Total Amount (₹L)': st.column_config.NumberColumn(
+                    'Total Amount (₹L)',
+                    format="₹%.1fL"
+                )
+            },
+            use_container_width=True
+        )
 
 def format_metric(value, metric_type):
     """Helper function to format metric values"""
