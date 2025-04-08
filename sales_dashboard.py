@@ -1647,35 +1647,35 @@ def show_ytd_dashboard():
     metrics = {
         'Total Pipeline': {
             'icon': '📈',
-            'current': float(df_current_filtered['Amount'].sum() or 0) / 100000,
-            'previous': float(df_previous_filtered['Amount'].sum() or 0) / 100000,
+            'current': df_current_filtered['Amount'].sum() / 100000,
+            'previous': df_previous_filtered['Amount'].sum() / 100000,
             'description': 'Total pipeline value across all stages',
             'gradient': 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
-            'trend_icon': '↗️' if float(df_current_filtered['Amount'].sum() or 0) > float(df_previous_filtered['Amount'].sum() or 0) else '↘️'
+            'trend_icon': '↗️' if (df_current_filtered['Amount'].sum() / 100000) > (df_previous_filtered['Amount'].sum() / 100000) else '↘️'
         },
         'Closed Won': {
             'icon': '🎯',
-            'current': float(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / 100000 if status_column else 0,
-            'previous': float(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / 100000 if status_column else 0,
+            'current': df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000 if status_column else 0,
+            'previous': df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000 if status_column else 0,
             'description': 'Successfully closed deals',
             'gradient': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-            'trend_icon': '↗️' if float(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) > float(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) else '↘️' if status_column else '➖'
+            'trend_icon': '↗️' if (df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000) > (df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000) else '↘️' if status_column else '➖'
         },
         'Win Rate': {
             'icon': '🏆',
-            'current': float(len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_current_filtered) * 100) if status_column and len(df_current_filtered) > 0 else 0,
-            'previous': float(len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_previous_filtered) * 100) if status_column and len(df_previous_filtered) > 0 else 0,
+            'current': (len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_current_filtered) * 100) if status_column and len(df_current_filtered) > 0 else 0,
+            'previous': (len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_previous_filtered) * 100) if status_column and len(df_previous_filtered) > 0 else 0,
             'description': 'Deal success rate',
             'gradient': 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
-            'trend_icon': '↗️' if float(len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_current_filtered) * 100) > float(len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_previous_filtered) * 100) else '↘️'
+            'trend_icon': '↗️' if ((len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_current_filtered) * 100) if status_column and len(df_current_filtered) > 0 else 0) > ((len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_previous_filtered) * 100) if status_column and len(df_previous_filtered) > 0 else 0) else '↘️'
         },
         'Average Deal Size': {
             'icon': '💰',
-            'current': float(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / (len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) or 1) / 100000 if status_column else 0,
-            'previous': float(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / (len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) or 1) / 100000 if status_column else 0,
+            'current': (df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)])) / 100000 if status_column and len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) > 0 else 0,
+            'previous': (df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)])) / 100000 if status_column and len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) > 0 else 0,
             'description': 'Average value per won deal',
             'gradient': 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-            'trend_icon': '↗️' if float(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / (len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) or 1) > float(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / (len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) or 1) else '↘️'
+            'trend_icon': '↗️' if ((df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)])) / 100000 if status_column and len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) > 0 else 0) > ((df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)])) / 100000 if status_column and len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) > 0 else 0) else '↘️'
         }
     }
 
@@ -2167,136 +2167,6 @@ def show_pipeline_analysis():
         fig_timeline.update_traces(line_color='#4CAF50')
         st.plotly_chart(fig_timeline, use_container_width=True)
 
-def display_quarter_summary_dashboard():
-    """Display the Quarter Summary Dashboard with comparisons"""
-    if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
-        st.warning("Please upload data first.")
-        return
-
-    st.markdown("""
-        <div style='
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            padding: 2rem;
-            border-radius: 20px;
-            margin-bottom: 2rem;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-        '>
-            <h2 style='
-                color: white;
-                text-align: center;
-                font-size: 2.2rem;
-                font-weight: 700;
-                margin: 0;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-            '>Quarter Summary Dashboard</h2>
-        </div>
-    """, unsafe_allow_html=True)
-
-    # Rest of the dashboard display code remains the same
-    df_current = st.session_state.df_current
-    df_previous = st.session_state.df_previous
-
-    # Create filters in the sidebar
-    st.sidebar.markdown("### Filters")
-    
-    # Sales Owner filter
-    sales_owners = sorted(df_current['Sales Owner'].unique())
-    selected_owner = st.sidebar.selectbox('Select Sales Owner', ['All'] + list(sales_owners))
-    
-    # Quarter filter
-    quarters = sorted(df_current['Quarter'].unique())
-    selected_quarter = st.sidebar.selectbox('Select Quarter', list(quarters))
-    
-    # Practice filter
-    practices = sorted(df_current['Practice'].unique())
-    selected_practice = st.sidebar.selectbox('Select Practice', ['All'] + list(practices))
-
-    # Filter the dataframes
-    df_current_filtered = df_current.copy()
-    df_previous_filtered = df_previous.copy()
-
-    if selected_owner != 'All':
-        df_current_filtered = df_current_filtered[df_current_filtered['Sales Owner'] == selected_owner]
-        df_previous_filtered = df_previous_filtered[df_previous_filtered['Sales Owner'] == selected_owner]
-
-    if selected_practice != 'All':
-        df_current_filtered = df_current_filtered[df_current_filtered['Practice'] == selected_practice]
-        df_previous_filtered = df_previous_filtered[df_previous_filtered['Practice'] == selected_practice]
-
-    df_current_filtered = df_current_filtered[df_current_filtered['Quarter'] == selected_quarter]
-    df_previous_filtered = df_previous_filtered[df_previous_filtered['Quarter'] == selected_quarter]
-
-    # Calculate metrics
-    metrics = {
-        'Committed Data': {
-            'current': df_current_filtered[df_current_filtered['Type'] == 'Committed']['Amount'].sum(),
-            'previous': df_previous_filtered[df_previous_filtered['Type'] == 'Committed']['Amount'].sum()
-        },
-        'Upside Data': {
-            'current': df_current_filtered[df_current_filtered['Type'] == 'Upside']['Amount'].sum(),
-            'previous': df_previous_filtered[df_previous_filtered['Type'] == 'Upside']['Amount'].sum()
-        },
-        'Closed Won': {
-            'current': df_current_filtered[df_current_filtered['Sales Stage'] == 'Closed Won']['Amount'].sum(),
-            'previous': df_previous_filtered[df_previous_filtered['Sales Stage'] == 'Closed Won']['Amount'].sum()
-        }
-    }
-
-    # Display metrics in a modern card layout
-    col1, col2, col3 = st.columns(3)
-    
-    for (metric_name, values), col in zip(metrics.items(), [col1, col2, col3]):
-        current_value = values['current'] / 100000  # Convert to Lakhs
-        previous_value = values['previous'] / 100000  # Convert to Lakhs
-        delta = current_value - previous_value
-        delta_percent = (delta / previous_value * 100) if previous_value != 0 else 0
-        
-        with col:
-            st.markdown(f"""
-                <div style='
-                    background: white;
-                    padding: 1.5rem;
-                    border-radius: 15px;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                    text-align: center;
-                    height: 100%;
-                '>
-                    <h3 style='
-                        color: #333;
-                        font-size: 1.1rem;
-                        margin-bottom: 0.5rem;
-                    '>{metric_name}</h3>
-                    <p style='
-                        color: #2196F3;
-                        font-size: 1.8rem;
-                        font-weight: 700;
-                        margin: 0;
-                    '>₹{current_value:.2f}L</p>
-                    <p style='
-                        color: {"#4CAF50" if delta >= 0 else "#F44336"};
-                        font-size: 1rem;
-                        margin-top: 0.5rem;
-                    '>
-                        {"+₹" if delta >= 0 else "-₹"}{abs(delta):.2f}L
-                        ({"+{:.1f}%" if delta >= 0 else "{:.1f}%"}.format(delta_percent))
-                    </p>
-                </div>
-            """, unsafe_allow_html=True)
-
-    # Display Overall Committed Data
-    st.markdown("### Overall Committed Data")
-    total_current = metrics['Committed Data']['current'] / 100000
-    total_previous = metrics['Committed Data']['previous'] / 100000
-    total_delta = total_current - total_previous
-    total_delta_percent = (total_delta / total_previous * 100) if total_previous != 0 else 0
-
-    st.metric(
-        "Total Committed Amount",
-        f"₹{total_current:.2f}L",
-        f"{'+' if total_delta >= 0 else ''}{total_delta:.2f}L ({total_delta_percent:.1f}%)",
-        delta_color="normal" if total_delta >= 0 else "inverse"
-    )
-
 def main():
     # Initialize session state for navigation if not exists
     if 'current_page' not in st.session_state:
@@ -2311,15 +2181,15 @@ def main():
     else:
         st.session_state.current_page = st.sidebar.radio(
             "Select a page",
-            ["Data Input", "Quarter Summary Dashboard", "Overview", "Sales Team", "Pipeline Analysis", 
+            ["Data Input", "Dashboard (Quarter Summary)", "Overview", "Sales Team", "Pipeline Analysis", 
              "YTD Dashboard", "Detailed Data"]
         )
 
     # Display the selected page
     if st.session_state.current_page == "Data Input":
         display_data_input()
-    elif st.session_state.current_page == "Quarter Summary Dashboard":
-        display_quarter_summary_dashboard()
+    elif st.session_state.current_page == "Dashboard (Quarter Summary)":
+        display_dashboard()
     elif st.session_state.current_page == "Overview":
         show_overview()
     elif st.session_state.current_page == "Sales Team":
