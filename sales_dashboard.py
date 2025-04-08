@@ -1387,22 +1387,32 @@ def show_detailed():
     st.dataframe(df, use_container_width=True)
 
 def main():
-    with st.sidebar:
-        st.title("Navigation")
-        selected = st.radio(
-            "Select View",
-            options=["Data Input", "Overview", "Sales Team", "Detailed Data"],
-            key="navigation"
-        )
-        st.session_state.current_view = selected.lower().replace(" ", "_")
+    st.set_page_config(page_title="Sales Dashboard", layout="wide")
     
-    if st.session_state.current_view == "data_input":
-        show_data_input()
-    elif st.session_state.current_view == "overview":
+    # Initialize session state for navigation if not exists
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "Data Input"
+
+    # Sidebar navigation
+    st.sidebar.title("Navigation")
+    
+    # First check if data is uploaded
+    if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
+        st.session_state.current_page = "Data Input"
+    else:
+        st.session_state.current_page = st.sidebar.radio(
+            "Select a page",
+            ["Data Input", "Overview", "Sales Team", "Detailed Data"]
+        )
+
+    # Display the selected page
+    if st.session_state.current_page == "Data Input":
+        display_data_input()
+    elif st.session_state.current_page == "Overview":
         show_overview()
-    elif st.session_state.current_view == "sales_team":
+    elif st.session_state.current_page == "Sales Team":
         show_sales_team()
-    elif st.session_state.current_view == "detailed_data":
+    elif st.session_state.current_page == "Detailed Data":
         show_detailed()
 
 if __name__ == "__main__":
