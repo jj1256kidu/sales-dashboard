@@ -434,12 +434,36 @@ def show_data_input():
                 else:
                     df = pd.read_csv(uploaded_file)
                 
+                # Standardize column names
+                column_mapping = {
+                    'Sales Team Member': 'Sales Owner',
+                    'Deal Value': 'Amount',
+                    'Status': 'Sales Stage',
+                    'Technical Lead': 'Pre-sales Technical Lead',
+                    'Expected Close Date': 'Expected Close Date'
+                }
+                
+                # Rename columns if they exist
+                for old_col, new_col in column_mapping.items():
+                    if old_col in df.columns:
+                        df = df.rename(columns={old_col: new_col})
+                
+                # Process dates
+                if 'Expected Close Date' in df.columns:
+                    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'])
+                    df['Month'] = df['Expected Close Date'].dt.strftime('%B')
+                    df['Year'] = df['Expected Close Date'].dt.year
+                    df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
+                
                 st.session_state.df = df
                 st.success(f"Successfully loaded {len(df):,} records")
                 
                 # Preview the data
                 st.subheader("Data Preview")
                 st.dataframe(df.head(), use_container_width=True)
+                
+                # Display column mapping info
+                st.info("Column names have been standardized for consistency across the dashboard")
                 
             except Exception as e:
                 st.error(f"Error: {str(e)}")
@@ -449,9 +473,10 @@ def show_data_input():
         <div class="info-box">
             <h4>Required Data Fields</h4>
             <ul>
-                <li>Amount</li>
-                <li>Sales Stage</li>
+                <li>Amount (or Deal Value)</li>
+                <li>Sales Stage (or Status)</li>
                 <li>Expected Close Date</li>
+                <li>Sales Owner (or Sales Team Member)</li>
                 <li>Practice/Region</li>
             </ul>
             <h4>File Formats</h4>
@@ -1400,7 +1425,7 @@ def show_quarter_summary():
     col1, col2, col3 = st.columns([1.2, 1.2, 1.2])
     
     with col1:
-        sales_owners = sorted(df['Sales Team Member'].dropna().unique().tolist())
+        sales_owners = sorted(df['Sales Owner'].dropna().unique().tolist())
         selected_sales_owner = st.selectbox("👤 Sales Owner", ["All Sales Owners"] + sales_owners)
     
     with col2:
@@ -1414,29 +1439,29 @@ def show_quarter_summary():
     # Apply filters
     filtered_df = df.copy()
     if selected_sales_owner != "All Sales Owners":
-        filtered_df = filtered_df[filtered_df['Sales Team Member'] == selected_sales_owner]
+        filtered_df = filtered_df[filtered_df['Sales Owner'] == selected_sales_owner]
     if selected_quarter != "All Quarters":
         filtered_df = filtered_df[filtered_df['Quarter'] == selected_quarter]
     if selected_practice != "All Practices":
         filtered_df = filtered_df[filtered_df['Practice'] == selected_practice]
     
     # Calculate metrics
-    committed_current = filtered_df[filtered_df['Status'] == "Committed for the Month"]['Deal Value'].sum()
-    upside_current = filtered_df[filtered_df['Status'] == "Upsides for the Month"]['Deal Value'].sum()
-    closed_won_current = filtered_df[filtered_df['Status'] == "Closed Won"]['Deal Value'].sum()
+    committed_current = filtered_df[filtered_df['Sales Stage'] == "Committed for the Month"]['Amount'].sum()
+    upside_current = filtered_df[filtered_df['Sales Stage'] == "Upsides for the Month"]['Amount'].sum()
+    closed_won_current = filtered_df[filtered_df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
     
     # Calculate previous period metrics (assuming previous quarter)
     previous_quarter = str(int(selected_quarter[1:]) - 1) if selected_quarter != "All Quarters" else "Q4"
     previous_df = df[df['Quarter'] == previous_quarter]
     
     if selected_sales_owner != "All Sales Owners":
-        previous_df = previous_df[previous_df['Sales Team Member'] == selected_sales_owner]
+        previous_df = previous_df[previous_df['Sales Owner'] == selected_sales_owner]
     if selected_practice != "All Practices":
         previous_df = previous_df[previous_df['Practice'] == selected_practice]
     
-    committed_previous = previous_df[previous_df['Status'] == "Committed for the Month"]['Deal Value'].sum()
-    upside_previous = previous_df[previous_df['Status'] == "Upsides for the Month"]['Deal Value'].sum()
-    closed_won_previous = previous_df[previous_df['Status'] == "Closed Won"]['Deal Value'].sum()
+    committed_previous = previous_df[previous_df['Sales Stage'] == "Committed for the Month"]['Amount'].sum()
+    upside_previous = previous_df[previous_df['Sales Stage'] == "Upsides for the Month"]['Amount'].sum()
+    closed_won_previous = previous_df[previous_df['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
     
     # Calculate deltas
     committed_delta = committed_current - committed_previous
