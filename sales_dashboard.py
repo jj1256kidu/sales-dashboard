@@ -1156,10 +1156,10 @@ def show_sales_team():
     team_metrics = df.groupby('Sales Owner').agg({
         'Amount': 'sum',
         'Sales Stage': 'count',
-        'Is_Won': 'sum'
+        'Closed Won': 'sum'
     }).reset_index()
     
-    team_metrics['Win Rate'] = (team_metrics['Is_Won'] / team_metrics['Sales Stage'] * 100).round(1)
+    team_metrics['Win Rate'] = (team_metrics['Closed Won'] / team_metrics['Sales Stage'] * 100).round(1)
     team_metrics['Amount'] = team_metrics['Amount'].div(100000).round(0).astype(int)
     
     # Display team metrics in a table
@@ -1169,7 +1169,7 @@ def show_sales_team():
             'Sales Owner': 'Sales Owner',
             'Amount': 'Total Amount (Lakhs)',
             'Sales Stage': 'Total Deals',
-            'Is_Won': 'Won Deals',
+            'Closed Won': 'Won Deals',
             'Win Rate': 'Win Rate (%)'
         }),
         use_container_width=True
@@ -1207,10 +1207,10 @@ def show_sales_team():
     practice_metrics = df.groupby('Practice').agg({
         'Amount': 'sum',
         'Sales Stage': 'count',
-        'Is_Won': 'sum'
+        'Closed Won': 'sum'
     }).reset_index()
     
-    practice_metrics['Win Rate'] = (practice_metrics['Is_Won'] / practice_metrics['Sales Stage'] * 100).round(1)
+    practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Sales Stage'] * 100).round(1)
     practice_metrics['Amount'] = practice_metrics['Amount'].div(100000).round(0).astype(int)
     
     st.dataframe(
@@ -1218,7 +1218,7 @@ def show_sales_team():
             'Practice': 'Practice',
             'Amount': 'Total Amount (Lakhs)',
             'Sales Stage': 'Total Deals',
-            'Is_Won': 'Won Deals',
+            'Closed Won': 'Won Deals',
             'Win Rate': 'Win Rate (%)'
         }),
         use_container_width=True
