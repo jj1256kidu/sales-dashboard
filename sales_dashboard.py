@@ -1443,51 +1443,56 @@ def show_quarterly_summary():
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        quarterly_pipeline = quarter_data['Deal Value'].sum()
-        st.metric("Total Pipeline", f"₹{quarterly_pipeline:,.2f}")
+        quarterly_pipeline = quarter_data['Amount'].sum() / 100000  # Convert to Lakhs
+        st.metric("Total Pipeline", f"₹{quarterly_pipeline:.0f}L")
     
     with col2:
-        closed_won = quarter_data[quarter_data['Status'] == 'Closed Won']['Deal Value'].sum()
-        st.metric("Closed Won", f"₹{closed_won:,.2f}")
+        closed_won = quarter_data[quarter_data['Sales Stage'] == 'Closed Won']['Amount'].sum() / 100000  # Convert to Lakhs
+        st.metric("Closed Won", f"₹{closed_won:.0f}L")
     
     with col3:
-        win_rate = (len(quarter_data[quarter_data['Status'] == 'Closed Won']) / len(quarter_data) * 100) if len(quarter_data) > 0 else 0
+        win_rate = (len(quarter_data[quarter_data['Sales Stage'] == 'Closed Won']) / len(quarter_data) * 100) if len(quarter_data) > 0 else 0
         st.metric("Win Rate", f"{win_rate:.1f}%")
     
     with col4:
-        avg_deal_size = quarterly_pipeline / len(quarter_data) if len(quarter_data) > 0 else 0
-        st.metric("Average Deal Size", f"₹{avg_deal_size:,.2f}")
+        avg_deal_size = (quarterly_pipeline / len(quarter_data)) if len(quarter_data) > 0 else 0
+        st.metric("Average Deal Size", f"₹{avg_deal_size:.0f}L")
     
     # Monthly Breakdown within Quarter
     st.subheader("Monthly Breakdown")
     monthly_data = quarter_data.groupby('Month').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Closed Won').sum(),
-        'Opportunity Name': 'count'
+        'Amount': lambda x: x.sum() / 100000,  # Convert to Lakhs
+        'Sales Stage': lambda x: (x == 'Closed Won').sum(),
+        'Organization Name': 'count'  # Count of opportunities
     }).reset_index()
     monthly_data.columns = ['Month', 'Pipeline Value', 'Closed Won Deals', 'Total Deals']
+    
+    # Sort months in correct order for the quarter
+    monthly_data['Month'] = pd.Categorical(monthly_data['Month'], categories=quarter_months[selected_quarter], ordered=True)
+    monthly_data = monthly_data.sort_values('Month')
+    
     st.dataframe(monthly_data.style.format({
-        'Pipeline Value': '₹{:,.2f}',
-        'Closed Won Deals': '{:,.0f}',
-        'Total Deals': '{:,.0f}'
+        'Pipeline Value': '₹{:.0f}L',
+        'Closed Won Deals': '{:.0f}',
+        'Total Deals': '{:.0f}'
     }), use_container_width=True)
     
     # Practice Performance in Quarter
     st.subheader("Practice Performance")
     if 'Practice' in quarter_data.columns:
         practice_data = quarter_data.groupby('Practice').agg({
-            'Deal Value': 'sum',
-            'Status': lambda x: (x == 'Closed Won').sum(),
-            'Opportunity Name': 'count'
+            'Amount': lambda x: x.sum() / 100000,  # Convert to Lakhs
+            'Sales Stage': lambda x: (x == 'Closed Won').sum(),
+            'Organization Name': 'count'  # Count of opportunities
         }).reset_index()
         practice_data.columns = ['Practice', 'Pipeline Value', 'Closed Won Deals', 'Total Deals']
         practice_data['Win Rate'] = (practice_data['Closed Won Deals'] / practice_data['Total Deals'] * 100).round(1)
         
         # Practice performance table
         st.dataframe(practice_data.style.format({
-            'Pipeline Value': '₹{:,.2f}',
-            'Closed Won Deals': '{:,.0f}',
-            'Total Deals': '{:,.0f}',
+            'Pipeline Value': '₹{:.0f}L',
+            'Closed Won Deals': '{:.0f}',
+            'Total Deals': '{:.0f}',
             'Win Rate': '{:.1f}%'
         }), use_container_width=True)
         
@@ -1499,27 +1504,34 @@ def show_quarterly_summary():
     
     # Team Performance in Quarter
     st.subheader("Team Performance")
-    team_data = quarter_data.groupby('Sales Team Member').agg({
-        'Deal Value': 'sum',
-        'Status': lambda x: (x == 'Closed Won').sum(),
-        'Opportunity Name': 'count'
+    team_data = quarter_data.groupby('Sales Owner').agg({
+        'Amount': lambda x: x.sum() / 100000,  # Convert to Lakhs
+        'Sales Stage': lambda x: (x == 'Closed Won').sum(),
+        'Organization Name': 'count'  # Count of opportunities
     }).reset_index()
     team_data.columns = ['Sales Team Member', 'Pipeline Value', 'Closed Won Deals', 'Total Deals']
     team_data['Win Rate'] = (team_data['Closed Won Deals'] / team_data['Total Deals'] * 100).round(1)
     
     # Team performance table
     st.dataframe(team_data.style.format({
-        'Pipeline Value': '₹{:,.2f}',
-        'Closed Won Deals': '{:,.0f}',
-        'Total Deals': '{:,.0f}',
+        'Pipeline Value': '₹{:.0f}L',
+        'Closed Won Deals': '{:.0f}',
+        'Total Deals': '{:.0f}',
         'Win Rate': '{:.1f}%'
     }), use_container_width=True)
     
     # Pipeline Trend Chart
     st.subheader("Pipeline Trend")
-    trend_data = quarter_data.groupby(['Month', 'Status'])['Deal Value'].sum().reset_index()
-    fig = px.bar(trend_data, x='Month', y='Deal Value', color='Status',
+    trend_data = quarter_data.groupby(['Month', 'Sales Stage'])['Amount'].sum().reset_index()
+    trend_data['Amount'] = trend_data['Amount'] / 100000  # Convert to Lakhs
+    
+    # Sort months in correct order
+    trend_data['Month'] = pd.Categorical(trend_data['Month'], categories=quarter_months[selected_quarter], ordered=True)
+    trend_data = trend_data.sort_values('Month')
+    
+    fig = px.bar(trend_data, x='Month', y='Amount', color='Sales Stage',
                  title=f'Pipeline Trend by Status - {selected_quarter}',
+                 labels={'Amount': 'Amount (Lakhs)'},
                  barmode='group')
     st.plotly_chart(fig, use_container_width=True)
 
