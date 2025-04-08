@@ -1674,26 +1674,38 @@ def display_dashboard():
 
 def display_data_input():
     st.title("Data Input")
-    st.write("Please upload your Excel files for current and previous week data.")
+    st.write("Please upload your Excel file containing both current and previous week data in different sheets.")
 
-    # File upload for current week
-    current_week_file = st.file_uploader("Upload Current Week Data (Excel/CSV)", type=['xlsx', 'csv'], key='current_week')
-    
-    # File upload for previous week
-    previous_week_file = st.file_uploader("Upload Previous Week Data (Excel/CSV)", type=['xlsx', 'csv'], key='previous_week')
+    # Single file upload for Excel
+    uploaded_file = st.file_uploader("Upload Excel File", type=['xlsx'], key='excel_file')
 
-    if current_week_file is not None and previous_week_file is not None:
+    if uploaded_file is not None:
         try:
-            # Read the uploaded files
-            if current_week_file.name.endswith('.csv'):
-                df_current = pd.read_csv(current_week_file)
-            else:
-                df_current = pd.read_excel(current_week_file)
+            # Read the Excel file and get sheet names
+            excel_file = pd.ExcelFile(uploaded_file)
+            sheet_names = excel_file.sheet_names
 
-            if previous_week_file.name.endswith('.csv'):
-                df_previous = pd.read_csv(previous_week_file)
-            else:
-                df_previous = pd.read_excel(previous_week_file)
+            # Sheet selection for current week
+            current_week_sheet = st.selectbox(
+                "Select Current Week Sheet",
+                options=sheet_names,
+                key="current_week_sheet"
+            )
+
+            # Sheet selection for previous week
+            previous_week_sheet = st.selectbox(
+                "Select Previous Week Sheet",
+                options=sheet_names,
+                key="previous_week_sheet"
+            )
+
+            if current_week_sheet == previous_week_sheet:
+                st.warning("Please select different sheets for current and previous week data.")
+                return
+
+            # Read the selected sheets
+            df_current = pd.read_excel(uploaded_file, sheet_name=current_week_sheet)
+            df_previous = pd.read_excel(uploaded_file, sheet_name=previous_week_sheet)
 
             # Store the dataframes in session state
             st.session_state.df_current = df_current
