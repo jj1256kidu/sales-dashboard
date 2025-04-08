@@ -1155,21 +1155,35 @@ def show_sales_team():
     # Calculate team metrics
     team_metrics = df.groupby('Sales Owner').agg({
         'Amount': 'sum',
-        'Sales Stage': 'count',
-        'Closed Won': 'sum'
+        'Sales Stage': 'count'
     }).reset_index()
     
-    team_metrics['Win Rate'] = (team_metrics['Closed Won'] / team_metrics['Sales Stage'] * 100).round(1)
-    team_metrics['Amount'] = team_metrics['Amount'].div(100000).round(0).astype(int)
+    # Calculate won deals based on Sales Stage
+    won_deals = df[df['Sales Stage'].apply(lambda x: 'Won' in str(x) if pd.notna(x) else False)]
+    won_metrics = won_deals.groupby('Sales Owner').agg({
+        'Amount': 'sum',
+        'Sales Stage': 'count'
+    }).reset_index()
+    
+    # Merge won metrics with team metrics
+    team_metrics = team_metrics.merge(
+        won_metrics[['Sales Owner', 'Amount', 'Sales Stage']],
+        on='Sales Owner',
+        how='left',
+        suffixes=('_total', '_won')
+    ).fillna(0)
+    
+    team_metrics['Win Rate'] = (team_metrics['Sales Stage_won'] / team_metrics['Sales Stage_total'] * 100).round(1)
+    team_metrics['Amount_total'] = team_metrics['Amount_total'].div(100000).round(0).astype(int)
     
     # Display team metrics in a table
     st.subheader("Team Performance Metrics")
     st.dataframe(
         team_metrics.rename(columns={
             'Sales Owner': 'Sales Owner',
-            'Amount': 'Total Amount (Lakhs)',
-            'Sales Stage': 'Total Deals',
-            'Closed Won': 'Won Deals',
+            'Amount_total': 'Total Amount (Lakhs)',
+            'Sales Stage_total': 'Total Deals',
+            'Sales Stage_won': 'Won Deals',
             'Win Rate': 'Win Rate (%)'
         }),
         use_container_width=True
@@ -1183,9 +1197,9 @@ def show_sales_team():
         fig = px.bar(
             team_metrics,
             x='Sales Owner',
-            y='Amount',
+            y='Amount_total',
             title='Total Amount by Sales Owner',
-            labels={'Amount': 'Amount (Lakhs)'}
+            labels={'Amount_total': 'Amount (Lakhs)'}
         )
         st.plotly_chart(fig, use_container_width=True)
     
@@ -1206,19 +1220,32 @@ def show_sales_team():
     st.subheader("Practice Performance")
     practice_metrics = df.groupby('Practice').agg({
         'Amount': 'sum',
-        'Sales Stage': 'count',
-        'Closed Won': 'sum'
+        'Sales Stage': 'count'
     }).reset_index()
     
-    practice_metrics['Win Rate'] = (practice_metrics['Closed Won'] / practice_metrics['Sales Stage'] * 100).round(1)
-    practice_metrics['Amount'] = practice_metrics['Amount'].div(100000).round(0).astype(int)
+    # Calculate won deals for practices
+    won_practice = won_deals.groupby('Practice').agg({
+        'Amount': 'sum',
+        'Sales Stage': 'count'
+    }).reset_index()
+    
+    # Merge won metrics with practice metrics
+    practice_metrics = practice_metrics.merge(
+        won_practice[['Practice', 'Amount', 'Sales Stage']],
+        on='Practice',
+        how='left',
+        suffixes=('_total', '_won')
+    ).fillna(0)
+    
+    practice_metrics['Win Rate'] = (practice_metrics['Sales Stage_won'] / practice_metrics['Sales Stage_total'] * 100).round(1)
+    practice_metrics['Amount_total'] = practice_metrics['Amount_total'].div(100000).round(0).astype(int)
     
     st.dataframe(
         practice_metrics.rename(columns={
             'Practice': 'Practice',
-            'Amount': 'Total Amount (Lakhs)',
-            'Sales Stage': 'Total Deals',
-            'Closed Won': 'Won Deals',
+            'Amount_total': 'Total Amount (Lakhs)',
+            'Sales Stage_total': 'Total Deals',
+            'Sales Stage_won': 'Won Deals',
             'Win Rate': 'Win Rate (%)'
         }),
         use_container_width=True
