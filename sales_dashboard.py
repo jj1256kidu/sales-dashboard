@@ -296,6 +296,13 @@ def process_data(df):
     """Process and prepare data for the dashboard"""
     df = df.copy()
     
+    # Check for duplicate indices
+    if df.index.duplicated().any():
+        st.warning(f"Found {df.index.duplicated().sum()} duplicate indices in the data")
+        st.write("Duplicate indices:", df.index[df.index.duplicated()].tolist())
+        # Reset index to remove duplicates
+        df = df.reset_index(drop=True)
+    
     # Handle duplicate columns by keeping only the first occurrence
     df = df.loc[:, ~df.columns.duplicated()]
     
