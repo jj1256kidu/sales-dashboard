@@ -460,74 +460,81 @@ def show_data_input():
                     selected_current_sheet = st.selectbox("Select Current Week Sheet", sheet_names)
                     selected_previous_sheet = st.selectbox("Select Previous Week Sheet", sheet_names)
                     
-                    # Loads data from both sheets
+                    # Read and display the current and previous sheet data
                     df_current = pd.read_excel(uploaded_file, sheet_name=selected_current_sheet)
                     df_previous = pd.read_excel(uploaded_file, sheet_name=selected_previous_sheet)
                     
-                    # Standardize column names
+                    # Clean column names
+                    df_current.columns = df_current.columns.str.strip()
+                    df_previous.columns = df_previous.columns.str.strip()
+                    
+                    # Handle duplicate columns in both dataframes
+                    df_current = df_current.loc[:, ~df_current.columns.duplicated()]
+                    df_previous = df_previous.loc[:, ~df_previous.columns.duplicated()]
+                    
+                    # Standardize column names for both dataframes
                     column_mapping = {
                         'Sales Team Member': 'Sales Owner',
                         'Deal Value': 'Amount',
                         'Status': 'Sales Stage',
                         'Technical Lead': 'Pre-sales Technical Lead',
-                        'Expected Close Date': 'Expected Close Date'
+                        'Expected Close Date': 'Expected Close Date',
+                        'Hunting/Farming': 'Type',
+                        'Hunting /farming': 'Type',
+                        'Sales_Stage': 'Sales Stage',
+                        'Month_1': 'Month',
+                        'Short Month': 'Month',
+                        'Short Year(25)': 'Year',
+                        'Year in FY': 'Year',
+                        'FY': 'Year',
+                        'Merge COlumn': 'Practice',
+                        'P & L Centre': 'Practice'
                     }
                     
-                    # Rename columns if they exist
+                    # Rename columns if they exist in current week data
                     for old_col, new_col in column_mapping.items():
                         if old_col in df_current.columns:
                             df_current = df_current.rename(columns={old_col: new_col})
                     
-                    # Process dates
-                    if 'Expected Close Date' in df_current.columns:
-                        df_current['Expected Close Date'] = pd.to_datetime(df_current['Expected Close Date'])
-                        df_current['Month'] = df_current['Expected Close Date'].dt.strftime('%B')
-                        df_current['Year'] = df_current['Expected Close Date'].dt.year
-                        df_current['Quarter'] = df_current['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
+                    # Rename columns if they exist in previous week data
+                    for old_col, new_col in column_mapping.items():
+                        if old_col in df_previous.columns:
+                            df_previous = df_previous.rename(columns={old_col: new_col})
                     
-                    st.session_state.df = df_current
-                    st.success(f"Successfully loaded {len(df_current):,} records")
+                    # Store in session state for use in Dashboard
+                    st.session_state.df_current = df_current
+                    st.session_state.df_previous = df_previous
+                    st.session_state.df = df_current  # Keep main df as current week for compatibility
                     
-                    # Preview the data
-                    st.subheader("Data Preview")
+                    # Preview Section with better formatting
+                    st.markdown("### Data Preview")
+                    
+                    st.markdown(f"""
+                        <div style='background: #f0f2f6; padding: 15px; border-radius: 10px; margin: 10px 0;'>
+                            <h4 style='color: #2a5298; margin: 0;'>Current Week Data from {selected_current_sheet}</h4>
+                        </div>
+                    """, unsafe_allow_html=True)
                     st.dataframe(df_current.head(), use_container_width=True)
+                    
+                    st.markdown(f"""
+                        <div style='background: #f0f2f6; padding: 15px; border-radius: 10px; margin: 10px 0;'>
+                            <h4 style='color: #2a5298; margin: 0;'>Previous Week Data from {selected_previous_sheet}</h4>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    st.dataframe(df_previous.head(), use_container_width=True)
+                    
+                    # Success message with record counts
+                    st.success(f"""
+                        Successfully loaded:
+                        - Current week: {len(df_current):,} records
+                        - Previous week: {len(df_previous):,} records
+                    """)
                     
                     # Display column mapping info
                     st.info("Column names have been standardized for consistency across the dashboard")
                     
                 else:
-                    df = pd.read_csv(uploaded_file)
-                
-                # Standardize column names
-                column_mapping = {
-                    'Sales Team Member': 'Sales Owner',
-                    'Deal Value': 'Amount',
-                    'Status': 'Sales Stage',
-                    'Technical Lead': 'Pre-sales Technical Lead',
-                    'Expected Close Date': 'Expected Close Date'
-                }
-                
-                # Rename columns if they exist
-                for old_col, new_col in column_mapping.items():
-                    if old_col in df.columns:
-                        df = df.rename(columns={old_col: new_col})
-                
-                # Process dates
-                if 'Expected Close Date' in df.columns:
-                    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'])
-                    df['Month'] = df['Expected Close Date'].dt.strftime('%B')
-                    df['Year'] = df['Expected Close Date'].dt.year
-                    df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
-                
-                st.session_state.df = df
-                st.success(f"Successfully loaded {len(df):,} records")
-                
-                # Preview the data
-                st.subheader("Data Preview")
-                st.dataframe(df.head(), use_container_width=True)
-                
-                # Display column mapping info
-                st.info("Column names have been standardized for consistency across the dashboard")
+                    st.error("Please upload an Excel file (.xlsx)")
                 
             except Exception as e:
                 st.error(f"Error: {str(e)}")
