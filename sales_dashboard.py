@@ -1534,7 +1534,7 @@ def show_detailed():
     
     st.dataframe(df, use_container_width=True)
 
-def show_quarterly_summary():
+def show_ytd_dashboard():  # Renamed from show_quarterly_summary
     if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
         st.warning("Please upload data first.")
         return
@@ -1562,7 +1562,7 @@ def show_quarterly_summary():
                 font-weight: 700;
                 letter-spacing: 1px;
                 text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
-            '>Quarterly Performance Dashboard</h1>
+            '>YTD Performance Dashboard</h1>
         </div>
     """, unsafe_allow_html=True)
     
@@ -1570,16 +1570,35 @@ def show_quarterly_summary():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        # Convert quarters to strings and ensure proper formatting
-        def format_quarter(q):
-            if pd.isna(q):
-                return 'Unknown'
-            if isinstance(q, (int, float)):
-                return f'Q{int(q)}'
-            return str(q)
+        # Define standard quarters
+        standard_quarters = ['Q1', 'Q2', 'Q3', 'Q4']
         
-        quarters = df_current['Quarter'].apply(format_quarter).unique()
-        valid_quarters = ['All'] + sorted([q for q in quarters if q != 'Unknown' and q.startswith('Q')])
+        # Function to standardize quarter format
+        def standardize_quarter(q):
+            if pd.isna(q):
+                return None
+            if isinstance(q, (int, float)):
+                q_int = int(q)
+                if 1 <= q_int <= 4:
+                    return f'Q{q_int}'
+            elif isinstance(q, str) and q.startswith('Q'):
+                q_num = q[1:]
+                try:
+                    q_int = int(q_num)
+                    if 1 <= q_int <= 4:
+                        return f'Q{q_int}'
+                except ValueError:
+                    pass
+            return None
+
+        # Get unique quarters from both dataframes and standardize them
+        current_quarters = df_current['Quarter'].apply(standardize_quarter).dropna().unique()
+        previous_quarters = df_previous['Quarter'].apply(standardize_quarter).dropna().unique()
+        
+        # Combine and sort quarters
+        all_quarters = sorted(set(current_quarters) | set(previous_quarters))
+        valid_quarters = ['All'] + [q for q in standard_quarters if q in all_quarters]
+        
         selected_quarter = st.selectbox(
             "📅 Select Quarter",
             valid_quarters,
@@ -1605,8 +1624,10 @@ def show_quarterly_summary():
     # Filter data based on selections
     def filter_data(df):
         filtered_df = df.copy()
-        # Format quarters consistently
-        filtered_df['Quarter'] = filtered_df['Quarter'].apply(format_quarter)
+        
+        # Standardize quarters in the filtered dataframe
+        filtered_df['Quarter'] = filtered_df['Quarter'].apply(standardize_quarter)
+        filtered_df = filtered_df[filtered_df['Quarter'].notna()]  # Remove rows with invalid quarters
         
         if selected_quarter != "All":
             filtered_df = filtered_df[filtered_df['Quarter'] == selected_quarter]
@@ -1935,7 +1956,7 @@ def main():
     else:
         st.session_state.current_page = st.sidebar.radio(
             "Select a page",
-            ["Data Input", "Dashboard", "Overview", "Sales Team", "Quarterly Summary", "Detailed Data"]
+            ["Data Input", "Dashboard", "Overview", "Sales Team", "YTD Dashboard", "Detailed Data"]  # Changed from "Quarterly Summary"
         )
 
     # Display the selected page
@@ -1947,8 +1968,8 @@ def main():
         show_overview()
     elif st.session_state.current_page == "Sales Team":
         show_sales_team()
-    elif st.session_state.current_page == "Quarterly Summary":
-        show_quarterly_summary()
+    elif st.session_state.current_page == "YTD Dashboard":  # Changed from "Quarterly Summary"
+        show_ytd_dashboard()  # Changed from show_quarterly_summary
     elif st.session_state.current_page == "Detailed Data":
         show_detailed()
 
