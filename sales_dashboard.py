@@ -1570,10 +1570,19 @@ def show_quarterly_summary():
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        quarters = ["All"] + sorted(df_current['Quarter'].unique().tolist())
+        # Convert quarters to strings and ensure proper formatting
+        def format_quarter(q):
+            if pd.isna(q):
+                return 'Unknown'
+            if isinstance(q, (int, float)):
+                return f'Q{int(q)}'
+            return str(q)
+        
+        quarters = df_current['Quarter'].apply(format_quarter).unique()
+        valid_quarters = ['All'] + sorted([q for q in quarters if q != 'Unknown' and q.startswith('Q')])
         selected_quarter = st.selectbox(
             "📅 Select Quarter",
-            quarters,
+            valid_quarters,
             help="Filter data by quarter"
         )
     
@@ -1596,6 +1605,9 @@ def show_quarterly_summary():
     # Filter data based on selections
     def filter_data(df):
         filtered_df = df.copy()
+        # Format quarters consistently
+        filtered_df['Quarter'] = filtered_df['Quarter'].apply(format_quarter)
+        
         if selected_quarter != "All":
             filtered_df = filtered_df[filtered_df['Quarter'] == selected_quarter]
         if selected_practice != "All":
