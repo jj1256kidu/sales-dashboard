@@ -296,6 +296,33 @@ def process_data(df):
     """Process and prepare data for the dashboard"""
     df = df.copy()
     
+    # Handle duplicate columns by keeping only the first occurrence
+    df = df.loc[:, ~df.columns.duplicated()]
+    
+    # Standardize column names
+    column_mapping = {
+        'Sales Team Member': 'Sales Owner',
+        'Deal Value': 'Amount',
+        'Status': 'Sales Stage',
+        'Technical Lead': 'Pre-sales Technical Lead',
+        'Expected Close Date': 'Expected Close Date',
+        'Hunting/Farming': 'Type',
+        'Hunting /farming': 'Type',
+        'Sales_Stage': 'Sales Stage',
+        'Month_1': 'Month',
+        'Short Month': 'Month',
+        'Short Year(25)': 'Year',
+        'Year in FY': 'Year',
+        'FY': 'Year',
+        'Merge COlumn': 'Practice',
+        'P & L Centre': 'Practice'
+    }
+    
+    # Rename columns if they exist
+    for old_col, new_col in column_mapping.items():
+        if old_col in df.columns:
+            df = df.rename(columns={old_col: new_col})
+    
     # Convert dates and calculate time-based columns at once with explicit dayfirst parameter
     df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', dayfirst=True, errors='coerce')
     df['Month'] = df['Expected Close Date'].dt.strftime('%B')
