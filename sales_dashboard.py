@@ -296,8 +296,8 @@ def process_data(df):
     """Process and prepare data for the dashboard"""
     df = df.copy()
     
-    # Convert dates and calculate time-based columns at once
-    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', errors='coerce')
+    # Convert dates and calculate time-based columns at once with explicit dayfirst parameter
+    df['Expected Close Date'] = pd.to_datetime(df['Expected Close Date'], format='%d-%m-%Y', dayfirst=True, errors='coerce')
     df['Month'] = df['Expected Close Date'].dt.strftime('%B')
     df['Year'] = df['Expected Close Date'].dt.year
     df['Quarter'] = df['Expected Close Date'].dt.quarter.map({1: 'Q1', 2: 'Q2', 3: 'Q3', 4: 'Q4'})
@@ -316,7 +316,7 @@ def process_data(df):
     df['Probability_Num'] = df['Probability'].apply(convert_probability)
     
     # Pre-calculate common flags and metrics with safe null handling
-    df['Is_Won'] = df['Sales Stage'].str.contains('Won', case=False, na=False)
+    df['Is_Won'] = df['Sales Stage'].apply(lambda x: 'Won' in str(x) if pd.notna(x) else False)
     df['Amount_Lacs'] = df['Amount'].fillna(0).div(100000).round(0).astype(int)
     df['Weighted_Amount'] = (df['Amount_Lacs'] * df['Probability_Num'] / 100).round(0).astype(int)
     
@@ -1493,12 +1493,12 @@ def show_quarter_summary():
     # Calculate metrics for current week
     committed_current = current_week[current_week['Sales Stage'] == "Committed for the Month"]['Amount'].sum()
     upside_current = current_week[current_week['Sales Stage'] == "Upsides for the Month"]['Amount'].sum()
-    closed_won_current = current_week[current_week['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
+    closed_won_current = current_week[current_week['Sales Stage'].apply(lambda x: 'Won' in str(x) if pd.notna(x) else False)]['Amount'].sum()
     
     # Calculate metrics for previous week
     committed_previous = previous_week[previous_week['Sales Stage'] == "Committed for the Month"]['Amount'].sum()
     upside_previous = previous_week[previous_week['Sales Stage'] == "Upsides for the Month"]['Amount'].sum()
-    closed_won_previous = previous_week[previous_week['Sales Stage'].str.contains('Won', case=False, na=False)]['Amount'].sum()
+    closed_won_previous = previous_week[previous_week['Sales Stage'].apply(lambda x: 'Won' in str(x) if pd.notna(x) else False)]['Amount'].sum()
     
     # Calculate deltas
     committed_delta = committed_current - committed_previous
