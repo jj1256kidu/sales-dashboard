@@ -1387,6 +1387,68 @@ def show_detailed():
     st.dataframe(df, use_container_width=True)
 
 def show_quarter_summary():
+    st.title("Quarter Summary Dashboard")
+    
+    # Check if data is loaded
+    if 'df' not in st.session_state:
+        st.warning("Please upload sales data first!")
+        return
+    
+    df = st.session_state.df
+    
+    # Filters
+    col1, col2, col3 = st.columns([1.2, 1.2, 1.2])
+    
+    with col1:
+        sales_owners = sorted(df['Sales Team Member'].dropna().unique().tolist())
+        selected_sales_owner = st.selectbox("👤 Sales Owner", ["All Sales Owners"] + sales_owners)
+    
+    with col2:
+        quarters = ['Q1', 'Q2', 'Q3', 'Q4']
+        selected_quarter = st.selectbox("📊 Quarter", ["All Quarters"] + quarters)
+    
+    with col3:
+        practices = sorted(df['Practice'].dropna().unique().tolist())
+        selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + practices)
+    
+    # Apply filters
+    filtered_df = df.copy()
+    if selected_sales_owner != "All Sales Owners":
+        filtered_df = filtered_df[filtered_df['Sales Team Member'] == selected_sales_owner]
+    if selected_quarter != "All Quarters":
+        filtered_df = filtered_df[filtered_df['Quarter'] == selected_quarter]
+    if selected_practice != "All Practices":
+        filtered_df = filtered_df[filtered_df['Practice'] == selected_practice]
+    
+    # Calculate metrics
+    committed_current = filtered_df[filtered_df['Status'] == "Committed for the Month"]['Deal Value'].sum()
+    upside_current = filtered_df[filtered_df['Status'] == "Upsides for the Month"]['Deal Value'].sum()
+    closed_won_current = filtered_df[filtered_df['Status'] == "Closed Won"]['Deal Value'].sum()
+    
+    # Calculate previous period metrics (assuming previous quarter)
+    previous_quarter = str(int(selected_quarter[1:]) - 1) if selected_quarter != "All Quarters" else "Q4"
+    previous_df = df[df['Quarter'] == previous_quarter]
+    
+    if selected_sales_owner != "All Sales Owners":
+        previous_df = previous_df[previous_df['Sales Team Member'] == selected_sales_owner]
+    if selected_practice != "All Practices":
+        previous_df = previous_df[previous_df['Practice'] == selected_practice]
+    
+    committed_previous = previous_df[previous_df['Status'] == "Committed for the Month"]['Deal Value'].sum()
+    upside_previous = previous_df[previous_df['Status'] == "Upsides for the Month"]['Deal Value'].sum()
+    closed_won_previous = previous_df[previous_df['Status'] == "Closed Won"]['Deal Value'].sum()
+    
+    # Calculate deltas
+    committed_delta = committed_current - committed_previous
+    upside_delta = upside_current - upside_previous
+    closed_won_delta = closed_won_current - closed_won_previous
+    
+    # Calculate overall committed
+    overall_committed_current = committed_current + closed_won_current
+    overall_committed_previous = committed_previous + closed_won_previous
+    overall_committed_delta = overall_committed_current - overall_committed_previous
+    
+    # Display metrics
     st.markdown("""
         <style>
             .metric-container {
@@ -1426,178 +1488,103 @@ def show_quarter_summary():
             .delta-negative {
                 color: #E74C3C;
             }
-            .delta-box {
-                background: #34495E;
-                padding: 10px;
-                border-radius: 10px;
-                box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
-                margin-top: 10px;
-                font-size: 2.5em;
-                color: #FFFFFF;
-                font-weight: 800;
-            }
         </style>
     """, unsafe_allow_html=True)
-
-    if 'df' not in st.session_state:
-        st.warning("Please upload sales data first!")
-        return
-
-    df = st.session_state.df
-
-    st.title("Quarter Summary Dashboard")
-
-    # Create filters in a single row with adjusted sizes
-    col1, col2, col3 = st.columns([1.2, 1.2, 1.2])
-
-    with col1:
-        sales_owners = sorted(df['Sales Team Member'].dropna().unique().tolist())
-        selected_sales_owner = st.selectbox("👤 Sales Owner", ["All Sales Owners"] + sales_owners)
-
-    with col2:
-        quarters = ['Q1', 'Q2', 'Q3', 'Q4']
-        selected_quarter = st.selectbox("📊 Quarter", ["All Quarters"] + quarters)
-
-    with col3:
-        practices = sorted(df['Practice'].dropna().unique().tolist())
-        selected_practice = st.selectbox("🏢 Practice", ["All Practices"] + practices)
-
-    # Filter the DataFrame based on selections
-    filtered_df = df.copy()
-    if selected_sales_owner != "All Sales Owners":
-        filtered_df = filtered_df[filtered_df['Sales Team Member'] == selected_sales_owner]
-    if selected_quarter != "All Quarters":
-        filtered_df = filtered_df[filtered_df['Quarter'] == selected_quarter]
-    if selected_practice != "All Practices":
-        filtered_df = filtered_df[filtered_df['Practice'] == selected_practice]
-
-    # Calculate metrics for current and previous periods
-    committed_current = filtered_df[filtered_df['Status'] == "Committed for the Month"]['Deal Value'].sum()
-    upside_current = filtered_df[filtered_df['Status'] == "Upside for the Month"]['Deal Value'].sum()
-    closed_won_current = filtered_df[filtered_df['Status'] == "Closed Won"]['Deal Value'].sum()
-
-    # Calculate previous period metrics (you may need to adjust this based on your data structure)
-    # For now, using a simple offset for demonstration
-    committed_previous = committed_current * 0.9  # Example: previous period was 90% of current
-    upside_previous = upside_current * 0.9
-    closed_won_previous = closed_won_current * 0.9
-
-    # Calculate deltas
-    committed_delta = committed_current - committed_previous
-    upside_delta = upside_current - upside_previous
-    closed_won_delta = closed_won_current - closed_won_previous
-
-    # Display metrics in cards
-    with st.container():
-        # Committed Data
-        st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Committed Data (Current)</div>
-                    <div class="metric-value">₹{committed_current / 100000:.0f}L</div>
-                    <div class="metric-label">Current Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Committed Data (Previous)</div>
-                    <div class="metric-value">₹{committed_previous / 100000:.0f}L</div>
-                    <div class="metric-label">Previous Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if committed_delta > 0 else 'delta-negative'}">
-                        ₹{committed_delta / 100000:.0f}L
-                    </div>
-                    <div class="metric-label">Change</div>
-                </div>
+    
+    # Committed Data
+    st.markdown(f"""
+        <div class="metric-container">
+            <div class="card">
+                <div class="metric-label">Committed Data (Current Quarter)</div>
+                <div class="metric-value">₹{committed_current / 100000:.0f}L</div>
+                <div class="metric-label">Current Quarter Total</div>
             </div>
-        """, unsafe_allow_html=True)
-
-        # Upside Data
-        st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Upside Data (Current)</div>
-                    <div class="metric-value">₹{upside_current / 100000:.0f}L</div>
-                    <div class="metric-label">Current Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Upside Data (Previous)</div>
-                    <div class="metric-value">₹{upside_previous / 100000:.0f}L</div>
-                    <div class="metric-label">Previous Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if upside_delta > 0 else 'delta-negative'}">
-                        ₹{upside_delta / 100000:.0f}L
-                    </div>
-                    <div class="metric-label">Change</div>
-                </div>
+            <div class="card">
+                <div class="metric-label">Committed Data (Previous Quarter)</div>
+                <div class="metric-value">₹{committed_previous / 100000:.0f}L</div>
+                <div class="metric-label">Previous Quarter Total</div>
             </div>
-        """, unsafe_allow_html=True)
-
-        # Closed Won Data
-        st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Closed Won (Current)</div>
-                    <div class="metric-value">₹{closed_won_current / 100000:.0f}L</div>
-                    <div class="metric-label">Current Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Closed Won (Previous)</div>
-                    <div class="metric-value">₹{closed_won_previous / 100000:.0f}L</div>
-                    <div class="metric-label">Previous Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if closed_won_delta > 0 else 'delta-negative'}">
-                        ₹{closed_won_delta / 100000:.0f}L
-                    </div>
-                    <div class="metric-label">Change</div>
-                </div>
+            <div class="card">
+                <div class="metric-label">Delta</div>
+                <div class="metric-value {'delta-positive' if committed_delta > 0 else 'delta-negative'}">₹{committed_delta / 100000:.0f}L</div>
+                <div class="metric-label">Change</div>
             </div>
-        """, unsafe_allow_html=True)
-
-        # Overall Metrics
-        overall_current = committed_current + closed_won_current
-        overall_previous = committed_previous + closed_won_previous
-        overall_delta = overall_current - overall_previous
-
-        st.markdown(f"""
-            <div class="metric-container">
-                <div class="card">
-                    <div class="metric-label">Overall Committed (Current)</div>
-                    <div class="metric-value">₹{overall_current / 100000:.0f}L</div>
-                    <div class="metric-label">Current Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Overall Committed (Previous)</div>
-                    <div class="metric-value">₹{overall_previous / 100000:.0f}L</div>
-                    <div class="metric-label">Previous Total</div>
-                </div>
-                <div class="card">
-                    <div class="metric-label">Delta</div>
-                    <div class="metric-value {'delta-positive' if overall_delta > 0 else 'delta-negative'}">
-                        ₹{overall_delta / 100000:.0f}L
-                    </div>
-                    <div class="metric-label">Change</div>
-                </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Upside Data
+    st.markdown(f"""
+        <div class="metric-container">
+            <div class="card">
+                <div class="metric-label">Upside Data (Current Quarter)</div>
+                <div class="metric-value">₹{upside_current / 100000:.0f}L</div>
+                <div class="metric-label">Current Quarter Total</div>
             </div>
-        """, unsafe_allow_html=True)
+            <div class="card">
+                <div class="metric-label">Upside Data (Previous Quarter)</div>
+                <div class="metric-value">₹{upside_previous / 100000:.0f}L</div>
+                <div class="metric-label">Previous Quarter Total</div>
+            </div>
+            <div class="card">
+                <div class="metric-label">Delta</div>
+                <div class="metric-value {'delta-positive' if upside_delta > 0 else 'delta-negative'}">₹{upside_delta / 100000:.0f}L</div>
+                <div class="metric-label">Change</div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Closed Won
+    st.markdown(f"""
+        <div class="metric-container">
+            <div class="card">
+                <div class="metric-label">Closed Won (Current Quarter)</div>
+                <div class="metric-value">₹{closed_won_current / 100000:.0f}L</div>
+                <div class="metric-label">Current Quarter Total</div>
+            </div>
+            <div class="card">
+                <div class="metric-label">Closed Won (Previous Quarter)</div>
+                <div class="metric-value">₹{closed_won_previous / 100000:.0f}L</div>
+                <div class="metric-label">Previous Quarter Total</div>
+            </div>
+            <div class="card">
+                <div class="metric-label">Delta</div>
+                <div class="metric-value {'delta-positive' if closed_won_delta > 0 else 'delta-negative'}">₹{closed_won_delta / 100000:.0f}L</div>
+                <div class="metric-label">Change</div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Overall Committed
+    st.markdown(f"""
+        <div class="metric-container">
+            <div class="card">
+                <div class="metric-label">Overall Committed Data (Current Quarter)</div>
+                <div class="metric-value">₹{overall_committed_current / 100000:.0f}L</div>
+                <div class="metric-label">Current Quarter Total</div>
+            </div>
+            <div class="card">
+                <div class="metric-label">Overall Committed Data (Previous Quarter)</div>
+                <div class="metric-value">₹{overall_committed_previous / 100000:.0f}L</div>
+                <div class="metric-label">Previous Quarter Total</div>
+            </div>
+            <div class="card">
+                <div class="metric-label">Delta</div>
+                <div class="metric-value {'delta-positive' if overall_committed_delta > 0 else 'delta-negative'}">₹{overall_committed_delta / 100000:.0f}L</div>
+                <div class="metric-label">Change</div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 
 def main():
     with st.sidebar:
         st.title("Navigation")
-        view_options = {
-            "Data Input": "data_input",
-            "Overview": "overview",
-            "Sales Team": "sales_team",
-            "Detailed Data": "detailed_data",
-            "Quarter Summary": "quarter_summary"
-        }
-        selected_view = st.radio("Select View", list(view_options.keys()))
-        st.session_state.current_view = view_options[selected_view]
-
+        selected = st.radio(
+            "Select View",
+            options=["Data Input", "Overview", "Sales Team", "Detailed Data", "Quarter Summary"],
+            key="navigation"
+        )
+        st.session_state.current_view = selected.lower().replace(" ", "_")
+    
     if st.session_state.current_view == "data_input":
         show_data_input()
     elif st.session_state.current_view == "overview":
