@@ -497,13 +497,8 @@ def show_overview():
         st.warning("Please upload data first.")
         return
     
-    dataset_choice = st.radio(
-        "Select Dataset",
-        ["Current Week", "Previous Week"],
-        horizontal=True
-    )
-    
-    df = st.session_state.df_current if dataset_choice == "Current Week" else st.session_state.df_previous
+    # Use current week data by default
+    df = st.session_state.df_current
     st.session_state.df = df  # Set the current df in session state for compatibility
     
     st.title("Sales Performance Overview")
@@ -511,26 +506,15 @@ def show_overview():
     # --------------------------------------------------------
     # (1) Let user edit the target as an integer
     # --------------------------------------------------------
-    #st.markdown("### Enter Your Sales Target (Optional)")
-    #user_target = st.number_input(
-     #   "Sales Target (in Lakhs)",
-      #   value=float(st.session_state.sales_target),  # existing value or 0
-       #  step=0.1,  # or 1.0 if you want full numbers
-        # format="%.1f"
-    #)
-    #try:
-     #   user_target = float(user_target_input)
-    #except ValueError:
-    #    user_target = 0 
     st.markdown("### Enter Your Sales Target (Optional)")
 
-# Get existing value from session state or default to "0"
+    # Get existing value from session state or default to "0"
     default_target = str(int(st.session_state.get("sales_target", 0)))
 
-# Input as string (no steppers)
+    # Input as string (no steppers)
     user_target_input = st.text_input("Sales Target (in Lakhs)", value=default_target)
 
-# Try to convert it to int
+    # Try to convert it to int
     try:
         user_target = int(user_target_input)
     except ValueError:
