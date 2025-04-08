@@ -1647,35 +1647,35 @@ def show_ytd_dashboard():
     metrics = {
         'Total Pipeline': {
             'icon': '📈',
-            'current': df_current_filtered['Amount'].sum() / 100000,
-            'previous': df_previous_filtered['Amount'].sum() / 100000,
+            'current': float(df_current_filtered['Amount'].sum() or 0) / 100000,
+            'previous': float(df_previous_filtered['Amount'].sum() or 0) / 100000,
             'description': 'Total pipeline value across all stages',
             'gradient': 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
-            'trend_icon': '↗️' if (df_current_filtered['Amount'].sum() / 100000) > (df_previous_filtered['Amount'].sum() / 100000) else '↘️'
+            'trend_icon': '↗️' if float(df_current_filtered['Amount'].sum() or 0) > float(df_previous_filtered['Amount'].sum() or 0) else '↘️'
         },
         'Closed Won': {
             'icon': '🎯',
-            'current': df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000 if status_column else 0,
-            'previous': df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000 if status_column else 0,
+            'current': float(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / 100000 if status_column else 0,
+            'previous': float(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / 100000 if status_column else 0,
             'description': 'Successfully closed deals',
             'gradient': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-            'trend_icon': '↗️' if (df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000) > (df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / 100000) else '↘️' if status_column else '➖'
+            'trend_icon': '↗️' if float(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) > float(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) else '↘️' if status_column else '➖'
         },
         'Win Rate': {
             'icon': '🏆',
-            'current': (len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_current_filtered) * 100) if status_column and len(df_current_filtered) > 0 else 0,
-            'previous': (len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_previous_filtered) * 100) if status_column and len(df_previous_filtered) > 0 else 0,
+            'current': float(len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_current_filtered) * 100) if status_column and len(df_current_filtered) > 0 else 0,
+            'previous': float(len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_previous_filtered) * 100) if status_column and len(df_previous_filtered) > 0 else 0,
             'description': 'Deal success rate',
             'gradient': 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)',
-            'trend_icon': '↗️' if ((len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_current_filtered) * 100) if status_column and len(df_current_filtered) > 0 else 0) > ((len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_previous_filtered) * 100) if status_column and len(df_previous_filtered) > 0 else 0) else '↘️'
+            'trend_icon': '↗️' if float(len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_current_filtered) * 100) > float(len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) / len(df_previous_filtered) * 100) else '↘️'
         },
         'Average Deal Size': {
             'icon': '💰',
-            'current': (df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)])) / 100000 if status_column and len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) > 0 else 0,
-            'previous': (df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)])) / 100000 if status_column and len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) > 0 else 0,
+            'current': float(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / (len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) or 1) / 100000 if status_column else 0,
+            'previous': float(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / (len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) or 1) / 100000 if status_column else 0,
             'description': 'Average value per won deal',
             'gradient': 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-            'trend_icon': '↗️' if ((df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)])) / 100000 if status_column and len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) > 0 else 0) > ((df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() / len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)])) / 100000 if status_column and len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) > 0 else 0) else '↘️'
+            'trend_icon': '↗️' if float(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / (len(df_current_filtered[df_current_filtered[status_column].str.contains('Won', case=False, na=False)]) or 1) > float(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]['Amount'].sum() or 0) / (len(df_previous_filtered[df_previous_filtered[status_column].str.contains('Won', case=False, na=False)]) or 1) else '↘️'
         }
     }
 
