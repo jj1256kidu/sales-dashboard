@@ -1483,7 +1483,25 @@ def show_detailed():
     st.dataframe(df, use_container_width=True)
 
 def show_quarter_summary():
-    st.title("Quarter Summary Dashboard")
+    st.markdown("""
+        <div style='
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        '>
+            <h2 style='
+                color: white;
+                margin: 0;
+                text-align: center;
+                font-size: 2em;
+                font-weight: 600;
+                letter-spacing: 0.5px;
+                text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            '>Quarter Summary Dashboard</h2>
+        </div>
+    """, unsafe_allow_html=True)
     
     # Check if data is loaded
     if 'df' not in st.session_state:
@@ -1496,7 +1514,13 @@ def show_quarter_summary():
     current_week = df[df['Week'] == df['Week'].max()]
     previous_week = df[df['Week'] == df['Week'].max() - 1]
     
-    # Filters
+    # Filters section with improved styling
+    st.markdown("""
+        <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
+            <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>🔍 Filters</h4>
+        </div>
+    """, unsafe_allow_html=True)
+    
     col1, col2, col3 = st.columns([1.2, 1.2, 1.2])
     
     with col1:
@@ -1534,90 +1558,97 @@ def show_quarter_summary():
     upside_previous = previous_week[previous_week['Sales Stage'] == "Upsides for the Month"]['Amount'].sum()
     closed_won_previous = previous_week[previous_week['Sales Stage'].apply(lambda x: 'Won' in str(x) if pd.notna(x) else False)]['Amount'].sum()
     
-    # Calculate deltas
-    committed_delta = committed_current - committed_previous
-    upside_delta = upside_current - upside_previous
-    closed_won_delta = closed_won_current - closed_won_previous
+    # Calculate deltas and percentages
+    def calculate_delta_percentage(current, previous):
+        delta = current - previous
+        percentage = (delta / previous * 100) if previous != 0 else 0
+        return delta, percentage
+    
+    committed_delta, committed_pct = calculate_delta_percentage(committed_current, committed_previous)
+    upside_delta, upside_pct = calculate_delta_percentage(upside_current, upside_previous)
+    closed_won_delta, closed_won_pct = calculate_delta_percentage(closed_won_current, closed_won_previous)
     
     # Calculate overall committed
     overall_committed_current = committed_current + closed_won_current
     overall_committed_previous = committed_previous + closed_won_previous
-    overall_committed_delta = overall_committed_current - overall_committed_previous
+    overall_committed_delta, overall_committed_pct = calculate_delta_percentage(overall_committed_current, overall_committed_previous)
     
-    # Display metrics using the same card-based layout
-    st.markdown(f"""
-        <div class="metric-container">
-            <div class="card">
-                <div class="metric-label">Committed Data (Current Week)</div>
-                <div class="metric-value">₹{committed_current / 100000:.0f}L</div>
-                <div class="metric-label">Current Week Total</div>
+    # Helper function for trend indicator
+    def get_trend_indicator(value):
+        if value > 0:
+            return "↗️"
+        elif value < 0:
+            return "↘️"
+        return "➡️"
+    
+    # Display metrics using enhanced card-based layout
+    def create_metric_card(title, current, previous, delta, percentage):
+        trend = get_trend_indicator(delta)
+        return f"""
+            <div style='background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 10px 0;'>
+                <h3 style='color: #2a5298; margin: 0 0 15px 0; font-size: 1.2em;'>{title}</h3>
+                <div style='display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;'>
+                    <div>
+                        <div style='color: #666; font-size: 0.9em;'>Current Week</div>
+                        <div style='color: #2ecc71; font-size: 1.4em; font-weight: 600;'>₹{current / 100000:.0f}L</div>
+                    </div>
+                    <div>
+                        <div style='color: #666; font-size: 0.9em;'>Previous Week</div>
+                        <div style='color: #3498db; font-size: 1.4em; font-weight: 600;'>₹{previous / 100000:.0f}L</div>
+                    </div>
+                    <div>
+                        <div style='color: #666; font-size: 0.9em;'>Change</div>
+                        <div style='color: {"#2ecc71" if delta >= 0 else "#e74c3c"}; font-size: 1.4em; font-weight: 600;'>
+                            {trend} ₹{abs(delta) / 100000:.0f}L
+                            <div style='font-size: 0.7em;'>({percentage:.1f}%)</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card">
-                <div class="metric-label">Committed Data (Previous Week)</div>
-                <div class="metric-value">₹{committed_previous / 100000:.0f}L</div>
-                <div class="metric-label">Previous Week Total</div>
-            </div>
-            <div class="card">
-                <div class="metric-label">Delta</div>
-                <div class="metric-value {'delta-positive' if committed_delta > 0 else 'delta-negative'}">₹{committed_delta / 100000:.0f}L</div>
-                <div class="metric-label">Change</div>
-            </div>
-        </div>
-        
-        <div class="metric-container">
-            <div class="card">
-                <div class="metric-label">Upside Data (Current Week)</div>
-                <div class="metric-value">₹{upside_current / 100000:.0f}L</div>
-                <div class="metric-label">Current Week Total</div>
-            </div>
-            <div class="card">
-                <div class="metric-label">Upside Data (Previous Week)</div>
-                <div class="metric-value">₹{upside_previous / 100000:.0f}L</div>
-                <div class="metric-label">Previous Week Total</div>
-            </div>
-            <div class="card">
-                <div class="metric-label">Delta</div>
-                <div class="metric-value {'delta-positive' if upside_delta > 0 else 'delta-negative'}">₹{upside_delta / 100000:.0f}L</div>
-                <div class="metric-label">Change</div>
-            </div>
-        </div>
-        
-        <div class="metric-container">
-            <div class="card">
-                <div class="metric-label">Closed Won (Current Week)</div>
-                <div class="metric-value">₹{closed_won_current / 100000:.0f}L</div>
-                <div class="metric-label">Current Week Total</div>
-            </div>
-            <div class="card">
-                <div class="metric-label">Closed Won (Previous Week)</div>
-                <div class="metric-value">₹{closed_won_previous / 100000:.0f}L</div>
-                <div class="metric-label">Previous Week Total</div>
-            </div>
-            <div class="card">
-                <div class="metric-label">Delta</div>
-                <div class="metric-value {'delta-positive' if closed_won_delta > 0 else 'delta-negative'}">₹{closed_won_delta / 100000:.0f}L</div>
-                <div class="metric-label">Change</div>
-            </div>
-        </div>
-        
-        <div class="metric-container">
-            <div class="card">
-                <div class="metric-label">Overall Committed Data (Current Week)</div>
-                <div class="metric-value">₹{overall_committed_current / 100000:.0f}L</div>
-                <div class="metric-label">Current Week Total</div>
-            </div>
-            <div class="card">
-                <div class="metric-label">Overall Committed Data (Previous Week)</div>
-                <div class="metric-value">₹{overall_committed_previous / 100000:.0f}L</div>
-                <div class="metric-label">Previous Week Total</div>
-            </div>
-            <div class="card">
-                <div class="metric-label">Delta</div>
-                <div class="metric-value {'delta-positive' if overall_committed_delta > 0 else 'delta-negative'}">₹{overall_committed_delta / 100000:.0f}L</div>
-                <div class="metric-label">Change</div>
-            </div>
+        """
+    
+    # Create all metric cards
+    metrics_html = f"""
+        {create_metric_card("Committed Data", committed_current, committed_previous, committed_delta, committed_pct)}
+        {create_metric_card("Upside Data", upside_current, upside_previous, upside_delta, upside_pct)}
+        {create_metric_card("Closed Won", closed_won_current, closed_won_previous, closed_won_delta, closed_won_pct)}
+        {create_metric_card("Overall Committed", overall_committed_current, overall_committed_previous, overall_committed_delta, overall_committed_pct)}
+    """
+    
+    st.markdown(metrics_html, unsafe_allow_html=True)
+    
+    # Add summary statistics
+    st.markdown("""
+        <div style='padding: 15px; background: linear-gradient(to right, #f8f9fa, #e9ecef); border-radius: 10px; margin: 15px 0;'>
+            <h4 style='color: #2a5298; margin: 0; font-size: 1.1em; font-weight: 600;'>📊 Summary Statistics</h4>
         </div>
     """, unsafe_allow_html=True)
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        total_deals_current = len(current_week)
+        total_deals_previous = len(previous_week)
+        deals_delta = total_deals_current - total_deals_previous
+        st.metric("Total Deals", total_deals_current, deals_delta)
+    
+    with col2:
+        avg_deal_size_current = committed_current / total_deals_current if total_deals_current > 0 else 0
+        avg_deal_size_previous = committed_previous / total_deals_previous if total_deals_previous > 0 else 0
+        avg_deal_delta = avg_deal_size_current - avg_deal_size_previous
+        st.metric("Avg Deal Size (Lakhs)", f"₹{avg_deal_size_current/100000:.1f}L", f"₹{avg_deal_delta/100000:.1f}L")
+    
+    with col3:
+        win_rate_current = (closed_won_current / committed_current * 100) if committed_current > 0 else 0
+        win_rate_previous = (closed_won_previous / committed_previous * 100) if committed_previous > 0 else 0
+        win_rate_delta = win_rate_current - win_rate_previous
+        st.metric("Win Rate", f"{win_rate_current:.1f}%", f"{win_rate_delta:.1f}%")
+    
+    with col4:
+        conversion_rate_current = (closed_won_current / upside_current * 100) if upside_current > 0 else 0
+        conversion_rate_previous = (closed_won_previous / upside_previous * 100) if upside_previous > 0 else 0
+        conversion_rate_delta = conversion_rate_current - conversion_rate_previous
+        st.metric("Conversion Rate", f"{conversion_rate_current:.1f}%", f"{conversion_rate_delta:.1f}%")
 
 def main():
     with st.sidebar:
