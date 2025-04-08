@@ -7,6 +7,14 @@ import numpy as np
 import io
 from functools import lru_cache
 
+# Set page config - MUST BE THE FIRST STREAMLIT COMMAND
+st.set_page_config(
+    page_title="Sales Dashboard",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # Format helper functions
 def format_amount(x):
     try:
@@ -40,14 +48,6 @@ def format_number(x):
         return f"{int(value):,}"
     except:
         return "0"
-
-# Set page config
-st.set_page_config(
-    page_title="Sales Dashboard",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 # Initialize session state
 if 'df' not in st.session_state:
@@ -1387,8 +1387,6 @@ def show_detailed():
     st.dataframe(df, use_container_width=True)
 
 def main():
-    st.set_page_config(page_title="Sales Dashboard", layout="wide")
-    
     # Initialize session state for navigation if not exists
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Data Input"
