@@ -1394,39 +1394,120 @@ def show_detailed():
     
     st.dataframe(df, use_container_width=True)
 
-# Function to display data input (upload and preview)
-def display_data_input():
-    st.title("Data Input")
-
-    uploaded_file = st.file_uploader("Upload your Excel file", type=["xlsx"])
-
-    if uploaded_file:
-        excel_file = pd.ExcelFile(uploaded_file)
-        sheet_names = excel_file.sheet_names
-        st.write("Available Sheets:", sheet_names)
-
-        selected_current_sheet = st.selectbox("Select Current Week Sheet", sheet_names, key="current_week")
-        selected_previous_sheet = st.selectbox("Select Previous Week Sheet", sheet_names, key="previous_week")
-
-        df_current = pd.read_excel(uploaded_file, sheet_name=selected_current_sheet)
-        df_previous = pd.read_excel(uploaded_file, sheet_name=selected_previous_sheet)
-
-        df_current.columns = df_current.columns.str.strip()
-        df_previous.columns = df_previous.columns.str.strip()
-
-        st.session_state.df_current = df_current
-        st.session_state.df_previous = df_previous
-
-        st.write(f"Current Week Data from {selected_current_sheet}:")
-        st.dataframe(df_current.head())
+def show_quarterly_summary():
+    if 'df_current' not in st.session_state or 'df_previous' not in st.session_state:
+        st.warning("Please upload data first.")
+        return
+    
+    dataset_choice = st.radio(
+        "Select Dataset",
+        ["Current Week", "Previous Week"],
+        horizontal=True
+    )
+    
+    df = st.session_state.df_current if dataset_choice == "Current Week" else st.session_state.df_previous
+    
+    st.title("Quarterly Summary")
+    
+    # Quarter selector
+    quarters = ["Q1", "Q2", "Q3", "Q4"]
+    selected_quarter = st.selectbox("Select Quarter", quarters)
+    
+    # Quarter mapping
+    quarter_months = {
+        "Q1": ["April", "May", "June"],
+        "Q2": ["July", "August", "September"],
+        "Q3": ["October", "November", "December"],
+        "Q4": ["January", "February", "March"]
+    }
+    
+    # Filter data for selected quarter
+    quarter_data = df[df['Month'].isin(quarter_months[selected_quarter])]
+    
+    # Quarterly Metrics
+    st.subheader("Quarterly Performance Metrics")
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        quarterly_pipeline = quarter_data['Deal Value'].sum()
+        st.metric("Total Pipeline", f"₹{quarterly_pipeline:,.2f}")
+    
+    with col2:
+        closed_won = quarter_data[quarter_data['Status'] == 'Closed Won']['Deal Value'].sum()
+        st.metric("Closed Won", f"₹{closed_won:,.2f}")
+    
+    with col3:
+        win_rate = (len(quarter_data[quarter_data['Status'] == 'Closed Won']) / len(quarter_data) * 100) if len(quarter_data) > 0 else 0
+        st.metric("Win Rate", f"{win_rate:.1f}%")
+    
+    with col4:
+        avg_deal_size = quarterly_pipeline / len(quarter_data) if len(quarter_data) > 0 else 0
+        st.metric("Average Deal Size", f"₹{avg_deal_size:,.2f}")
+    
+    # Monthly Breakdown within Quarter
+    st.subheader("Monthly Breakdown")
+    monthly_data = quarter_data.groupby('Month').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Closed Won').sum(),
+        'Opportunity Name': 'count'
+    }).reset_index()
+    monthly_data.columns = ['Month', 'Pipeline Value', 'Closed Won Deals', 'Total Deals']
+    st.dataframe(monthly_data.style.format({
+        'Pipeline Value': '₹{:,.2f}',
+        'Closed Won Deals': '{:,.0f}',
+        'Total Deals': '{:,.0f}'
+    }), use_container_width=True)
+    
+    # Practice Performance in Quarter
+    st.subheader("Practice Performance")
+    if 'Practice' in quarter_data.columns:
+        practice_data = quarter_data.groupby('Practice').agg({
+            'Deal Value': 'sum',
+            'Status': lambda x: (x == 'Closed Won').sum(),
+            'Opportunity Name': 'count'
+        }).reset_index()
+        practice_data.columns = ['Practice', 'Pipeline Value', 'Closed Won Deals', 'Total Deals']
+        practice_data['Win Rate'] = (practice_data['Closed Won Deals'] / practice_data['Total Deals'] * 100).round(1)
         
-        st.write(f"Previous Week Data from {selected_previous_sheet}:")
-        st.dataframe(df_previous.head())
-
-        return df_current, df_previous
-    else:
-        st.warning("Please upload a file to proceed.")
-        return None, None
+        # Practice performance table
+        st.dataframe(practice_data.style.format({
+            'Pipeline Value': '₹{:,.2f}',
+            'Closed Won Deals': '{:,.0f}',
+            'Total Deals': '{:,.0f}',
+            'Win Rate': '{:.1f}%'
+        }), use_container_width=True)
+        
+        # Practice pipeline distribution chart
+        st.subheader("Practice Pipeline Distribution")
+        fig = px.pie(practice_data, values='Pipeline Value', names='Practice',
+                     title=f'Pipeline Distribution by Practice - {selected_quarter}')
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Team Performance in Quarter
+    st.subheader("Team Performance")
+    team_data = quarter_data.groupby('Sales Team Member').agg({
+        'Deal Value': 'sum',
+        'Status': lambda x: (x == 'Closed Won').sum(),
+        'Opportunity Name': 'count'
+    }).reset_index()
+    team_data.columns = ['Sales Team Member', 'Pipeline Value', 'Closed Won Deals', 'Total Deals']
+    team_data['Win Rate'] = (team_data['Closed Won Deals'] / team_data['Total Deals'] * 100).round(1)
+    
+    # Team performance table
+    st.dataframe(team_data.style.format({
+        'Pipeline Value': '₹{:,.2f}',
+        'Closed Won Deals': '{:,.0f}',
+        'Total Deals': '{:,.0f}',
+        'Win Rate': '{:.1f}%'
+    }), use_container_width=True)
+    
+    # Pipeline Trend Chart
+    st.subheader("Pipeline Trend")
+    trend_data = quarter_data.groupby(['Month', 'Status'])['Deal Value'].sum().reset_index()
+    fig = px.bar(trend_data, x='Month', y='Deal Value', color='Status',
+                 title=f'Pipeline Trend by Status - {selected_quarter}',
+                 barmode='group')
+    st.plotly_chart(fig, use_container_width=True)
 
 def main():
     # Initialize session state for navigation if not exists
@@ -1442,7 +1523,7 @@ def main():
     else:
         st.session_state.current_page = st.sidebar.radio(
             "Select a page",
-            ["Data Input", "Overview", "Sales Team", "Detailed Data"]
+            ["Data Input", "Overview", "Sales Team", "Quarterly Summary", "Detailed Data"]
         )
 
     # Display the selected page
@@ -1452,6 +1533,8 @@ def main():
         show_overview()
     elif st.session_state.current_page == "Sales Team":
         show_sales_team()
+    elif st.session_state.current_page == "Quarterly Summary":
+        show_quarterly_summary()
     elif st.session_state.current_page == "Detailed Data":
         show_detailed()
 
